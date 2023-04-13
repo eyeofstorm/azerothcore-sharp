@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>AzerothCore</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>..\..\build\bin\Debug</OutputPath>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>..\..\build\bin\Release</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MySqlConnector" Version="2.2.5" />
+    <PackageReference Include="Google.Protobuf" Version="3.22.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Logging\" />
+    <None Remove="Logging\obj\AzerothSharp.Logging.csproj.nuget.dgspec.json" />
+    <None Remove="Logging\obj\AzerothSharp.Logging.csproj.nuget.g.props" />
+    <None Remove="Logging\obj\project.nuget.cache" />
+    <None Remove="Logging\obj\AzerothSharp.Logging.csproj.nuget.g.targets" />
+    <None Remove="Logging\obj\project.assets.json" />
+    <None Remove="Logging\obj\Debug\net6.0\AzerothSharp.Logging.AssemblyInfoInputs.cache" />
+    <None Remove="Logging\obj\Debug\net6.0\AzerothSharp.Logging.assets.cache" />
+    <None Remove="Logging\obj\Debug\net6.0\AzerothSharp.Logging.csproj.AssemblyReference.cache" />
+    <None Remove="Logging\obj\Debug\net6.0\AzerothSharp.Logging.GeneratedMSBuildEditorConfig.editorconfig" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Logging\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Logging\obj\Debug\net6.0\AzerothSharp.Logging.AssemblyInfo.cs" />
+    <Compile Remove="Logging\obj\Debug\net6.0\.NETCoreApp,Version=v6.0.AssemblyAttributes.cs" />
+    <Compile Remove="Logging\obj\Debug\net6.0\AzerothSharp.Logging.GlobalUsings.g.cs" />
+  </ItemGroup>
+</Project>

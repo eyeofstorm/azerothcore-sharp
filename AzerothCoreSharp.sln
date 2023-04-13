@@ -1,0 +1,49 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 25.0.1705.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "common", "src\common\common.csproj", "{8E34052D-8294-42D0-BAE4-C0C6DE4757F4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "server", "server", "{D05CF111-11C4-4341-B3A4-31BB814F86F9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "apps", "apps", "{47D288C5-382E-421F-B6FD-6392FD7DBD89}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "authserver", "src\server\apps\authserver\authserver.csproj", "{CBBEC0E6-B37E-43B9-89F3-A3B4C2CBF362}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8E34052D-8294-42D0-BAE4-C0C6DE4757F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E34052D-8294-42D0-BAE4-C0C6DE4757F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E34052D-8294-42D0-BAE4-C0C6DE4757F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E34052D-8294-42D0-BAE4-C0C6DE4757F4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{292E1206-08E5-4612-A446-5043E403EAC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{292E1206-08E5-4612-A446-5043E403EAC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{292E1206-08E5-4612-A446-5043E403EAC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{292E1206-08E5-4612-A446-5043E403EAC1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBBEC0E6-B37E-43B9-89F3-A3B4C2CBF362}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBBEC0E6-B37E-43B9-89F3-A3B4C2CBF362}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBBEC0E6-B37E-43B9-89F3-A3B4C2CBF362}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBBEC0E6-B37E-43B9-89F3-A3B4C2CBF362}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {729BDDB2-C181-4DD0-93BA-0C4C9C783A9D}
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		Policies = $0
+		$0.StandardHeader = $1
+		$1.Text = @/*\n * This file is part of the AzerothCore Project. See AUTHORS file for Copyright information\n *\n * This program is free software; you can redistribute it and/or modify it\n * under the terms of the GNU Affero General Public License as published by the\n * Free Software Foundation; either version 3 of the License, or (at your\n * option) any later version.\n *\n * This program is distributed in the hope that it will be useful, but WITHOUT\n * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or\n * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for\n * more details.\n *\n * You should have received a copy of the GNU General Public License along\n * with this program. If not, see <http://www.gnu.org/licenses/>.\n */
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{47D288C5-382E-421F-B6FD-6392FD7DBD89} = {D05CF111-11C4-4341-B3A4-31BB814F86F9}
+		{292E1206-08E5-4612-A446-5043E403EAC1} = {47D288C5-382E-421F-B6FD-6392FD7DBD89}
+		{CBBEC0E6-B37E-43B9-89F3-A3B4C2CBF362} = {47D288C5-382E-421F-B6FD-6392FD7DBD89}
+	EndGlobalSection
+EndGlobal
