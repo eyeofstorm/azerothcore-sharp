@@ -26,7 +26,7 @@ public enum AccountTypes : byte
     SEC_CONSOLE = 4                                  // must be always last in list, accounts must have less security level always also
 };
 
-public enum Locale
+public enum Locale : byte
 {
     LOCALE_enUS = 0,
     LOCALE_koKR = 1,

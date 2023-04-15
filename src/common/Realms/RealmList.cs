@@ -24,7 +24,7 @@ using AzerothCore.Database;
 using AzerothCore.Logging;
 using AzerothCore.Singleton;
 
-namespace AzerothCore.Realm;
+namespace AzerothCore.Realms;
 
 public class RealmList : Singleton<RealmList>
 {
@@ -33,10 +33,6 @@ public class RealmList : Singleton<RealmList>
     private List<RealmBuildInfo>                        _builds = new();
     private ConcurrentDictionary<RealmHandle, Realm>    _realms = new();
     private System.Timers.Timer?                        _updateTimer;
-
-    private RealmList()
-    {
-    }
 
     public void Initialize(int updateInterval)
     {
@@ -142,14 +138,14 @@ public class RealmList : Singleton<RealmList>
 
                 RealmType realmType = (RealmType)result.Read<byte>(6);
 
-                if (realmType == RealmType.FFAPVP)
+                if (realmType == RealmType.REALM_TYPE_FFA_PVP)
                 {
-                    realmType = RealmType.PVP;
+                    realmType = RealmType.REALM_TYPE_PVP;
                 }
 
-                if (realmType >= RealmType.MaxType)
+                if (realmType >= RealmType.MAX_CLIENT_REALM_TYPE)
                 {
-                    realmType = RealmType.Normal;
+                    realmType = RealmType.REALM_TYPE_NORMAL;
                 }
 
                 realm.Type = (byte)realmType;

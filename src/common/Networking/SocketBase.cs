@@ -81,7 +81,7 @@ public abstract class SocketBase : ISocket, IDisposable
         _readBuffer.Normalize();
         _readBuffer.EnsureFreeSpace();
 
-        _receiveSocketAsyncEventArgs.SetBuffer(_readBuffer.GetWriteBuffer());
+        _receiveSocketAsyncEventArgs.SetBuffer(_readBuffer.GetWritePointer());
 
         if (!_socket.ReceiveAsync(_receiveSocketAsyncEventArgs))
         {

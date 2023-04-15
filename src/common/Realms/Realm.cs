@@ -21,32 +21,34 @@ using System.Net.Sockets;
 using AzerothCore.Constants;
 using AzerothCore.Utilities;
 
-namespace AzerothCore.Realm;
+namespace AzerothCore.Realms;
 
 [Flags]
-public enum RealmFlags
+public enum RealmFlags : byte
 {
-    None            = 0x00,
-    VersionMismatch = 0x01,
-    Offline         = 0x02,
-    SpecifyBuild    = 0x04,
-    Unk1            = 0x08,
-    Unk2            = 0x10,
-    Recommended     = 0x20,
-    New             = 0x40,
-    Full            = 0x80
+    REALM_FLAG_NONE             = 0x00,
+    REALM_FLAG_VERSION_MISMATCH = 0x01,
+    REALM_FLAG_OFFLINE          = 0x02,
+    REALM_FLAG_SPECIFYBUILD     = 0x04,
+    REALM_FLAG_UNK1             = 0x08,
+    REALM_FLAG_UNK2             = 0x10,
+    REALM_FLAG_RECOMMENDED      = 0x20,
+    REALM_FLAG_NEW              = 0x40,
+    REALM_FLAG_FULL             = 0x80
 }
 
 public enum RealmType
 {
-    Normal  = 0,
-    PVP     = 1,
-    Normal2 = 4,
-    RP      = 6,
-    RPPVP   = 8,
-    MaxType = 14,
-    FFAPVP  = 16                           // custom, free for all pvp mode like arena PvP in all zones except rest activated places and sanctuaries
-                                           // replaced by REALM_PVP in realm list
+    REALM_TYPE_NORMAL           = 0,
+    REALM_TYPE_PVP              = 1,
+    REALM_TYPE_NORMAL2          = 4,
+    REALM_TYPE_RP               = 6,
+    REALM_TYPE_RPPVP            = 8,
+
+    MAX_CLIENT_REALM_TYPE       = 14,
+
+    REALM_TYPE_FFA_PVP          = 16    // custom, free for all pvp mode like arena PvP in all zones except rest activated places and sanctuaries
+                                        // replaced by REALM_PVP in realm list
 }
 
 public class Realm : IEquatable<Realm>
@@ -72,8 +74,13 @@ public class Realm : IEquatable<Realm>
         NormalizedName  = NormalizedName.Replace(" ", "");
     }
 
-    public IPEndPoint GetAddressForClient(IPAddress clientAddr)
+    public IPEndPoint GetAddressForClient(IPAddress? clientAddr)
     {
+        if (clientAddr == null)
+        {
+            throw new NullReferenceException(nameof(clientAddr));
+        }
+
         IPAddress realmIp;
 
         // Attempt to send best address for client

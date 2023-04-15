@@ -15,20 +15,19 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System.Security.Cryptography;
 using System.Text;
 
 namespace AzerothCore.Cryptography;
 
 public class SrpServerAuth
 {
-	public static readonly int			SALT_LENGTH = 32;
+    private static readonly System.Security.Cryptography.SHA1 s_sha1;
+
+    public static readonly int			SALT_LENGTH = 32;
 	public static readonly int			VERIFIER_LENGTH = 32;
 	public static readonly int			EPHEMERAL_KEY_LENGTH = 32;
 	public static readonly int			SHA1_DIGEST_LENGTH_BYTES = 20;
 	public static readonly int			SESSION_KEY_LENGTH = 40;
-
-	private static readonly SHA1		s_sha1;
 
 	public static readonly SrpInteger	Generator;
 	public static readonly SrpInteger	SafePrime;
@@ -42,7 +41,7 @@ public class SrpServerAuth
 
 	static SrpServerAuth()
     {
-		s_sha1 = SHA1.Create();
+		s_sha1 = System.Security.Cryptography.SHA1.Create();
 
 		Generator = 7;
 

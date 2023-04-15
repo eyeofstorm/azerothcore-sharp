@@ -15,7 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace AzerothCore.Realm;
+namespace AzerothCore.Realms;
 
 public struct RealmHandle : IEquatable<RealmHandle>
 {   

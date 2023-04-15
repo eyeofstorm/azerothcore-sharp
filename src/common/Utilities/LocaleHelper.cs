@@ -22,7 +22,7 @@ namespace AzerothCore.Utilities;
 
 public static class LocaleHelper
 {
-    public static Locale GetLocaleByName(string name)
+    public static Locale GetLocaleByName(string? name)
     {
         Locale locale;
 

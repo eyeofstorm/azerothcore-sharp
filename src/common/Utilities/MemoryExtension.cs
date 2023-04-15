@@ -20,13 +20,8 @@ namespace AzerothCore.Utilities
 {
     public static class MemoryExtension
 	{
-        public static T CastTo<T>(this Span<byte> from) where T : struct
+        public static T CastTo<T>(this Memory<byte> from) where T : struct
         {
-            if (from == null)
-            {
-                throw new NullReferenceException(nameof(from));
-            }
-
             Type objType = typeof(T);
 
             byte[] buffer = from.ToArray();
@@ -71,6 +66,17 @@ namespace AzerothCore.Utilities
             }
 
             return default(T);
+        }
+
+        public static byte[] GetBytes<T>(this T from) where T : struct
+        {
+            byte[] bytes = new byte[Marshal.SizeOf(typeof(T))];
+
+            GCHandle gch = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+            Marshal.StructureToPtr(from, gch.AddrOfPinnedObject(), false);
+            gch.Free();
+
+            return bytes;
         }
     }
 }

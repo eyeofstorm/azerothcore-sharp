@@ -25,7 +25,9 @@ public abstract class Singleton<T> where T : class
     private static volatile T? _instance;
     private static readonly object syncRoot = new();
 
-    public static T? Instance
+    protected Singleton() { }
+
+    public static T Instance
     {
         get
         {
@@ -36,7 +38,13 @@ public abstract class Singleton<T> where T : class
                     if (_instance == null)
                     {
                         ConstructorInfo? constructorInfo = typeof(T).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
-                        _instance = (T?)constructorInfo?.Invoke(new object[0]);
+
+                        if (constructorInfo == null)
+                        {
+                            throw new InvalidOperationException("GetConstructor");
+                        }
+
+                        _instance = (T)constructorInfo.Invoke(Array.Empty<object>());
                     }
                 }
             }

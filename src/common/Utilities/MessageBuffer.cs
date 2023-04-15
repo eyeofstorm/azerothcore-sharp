@@ -32,7 +32,7 @@ public class MessageBuffer
         _storage = new byte[initialSize];
     }
 
-    private void ExpandSize(int size)
+    private void ExpandStorageSize(int size)
     {
         Memory<byte> newStorage = new byte[size];
         _storage.CopyTo(newStorage);
@@ -46,34 +46,19 @@ public class MessageBuffer
         _rpos = 0;
     }
 
-    private Memory<byte> GetBaseMemory()
+    public Memory<byte> GetBasePointer()
     {
         return _storage;
     }
 
-    public Memory<byte> GetReadBuffer()
+    public Memory<byte> GetReadPointer()
     {
         return _storage.Slice(_rpos);
     }
 
-    public Memory<byte> GetWriteBuffer()
+    public Memory<byte> GetWritePointer()
     {
         return _storage.Slice(_wpos);
-    }
-
-    public Span<byte> GetBasePointer()
-    {
-        return _storage.Span;
-    }
-
-    public Span<byte> GetReadPointer()
-    {
-        return _storage.Slice(_rpos).Span;
-    }
-
-    public Span<byte> GetWritePointer()
-    {
-        return _storage.Slice(_wpos).Span;
     }
 
     public void ReadCompleted(int bytes)
@@ -122,7 +107,7 @@ public class MessageBuffer
         // resize buffer if it's already full
         if (GetRemainingSpace() == 0)
         {
-            ExpandSize(_storage.Length * 3 / 2);
+            ExpandStorageSize(_storage.Length * 3 / 2);
         }
     }
 
