@@ -54,7 +54,7 @@ public class AuthServer
         }
 
         // Get the list of realms for the server
-        RealmList.Instance?.Initialize(ConfigMgr.GetValueOrDefault("RealmsStateUpdateDelay", 20));
+        RealmList.Instance.Initialize(ConfigMgr.GetValueOrDefault("RealmsStateUpdateDelay", 20));
 
         if (RealmList.Instance == null || RealmList.Instance.GetRealms().Empty())
         {

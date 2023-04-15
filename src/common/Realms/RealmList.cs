@@ -34,6 +34,8 @@ public class RealmList : Singleton<RealmList>
     private ConcurrentDictionary<RealmHandle, Realm>    _realms = new();
     private System.Timers.Timer?                        _updateTimer;
 
+    private RealmList() { }
+
     public void Initialize(int updateInterval)
     {
         _updateTimer = new System.Timers.Timer(TimeSpan.FromSeconds(updateInterval).TotalMilliseconds);
