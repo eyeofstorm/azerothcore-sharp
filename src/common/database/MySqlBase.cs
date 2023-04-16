@@ -103,11 +103,11 @@ public struct DBVersion
 
 public abstract class MySqlBase<T> where T : notnull
 {
-    private static readonly Logger logger = LoggerFactory.GetLogger();
+    private static readonly ILogger logger = LoggerFactory.GetLogger();
 
     private static Dictionary<T, string> _preparedQueries = new();
 
-    private ProducerConsumerQueue<ISqlOperation> _queue = new();
+    private ProducerConsumerQueue<ISqlOperation> _sqlOperationQueue = new();
     private MySqlConnectionInfo? _connectionInfo;
     private DatabaseUpdater<T>? _updater;
     private DatabaseWorker<T>? _worker;
@@ -117,7 +117,7 @@ public abstract class MySqlBase<T> where T : notnull
     {
         _connectionInfo = connectionInfo;
         _updater = new DatabaseUpdater<T>(this);
-        _worker = new DatabaseWorker<T>(_queue, this);
+        _worker = new DatabaseWorker<T>(_sqlOperationQueue, this);
 
         try
         {
@@ -133,7 +133,7 @@ public abstract class MySqlBase<T> where T : notnull
         }
         catch (MySqlException ex)
         {
-            return HandleMySQLException(ex);
+            return MySqlBase<T>.HandleMySQLException(ex);
         }
     }
 
@@ -172,7 +172,7 @@ public abstract class MySqlBase<T> where T : notnull
         }
         catch (MySqlException ex)
         {
-            HandleMySQLException(ex, stmt.CommandText, stmt.Parameters);
+            MySqlBase<T>.HandleMySQLException(ex, stmt.CommandText, stmt.Parameters);
 
             return false;
         }
@@ -186,7 +186,7 @@ public abstract class MySqlBase<T> where T : notnull
     public void Execute(PreparedStatement stmt)
     {
         PreparedStatementTask task = new(stmt);
-        _queue.Push(task);
+        _sqlOperationQueue.Push(task);
     }
 
     public void ExecuteOrAppend(SQLTransaction trans, PreparedStatement stmt)
@@ -227,20 +227,23 @@ public abstract class MySqlBase<T> where T : notnull
         }
         catch (MySqlException ex)
         {
-            HandleMySQLException(ex, stmt.CommandText, stmt.Parameters);
+            MySqlBase<T>.HandleMySQLException(ex, stmt.CommandText, stmt.Parameters);
+
             return new SQLResult();
         }
     }
 
     public QueryCallback AsyncQuery(PreparedStatement stmt)
     {
-        PreparedStatementTask task = new(stmt, true);
+        PreparedStatementTask preparedStmtExecTask = new PreparedStatementTask(stmt, true);
 
         // Store future result before enqueueing - task might get already processed and deleted before returning from this method
-        Task<SQLResult>? result = task.GetFuture();
-        _queue.Push(task);
+        Task<SQLResult>? preparedStmtExecTaskResult = preparedStmtExecTask.GetFuture();
+        _sqlOperationQueue.Push(preparedStmtExecTask);
 
-        return new QueryCallback(result);
+        QueryCallback callback = new QueryCallback(preparedStmtExecTaskResult);
+
+        return callback;
     }
 
     public SQLQueryHolderCallback<R> DelayQueryHolder<R>(SQLQueryHolder<R> holder) where R : notnull
@@ -249,7 +252,7 @@ public abstract class MySqlBase<T> where T : notnull
 
         // Store future result before enqueueing - task might get already processed and deleted before returning from this method
         Task<SQLQueryHolder<R>> result = task.GetFuture();
-        _queue.Push(task);
+        _sqlOperationQueue.Push(task);
 
         return new(result);
     }
@@ -267,9 +270,13 @@ public abstract class MySqlBase<T> where T : notnull
         for (var i = 0; i < sql.Length; i++)
         {
             if (sql[i].Equals('?'))
+            {
                 sb.Append("@" + index++);
+            }
             else
+            {
                 sb.Append(sql[i]);
+            }
         }
 
         _preparedQueries[statement] = sb.ToString();
@@ -292,15 +299,21 @@ public abstract class MySqlBase<T> where T : notnull
         args += $"-u{_connectionInfo.Username} ";
 
         if (!_connectionInfo.Password.IsEmpty())
+        {
             args += $"-p{_connectionInfo.Password} ";
+        }
 
         // Check if we want to connect through ip or socket (Unix only)
         if (OperatingSystem.IsWindows())
         {
             if (_connectionInfo.Host == ".")
+            {
                 args += "--protocol=PIPE ";
+            }
             else
+            {
                 args += $"-P{_connectionInfo.PortOrSocket} ";
+            }
         }
         else
         {
@@ -332,12 +345,16 @@ public abstract class MySqlBase<T> where T : notnull
         if (!version.IsMariaDB && version.IsAtLeast(8, 0, 0))
         {
             if (_connectionInfo.UseSSL)
+            {
                 args += "--ssl-mode=REQUIRED ";
+            }
         }
         else
         {
             if (_connectionInfo.UseSSL)
+            {
                 args += "--ssl ";
+            }
         }
 
         // Execute sql file
@@ -346,10 +363,13 @@ public abstract class MySqlBase<T> where T : notnull
 
         // Database
         if (useDatabase && !_connectionInfo.Database.IsEmpty())
+        {
             args += _connectionInfo.Database;
+        }
 
         // Invokes a mysql process which doesn't leak credentials to logs
         Process process = new();
+
         process.StartInfo = new(DBExecutableUtil.GetMySQLExecutable());
         process.StartInfo.UseShellExecute = false;
         process.StartInfo.RedirectStandardOutput = true;
@@ -384,14 +404,16 @@ public abstract class MySqlBase<T> where T : notnull
 
     public void CommitTransaction(SQLTransaction transaction)
     {
-        _queue.Push(new TransactionTask(transaction));
+        _sqlOperationQueue.Push(new TransactionTask(transaction));
     }
 
     public TransactionCallback AsyncCommitTransaction(SQLTransaction transaction)
     {
         TransactionWithResultTask task = new(transaction);
+
         Task<bool> result = task.GetFuture();
-        _queue.Push(task);
+        _sqlOperationQueue.Push(task);
+
         return new TransactionCallback(result);
     }
 
@@ -432,28 +454,34 @@ public abstract class MySqlBase<T> where T : notnull
                 {
                     trans.Rollback();
 
-                    return HandleMySQLException(ex, query);
+                    return MySqlBase<T>.HandleMySQLException(ex, query);
                 }
             }
         }
     }
 
-    private MySqlErrorCode HandleMySQLException(MySqlException ex, string query = "", Dictionary<int, object?>? parameters = null)
+    private static MySqlErrorCode HandleMySQLException(MySqlException ex, string query = "", Dictionary<int, object?>? parameters = null)
     {
         MySqlErrorCode code = (MySqlErrorCode)ex.Number;
 
         if (ex.InnerException is MySqlException)
+        {
             code = (MySqlErrorCode)((MySqlException)ex.InnerException).Number;
+        }
 
         StringBuilder stringBuilder = new($"SqlException: MySqlErrorCode: {code} Message: {ex.Message} SqlQuery: {query} ");
 
         if (parameters != null)
         {
             stringBuilder.Append("Parameters: ");
+
             foreach (var pair in parameters)
+            {
                 stringBuilder.Append($"{pair.Key} : {pair.Value}");
+            }
         }
 
+        logger.Debug(LogFilter.Sql, ex);
         logger.Error(LogFilter.Sql, stringBuilder.ToString());
 
         switch (code)
@@ -501,7 +529,7 @@ public abstract class MySqlBase<T> where T : notnull
 
 public static class DBExecutableUtil
 {
-    private static readonly Logger logger = LoggerFactory.GetLogger();
+    private static readonly ILogger logger = LoggerFactory.GetLogger();
     private static string mysqlExecutablePath = string.Empty;
 
     public static string GetMySQLExecutable()

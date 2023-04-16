@@ -28,7 +28,7 @@ namespace AzerothCore.Realms;
 
 public class RealmList : Singleton<RealmList>
 {
-    private static readonly Logger logger = LoggerFactory.GetLogger();
+    private static readonly ILogger logger = LoggerFactory.GetLogger();
 
     private List<RealmBuildInfo>                        _builds = new();
     private ConcurrentDictionary<RealmHandle, Realm>    _realms = new();
@@ -38,13 +38,12 @@ public class RealmList : Singleton<RealmList>
 
     public void Initialize(int updateInterval)
     {
-        _updateTimer = new System.Timers.Timer(TimeSpan.FromSeconds(updateInterval).TotalMilliseconds);
-        _updateTimer.Elapsed += UpdateRealms;
-
         LoadBuildInfo();
 
         UpdateRealms(null, null);
 
+        _updateTimer = new System.Timers.Timer(TimeSpan.FromSeconds(updateInterval).TotalMilliseconds);
+        _updateTimer.Elapsed += UpdateRealms;
         _updateTimer.Start();
     }
 

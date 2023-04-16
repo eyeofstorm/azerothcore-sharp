@@ -24,7 +24,7 @@ namespace AzerothCore.Database;
 
 public class DatabaseLoader
 {
-    private static readonly Logger logger = LoggerFactory.GetLogger();
+    private static readonly ILogger logger = LoggerFactory.GetLogger();
 
     private bool _autoSetup;
     private DatabaseTypeFlags _updateFlags;

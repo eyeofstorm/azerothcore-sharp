@@ -15,11 +15,11 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
+
 using AzerothCore.Auth;
 using AzerothCore.Configuration;
 using AzerothCore.Constants;
@@ -31,23 +31,24 @@ using AzerothCore.Utilities;
 
 namespace AzerothCore.Networking;
 
-public struct AccountInfo
+internal struct AccountInfo
 {
-    public uint Id = 0;
-    public string? Login;
-    public bool IsLockedToIP;
-    public string? LockCountry;
-    public string? LastIP;
-    public uint FailedLogins;
-    public bool IsBanned;
-    public bool IsPermanentlyBanned;
-    public AccountTypes SecurityLevel = AccountTypes.SEC_PLAYER;
+    internal uint Id = 0;
+    internal string? Login;
+    internal bool IsLockedToIP;
+    internal string? LockCountry;
+    internal string? LastIP;
+    internal uint FailedLogins;
+    internal bool IsBanned;
+    internal bool IsPermanentlyBanned;
+    internal AccountTypes SecurityLevel;
 
     public AccountInfo()
     {
+        SecurityLevel = AccountTypes.SEC_PLAYER;
     }
 
-    public void LoadResult(SQLFields fields)
+    internal void LoadResult(SQLFields fields)
     {
         //          0        1          2           3             4             5
         // SELECT a.id, a.username, a.locked, a.lock_country, a.last_ip, a.failed_logins,
@@ -77,7 +78,7 @@ public struct AccountInfo
     }
 }
 
-public enum AuthCmd : byte
+internal enum AuthCmd : byte
 {
     AUTH_LOGON_CHALLENGE        = 0x00,
     AUTH_LOGON_PROOF            = 0x01,
@@ -92,113 +93,113 @@ public enum AuthCmd : byte
 };
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct AUTH_LOGON_CHALLENGE_C
+internal struct AUTH_LOGON_CHALLENGE_C
 {
-    public byte cmd;
+    internal byte cmd;
 
-    public byte error;
+    internal byte error;
 
-    public ushort size;
+    internal ushort size;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-    public byte[] gamename;
+    internal byte[] gamename;
 
-    public byte version1;
+    internal byte version1;
 
-    public byte version2;
+    internal byte version2;
 
-    public byte version3;
+    internal byte version3;
 
-    public ushort build;
-
-    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 4)]
-    public string platform;
+    internal ushort build;
 
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 4)]
-    public string os;
+    internal string platform;
 
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 4)]
-    public string country;
+    internal string os;
 
-    public uint timezone_bias;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 4)]
+    internal string country;
 
-    public uint ip;
+    internal uint timezone_bias;
 
-    public byte I_len;
+    internal uint ip;
+
+    internal byte I_len;
 
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 17)]
-    public string I;
+    internal string I;
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct AUTH_LOGON_PROOF_C
+internal struct AUTH_LOGON_PROOF_C
 {
-    public byte cmd;
+    internal byte cmd;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
-    public byte[] A;
+    internal byte[] A;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 20)]
-    public byte[] clientM;
+    internal byte[] clientM;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 20)]
-    public byte[] crc_hash;
+    internal byte[] crc_hash;
 
-    public byte number_of_keys;
+    internal byte number_of_keys;
 
-    public byte securityFlags;
+    internal byte securityFlags;
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct AUTH_LOGON_PROOF_S
+internal struct AUTH_LOGON_PROOF_S
 {
-    public byte cmd;
+    internal byte cmd;
 
-    public byte error;
+    internal byte error;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 20)]
-    public byte[] M2;
+    internal byte[] M2;
 
-    public UInt32 AccountFlags;
+    internal UInt32 AccountFlags;
 
-    public UInt32 SurveyId;
+    internal UInt32 SurveyId;
 
-    public UInt16 LoginFlags;
+    internal UInt16 LoginFlags;
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct AUTH_LOGON_PROOF_S_OLD
+internal struct AUTH_LOGON_PROOF_S_OLD
 {
-    public byte cmd;
+    internal byte cmd;
 
-    public byte error;
+    internal byte error;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 20)]
-    public byte[] M2;
+    internal byte[] M2;
 
-    public UInt32 unk2;
+    internal UInt32 unk2;
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct AUTH_RECONNECT_PROOF_C
+internal struct AUTH_RECONNECT_PROOF_C
 {
-    byte cmd;
+    internal byte cmd;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-    public byte[] R1;
+    internal byte[] R1;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 20)]
-    public byte[] R2;
+    internal byte[] R2;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 20)]
-    public byte[] R3;
+    internal byte[] R3;
 
-    byte number_of_keys;
+    internal byte number_of_keys;
 }
 
-public delegate bool AuthSessionHandler();
+internal delegate bool AuthSessionHandler();
 
-public struct AuthHandler
+internal struct AuthHandler
 {
     public AuthHandler(AuthStatus status, int size, AuthSessionHandler handler)
     {
@@ -207,12 +208,12 @@ public struct AuthHandler
         this.handler = handler;
     }
 
-    public AuthStatus status;
-    public int packetSize;
-    public AuthSessionHandler handler;
+    internal AuthStatus status;
+    internal int packetSize;
+    internal AuthSessionHandler handler;
 }
 
-public class AuthSession : SocketBase
+internal class AuthSession : SocketBase
 {
     private static readonly int MAX_ACCEPTED_CHALLENGE_SIZE = Marshal.SizeOf(typeof(AUTH_LOGON_CHALLENGE_C)) + 16;
     private static readonly int AUTH_LOGON_CHALLENGE_INITIAL_SIZE = 4;
@@ -264,7 +265,10 @@ public class AuthSession : SocketBase
         var stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_SEL_IP_INFO);
         stmt.AddValue(0, ipAddress.Address.ToString());
 
-        _queryProcessor.AddCallback(DB.Login.AsyncQuery(stmt).WithCallback(CheckIpCallback));
+        QueryCallback asyncQuery = DB.Login.AsyncQuery(stmt);
+        asyncQuery.WithCallback(CheckIpCallback);
+
+        _queryProcessor.AddCallback(asyncQuery);
     }
 
     public override bool Update()
@@ -306,6 +310,7 @@ public class AuthSession : SocketBase
             if (banned)
             {
                 ByteBuffer pkt = new ByteBuffer();
+
                 pkt.WriteUInt8((byte)AuthCmd.AUTH_LOGON_CHALLENGE);
                 pkt.WriteUInt8(0x00);
                 pkt.WriteUInt8((byte)AuthResult.WOW_FAIL_BANNED);
@@ -405,7 +410,7 @@ public class AuthSession : SocketBase
 
         AUTH_LOGON_CHALLENGE_C challenge = GetReadBuffer().GetReadPointer().CastTo<AUTH_LOGON_CHALLENGE_C>();
 
-        if (challenge.size - (Marshal.SizeOf(typeof(AUTH_LOGON_CHALLENGE_C)) - AUTH_LOGON_CHALLENGE_INITIAL_SIZE - 1) != challenge.I_len)
+        if (challenge.size - (Marshal.SizeOf(typeof(AUTH_LOGON_CHALLENGE_C)) - AUTH_LOGON_CHALLENGE_INITIAL_SIZE - 1 - 16) != challenge.I_len)
         {
             return false;
         }
@@ -422,7 +427,7 @@ public class AuthSession : SocketBase
                                         ExpansionFlags.NO_VALID_EXP_FLAG));
 
         // Restore string order as its byte order is reversed
-        _os = challenge.os.Reverse().ToString();
+        _os = new string(challenge.os.Reverse().ToArray());
 
         char[] nameArr = new string(challenge.country).ToCharArray();
 
@@ -446,6 +451,7 @@ public class AuthSession : SocketBase
     private void LogonChallengeCallback(SQLResult result)
     {
         ByteBuffer pkt = new ByteBuffer();
+
         pkt.WriteUInt8((byte)AuthCmd.AUTH_LOGON_CHALLENGE);
         pkt.WriteUInt8(0x00);
 
@@ -640,7 +646,7 @@ public class AuthSession : SocketBase
                 //tokenSuccess = Acore::Crypto::TOTP::ValidateToken(*_totpSecret, incomingToken);
                 //memset(_totpSecret->data(), 0, _totpSecret->size());
             }
-            else if (!sentToken && _totpSecret != null)
+            else if (!sentToken && _totpSecret == null)
             {
                 tokenSuccess = true;
             }
@@ -718,6 +724,7 @@ public class AuthSession : SocketBase
             }
 
             SendPacket(packet);
+
             _status = AuthStatus.STATUS_AUTHED;
         }
         else
@@ -1002,7 +1009,7 @@ public class AuthSession : SocketBase
             pkt.WriteUInt8(characterCounts[realm.Id.Index]);
             pkt.WriteUInt8(realm.Timezone);                     // realm category
 
-            if ((_expversion & (byte)ExpansionFlags.PRE_BC_EXP_FLAG) == (byte)ExpansionFlags.PRE_BC_EXP_FLAG)                   // 2.x and 3.x clients
+            if ((_expversion & (byte)ExpansionFlags.POST_BC_EXP_FLAG) == (byte)ExpansionFlags.POST_BC_EXP_FLAG)                 // 2.x and 3.x clients
             {
                 pkt.WriteUInt8((byte)realm.Id.Index);
             }
@@ -1039,7 +1046,7 @@ public class AuthSession : SocketBase
         ByteBuffer realmListSizeBuffer = new ByteBuffer();
         realmListSizeBuffer.WriteUInt32(0);
 
-        if ((_expversion & (byte)ExpansionFlags.PRE_BC_EXP_FLAG) == (byte)ExpansionFlags.PRE_BC_EXP_FLAG)                     // only 2.x and 3.x clients
+        if ((_expversion & (byte)ExpansionFlags.POST_BC_EXP_FLAG) == (byte)ExpansionFlags.POST_BC_EXP_FLAG)                     // only 2.x and 3.x clients
         {
             realmListSizeBuffer.WriteUInt16((ushort)realmListSize);
         }
@@ -1053,7 +1060,7 @@ public class AuthSession : SocketBase
         hdr.WriteUInt8((byte)AuthCmd.REALM_LIST);
         hdr.WriteUInt16((ushort)(pkt.GetSize() + realmListSizeBuffer.GetSize()));
         hdr.WriteBytes(realmListSizeBuffer.GetData());          // append RealmList's size buffer
-        hdr.WriteBytes(pkt);                                    // append realms in the realmlist
+        hdr.WriteBytes(pkt.GetData());                          // append realms in the realmlist
 
         SendPacket(hdr);
 

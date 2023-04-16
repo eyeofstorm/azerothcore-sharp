@@ -22,14 +22,14 @@ using AzerothCore.Logging;
 
 namespace AzerothCore.Networking;
 
-public class AuthSocketManager : SocketManager<AuthSession>
+internal class AuthSocketManager : SocketManager<AuthSession>
 {
     private static volatile AuthSocketManager? _instance;
     private static readonly object syncRoot = new();
 
     private AuthSocketManager() {  }
 
-    public static AuthSocketManager Instance
+    internal static AuthSocketManager Instance
     {
         get
         {

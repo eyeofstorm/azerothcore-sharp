@@ -105,35 +105,42 @@ public class PreparedStatementTask : ISqlOperation
 {
     private PreparedStatement m_stmt;
     private bool _needsResult;
-    private TaskCompletionSource<SQLResult>? m_result;
+    private TaskCompletionSource<SQLResult>? m_taskFuture;
 
     public PreparedStatementTask(PreparedStatement stmt, bool needsResult = false)
     {
         m_stmt = stmt;
         _needsResult = needsResult;
+
+        if (_needsResult)
+        {
+            m_taskFuture = new TaskCompletionSource<SQLResult>();
+        }
     }
 
     public bool Execute<T>(MySqlBase<T> mySqlBase) where T : notnull
     {
-        if (_needsResult)
+        if (_needsResult && m_taskFuture != null)
         {
-            m_result = new TaskCompletionSource<SQLResult>();
+            SQLResult queryResult = mySqlBase.Query(m_stmt);
 
-            SQLResult result = mySqlBase.Query(m_stmt);
-
-            if (result == null)
+            if (queryResult == null)
             {
-                m_result.SetResult(new SQLResult());
+                m_taskFuture.SetResult(new SQLResult());
                 return false;
             }
-
-            m_result.SetResult(result);
-
-            return true;
+            else
+            {
+                m_taskFuture.SetResult(queryResult);
+                return true;
+            }
         }
 
         return mySqlBase.DirectExecute(m_stmt);
     }
 
-    public Task<SQLResult>? GetFuture() { return m_result?.Task; }
+    public Task<SQLResult>? GetFuture()
+    {
+        return m_taskFuture?.Task;
+    }
 }

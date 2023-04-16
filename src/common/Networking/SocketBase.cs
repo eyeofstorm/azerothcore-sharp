@@ -97,11 +97,13 @@ public abstract class SocketBase : ISocket, IDisposable
             return;
         }
 
-        if (args.BytesTransferred == 0 || args.Buffer?.Length == 0)
+        if (args.BytesTransferred == 0)
         {
             CloseSocket();
             return;
         }
+
+        _readBuffer.WriteCompleted(args.BytesTransferred);
 
         ReadHandler();
     }

@@ -122,60 +122,13 @@ public class SQLResult
             return null;
         }
 
-        // Writes the BLOB to memory.  
-        MemoryStream stream;
-        // Streams the BLOB to the FileStream object.  
-        BinaryWriter writer;
-
-        // Size of the BLOB buffer.  
-        int bufferSize = size;
         // The BLOB byte[] buffer to be filled by GetBytes.  
-        byte[] outByte = new byte[bufferSize];
-        // The bytes returned from GetBytes.  
-        long retval;
-        // The starting position in the BLOB output.  
-        long startIndex = 0;
+        byte[] outByte = new byte[size];
 
-        stream = new MemoryStream();
-        writer = new BinaryWriter(stream);
+        // Read bytes into outByte[] and retain the number of bytes returned.  
+        _reader.GetBytes(column, 0, outByte, 0, size);
 
-        // Reset the starting byte for the new BLOB.  
-        startIndex = 0;
-
-        try
-        {
-            // Read bytes into outByte[] and retain the number of bytes returned.  
-            retval = _reader.GetBytes(column, startIndex, outByte, 0, bufferSize);
-
-            // Continue while there are bytes beyond the size of the buffer.  
-            while (retval == bufferSize)
-            {
-                writer.Write(outByte);
-                writer.Flush();
-
-                // Reposition start index to end of last buffer and fill buffer.  
-                startIndex += bufferSize;
-                retval = _reader.GetBytes(1, startIndex, outByte, 0, bufferSize);
-            }
-
-            // Write the remaining buffer.  
-            writer.Write(outByte, 0, (int)retval);
-            writer.Flush();
-
-            return outByte;
-        }
-        catch 
-        {
-            outByte.Clear();
-        }
-        finally
-        {
-            // Close the output file.  
-            writer.Close();
-            stream.Close();
-        }
-
-        return null;
+        return outByte;
     }
 
     public T?[] ReadValues<T>(int startIndex, int numColumns)

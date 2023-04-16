@@ -19,7 +19,7 @@ using AzerothCore.Realms;
 
 namespace AzerothCore.Auth;
 
-public enum AuthStatus
+internal enum AuthStatus
 {
     STATUS_CHALLENGE = 0,
     STATUS_LOGON_PROOF,
@@ -29,7 +29,7 @@ public enum AuthStatus
     STATUS_CLOSED
 };
 
-public enum AuthResult : byte
+internal enum AuthResult : byte
 {
     WOW_SUCCESS = 0x00,
     WOW_FAIL_BANNED = 0x03,
@@ -59,7 +59,7 @@ public enum AuthResult : byte
     WOW_FAIL_DISCONNECTED = 0xFF
 };
 
-public enum LoginResult : byte
+internal enum LoginResult : byte
 {
     LOGIN_OK = 0x00,
     LOGIN_FAILED = 0x01,
@@ -80,14 +80,14 @@ public enum LoginResult : byte
     LOGIN_LOCKED_ENFORCED = 0x10
 };
 
-enum ExpansionFlags : byte
+internal enum ExpansionFlags : byte
 {
     POST_BC_EXP_FLAG = 0x2,
     PRE_BC_EXP_FLAG = 0x1,
     NO_VALID_EXP_FLAG = 0x0
 };
 
-public static class AuthHelper
+internal static class AuthHelper
 {
     public static readonly Int16 MAX_PRE_BC_CLIENT_BUILD = 6141;
 

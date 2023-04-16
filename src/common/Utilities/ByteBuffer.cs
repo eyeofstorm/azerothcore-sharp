@@ -426,9 +426,7 @@ public sealed class ByteBuffer : IDisposable
 
     public void WriteSrpInteger(SrpInteger srpInteger)
     {
-        byte[] serverPublicKey = new byte[32];
-        Array.Copy(srpInteger.ToByteArray().Reverse().ToArray(), serverPublicKey, 32);
-        WriteBytes(serverPublicKey);
+        WriteBytes(srpInteger.ToByteArray().Reverse().ToArray());
     }
 
     public void WriteVector4(Vector4 pos)

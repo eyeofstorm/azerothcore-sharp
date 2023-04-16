@@ -15,12 +15,31 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System.Collections.Concurrent;
+
 namespace AzerothCore.Logging;
 
 public sealed class LoggerFactory
 {
-    public static Logger GetLogger()
+    private static readonly ConcurrentDictionary<string, ILogger> s_loggers;
+
+    static LoggerFactory()
     {
-        return new Logger();
+        s_loggers = new ConcurrentDictionary<string, ILogger>();
+    }
+
+    public static ILogger GetLogger(String name = "ROOT")
+    {
+        if (s_loggers.TryGetValue(name, out ILogger? value))
+        {
+            return value;
+        }
+        else
+        {
+            ILogger logger = new Logger();
+            s_loggers[name] = logger;
+
+            return logger;
+        }
     }
 }

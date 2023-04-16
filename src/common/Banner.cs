@@ -21,7 +21,7 @@ namespace AzerothCore;
 
 public class Banner
 {
-    private static readonly Logger logger = LoggerFactory.GetLogger();
+    private static readonly ILogger logger = LoggerFactory.GetLogger();
 
     public static void Show()
     {

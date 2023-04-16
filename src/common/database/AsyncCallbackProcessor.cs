@@ -15,8 +15,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System.Collections.Generic;
-
 namespace AzerothCore.Database;
 
 public interface ISqlCallback
@@ -26,19 +24,27 @@ public interface ISqlCallback
 
 public class AsyncCallbackProcessor<T> where T : ISqlCallback
 {   
-    List<T> _callbacks = new();
+    private List<T> _callbacks = new();
 
-    public T AddCallback(T query)
+    public T AddCallback(T callback)
     {
-        _callbacks.Add(query);
-        return query;
+        _callbacks.Add(callback);
+
+        return callback;
     }
 
     public void ProcessReadyCallbacks()
     {
         if (_callbacks.Empty())
+        {
             return;
+        }
 
-        _callbacks.RemoveAll(callback => callback.InvokeIfReady());
+        _callbacks.RemoveAll(queryCallback =>
+        {
+            bool isReady = queryCallback.InvokeIfReady();
+
+            return isReady;
+        });
     }
 }

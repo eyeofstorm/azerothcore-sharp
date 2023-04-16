@@ -26,14 +26,14 @@ using AzerothCore.Realms;
 
 namespace AzerothCore;
 
-public class AuthServer
+internal class AuthServer
 {
-    private static readonly Logger logger = LoggerFactory.GetLogger();
+    private static readonly ILogger logger = LoggerFactory.GetLogger();
 
     private static System.Timers.Timer? _banExpiryCheckTimer;
 
-    public static void Main()
-	{
+    internal static void Main()
+    {
         // Set Culture
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
         System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
@@ -78,8 +78,7 @@ public class AuthServer
             ExitNow();
         }
 
-        uint _banExpiryCheckInterval = ConfigMgr.GetValueOrDefault("BanExpiryCheckInterval", 60u);
-        _banExpiryCheckTimer = new System.Timers.Timer(_banExpiryCheckInterval);
+        _banExpiryCheckTimer = new System.Timers.Timer(ConfigMgr.GetValueOrDefault("BanExpiryCheckInterval", 60u));
         _banExpiryCheckTimer.Elapsed += BanExpiryCheckTimer_Elapsed;
         _banExpiryCheckTimer.Start();
 

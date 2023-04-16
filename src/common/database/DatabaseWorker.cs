@@ -27,35 +27,40 @@ public interface ISqlOperation
 
 class DatabaseWorker<T> where T : notnull
 {
-    Thread _workerThread;
-    volatile bool _cancelationToken;
-    ProducerConsumerQueue<ISqlOperation> _queue;
-    MySqlBase<T> _mySqlBase;
+    private Thread _workerThread;
+    private volatile bool _cancelationToken;
+    private ProducerConsumerQueue<ISqlOperation> _sqlOperationQueues;
+    private MySqlBase<T> _mySqlBase;
 
     public DatabaseWorker(ProducerConsumerQueue<ISqlOperation> newQueue, MySqlBase<T> mySqlBase)
     {
-        _queue = newQueue;
+        _sqlOperationQueues = newQueue;
         _mySqlBase = mySqlBase;
         _cancelationToken = false;
+
         _workerThread = new Thread(WorkerThread);
         _workerThread.Start();
     }
 
-    void WorkerThread()
+    private void WorkerThread()
     {
-        if (_queue == null)
+        if (_sqlOperationQueues == null)
+        {
             return;
+        }
 
         while(true)
         {
-            ISqlOperation? operation;
+            ISqlOperation? sqlOperation;
 
-            _queue.WaitAndPop(out operation);
+            _sqlOperationQueues.WaitAndPop(out sqlOperation);
 
-            if (_cancelationToken || operation == null)
+            if (_cancelationToken || sqlOperation == null)
+            {
                 return;
+            }
 
-            operation.Execute(_mySqlBase);
+            sqlOperation.Execute(_mySqlBase);
         }
     }
 }

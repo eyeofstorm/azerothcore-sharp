@@ -29,8 +29,8 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
 
     private Thread? _thread;
 
-    List<TSocketType> _Sockets = new();
-    List<TSocketType> _newSockets = new();
+    private List<TSocketType> _Sockets = new();
+    private List<TSocketType> _newSockets = new();
 
     public void Stop()
     {
@@ -40,7 +40,9 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
     public bool Start()
     {
         if (_thread != null)
+        {
             return false;
+        }
 
         _thread = new Thread(Run);
         _thread.Start();
@@ -69,7 +71,7 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
     protected virtual void SocketAdded(TSocketType sock) { }
     protected virtual void SocketRemoved(TSocketType sock) { }
 
-    void AddNewSockets()
+    private void AddNewSockets()
     {
         if (_newSockets.Empty())
         {
@@ -93,7 +95,7 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
         _newSockets.Clear();
     }
 
-    void Run()
+    private void Run()
     {
         logger.Debug(LogFilter.Network, "Network Thread Starting");
 

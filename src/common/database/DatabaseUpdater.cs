@@ -26,7 +26,7 @@ namespace AzerothCore.Database;
 
 public class DatabaseUpdater<T> where T : notnull
 {
-    private static readonly Logger logger = LoggerFactory.GetLogger();
+    private static readonly ILogger logger = LoggerFactory.GetLogger();
 
     private MySqlBase<T> _database;
 
