@@ -1,4 +1,6 @@
 [![core-build](https://github.com/eyeofstorm/azerothcore-sharp/workflows/core-build/badge.svg?branch=develop&event=push)](https://github.com/eyeofstorm/azerothcore-sharp/actions?query=branch%3Adevelop+event%3Apush+workflow%3Acore-build++)
+[![macos-build](https://github.com/eyeofstorm/azerothcore-sharp/workflows/macos-build/badge.svg?branch=develop&event=push)](https://github.com/eyeofstorm/azerothcore-sharp/actions?query=branch%3Adevelop+event%3Apush+workflow%3Amacos-build++)
+[![windows-build](https://github.com/eyeofstorm/azerothcore-sharp/workflows/windows-build/badge.svg?branch=develop&event=push)](https://github.com/eyeofstorm/azerothcore-sharp/actions?query=branch%3Adevelop+event%3Apush+workflow%3Awindows-build++)
 
 ## Introduction
 
