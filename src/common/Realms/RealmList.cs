@@ -52,7 +52,7 @@ public class RealmList : Singleton<RealmList>
         _updateTimer?.Close();
     }
 
-    void LoadBuildInfo()
+    private void LoadBuildInfo()
     {
         //                                         0             1             2              3              4      5                6
         SQLResult result = DB.Login.Query("SELECT majorVersion, minorVersion, bugfixVersion, hotfixVersion, build, winChecksumSeed, macChecksumSeed FROM build_info ORDER BY build ASC");
@@ -98,7 +98,7 @@ public class RealmList : Singleton<RealmList>
         }
     }
 
-    void UpdateRealm(Realm realm)
+    private void UpdateRealm(Realm realm)
     {
         var oldRealm = _realms.LookupByKey(realm.Id);
 
@@ -110,7 +110,7 @@ public class RealmList : Singleton<RealmList>
         _realms[realm.Id] = realm;
     }
 
-    void UpdateRealms(object? source, ElapsedEventArgs? e)
+    private void UpdateRealms(object? source, ElapsedEventArgs? e)
     {
         PreparedStatement               stmt            = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_SEL_REALMLIST);
         SQLResult                       result          = DB.Login.Query(stmt);

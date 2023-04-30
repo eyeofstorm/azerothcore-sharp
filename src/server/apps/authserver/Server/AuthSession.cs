@@ -73,7 +73,7 @@ internal struct AccountInfo
         // Use our own uppercasing of the account name instead of using UPPER() in mysql query
         // This is how the account was created in the first place and changing it now would result in breaking
         // login for all accounts having accented characters in their name
-        // TODO: Utf8ToUpperOnlyLatin(Login);
+        // TODO: authserver: Utf8ToUpperOnlyLatin(Login);
         Login = Login?.ToUpper();
     }
 }
@@ -220,8 +220,6 @@ internal class AuthSession : SocketBase
     private static readonly int REALM_LIST_PACKET_SIZE = 5;
     private static readonly byte[] VERSION_CHALLENGE = new byte[] { 0xBA, 0xA3, 0x1E, 0x99, 0xA0, 0x0B, 0x21, 0x57, 0xFC, 0x37, 0x3F, 0xB3, 0x69, 0xCD, 0xD2, 0xF1 };
 
-    private static readonly ILogger                 logger = LoggerFactory.GetLogger();
-
     private Dictionary<AuthCmd, AuthHandler>        _handlers;
     private AuthStatus                              _status;
     private AccountInfo                             _accountInfo;
@@ -326,7 +324,7 @@ internal class AuthSession : SocketBase
         AsyncRead();
     }
 
-    public override void ReadHandler()
+    protected override void ReadHandler()
     {
         MessageBuffer packet = GetReadBuffer();
 
@@ -399,7 +397,7 @@ internal class AuthSession : SocketBase
             MessageBuffer buffer = new MessageBuffer((int)packet.GetSize());
             buffer.Write(packet.GetData(), (int)packet.GetSize());
 
-            AsyncWrite(buffer.GetBasePointer().ToArray());
+            QueuePacket(buffer);
         }
     }
 
@@ -481,7 +479,7 @@ internal class AuthSession : SocketBase
         }
         else
         {
-            // TODO: IPLocation
+            // TODO: authserver: IPLocation
             _ipCountry = null;
 
             //IPLocation->GetLocationRecord(ipAddress)
@@ -536,7 +534,7 @@ internal class AuthSession : SocketBase
             securityFlags = 4;
             _totpSecret = result.ReadBytes(11, 128);
 
-            // TODO: check TOTP token
+            // TODO: authserver: check TOTP token
             //if (auto const&secret = sSecretMgr->GetSecret(SECRET_TOTP_MASTER_KEY))
             //{
             //    bool success = Acore::Crypto::AEDecrypt<Acore::Crypto::AES>(*_totpSecret, *secret);
@@ -637,7 +635,7 @@ internal class AuthSession : SocketBase
 
             if (sentToken && _totpSecret != null)
             {
-                // TODO: Validate TOTP token.
+                // TODO: authserver: Validate TOTP token.
                 //uint8 size = *(GetReadBuffer().GetReadPointer() + sizeof(sAuthLogonProof_C));
                 //std::string token(reinterpret_cast<char*>(GetReadBuffer().GetReadPointer() +sizeof(sAuthLogonProof_C) + sizeof(size)), size);
                 //GetReadBuffer().ReadCompleted(sizeof(size) + size);

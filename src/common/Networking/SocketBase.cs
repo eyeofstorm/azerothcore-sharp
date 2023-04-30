@@ -15,9 +15,10 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+
 using AzerothCore.Logging;
 using AzerothCore.Utilities;
 
@@ -35,35 +36,55 @@ public delegate void SocketReadCallback(SocketAsyncEventArgs args);
 
 public abstract class SocketBase : ISocket, IDisposable
 {
-    private static readonly ILogger logger = LoggerFactory.GetLogger();
+    protected static readonly ILogger logger = LoggerFactory.GetLogger();
 
     private Socket _socket;
     private IPEndPoint? _remoteIPEndPoint;
     private SocketAsyncEventArgs _receiveSocketAsyncEventArgs;
+    private SocketAsyncEventArgs _sendSocketAsyncEventArgs;
+    private volatile bool _closing;
+    private volatile bool _isWritingAsync;
 
     private MessageBuffer _readBuffer;
+
+    private ConcurrentQueue<MessageBuffer> _writeQueue;
 
     protected SocketBase(Socket socket)
     {
         _socket = socket;
         _remoteIPEndPoint = (IPEndPoint?)_socket.RemoteEndPoint;
 
-        _readBuffer = new MessageBuffer();
+        _closing = false;
+        _isWritingAsync = false;
 
-        _receiveSocketAsyncEventArgs = new SocketAsyncEventArgs();
+        _readBuffer = new ();
+
+        _writeQueue = new ();
+
+        _receiveSocketAsyncEventArgs = new ();
         _receiveSocketAsyncEventArgs.Completed += (sender, args) => ReadHandlerInternal(args);
-    }
 
-    public virtual void Dispose()
-    {
-        _socket.Dispose();
+        _sendSocketAsyncEventArgs = new ();
+        _receiveSocketAsyncEventArgs.Completed += (sender, args) => WriteHandlerWrapper(args);
     }
 
     public abstract void Start();
 
     public virtual bool Update()
     {
-        return IsOpen();
+        if (_socket == null || !_socket.Connected)
+        {
+            return false;
+        }
+
+        if (_isWritingAsync || (_writeQueue.IsEmpty && !_closing))
+        {
+            return true;
+        }
+
+        for (; HandleQueue(););
+
+        return true;
     }
 
     public IPEndPoint? GetRemoteIpAddress()
@@ -89,40 +110,14 @@ public abstract class SocketBase : ISocket, IDisposable
         }
     }
 
-    private void ReadHandlerInternal(SocketAsyncEventArgs args)
+    public void QueuePacket(MessageBuffer buffer)
     {
-        if (args.SocketError != SocketError.Success)
-        {
-            CloseSocket();
-            return;
-        }
-
-        if (args.BytesTransferred == 0)
-        {
-            CloseSocket();
-            return;
-        }
-
-        _readBuffer.WriteCompleted(args.BytesTransferred);
-
-        ReadHandler();
+        _writeQueue.Enqueue(buffer);
     }
-
-    public abstract void ReadHandler();
 
     public MessageBuffer GetReadBuffer()
     {
         return _readBuffer;
-    }
-
-    public void AsyncWrite(byte[] data)
-    {
-        if (!IsOpen())
-        {
-            return;
-        }
-
-        _socket.SendAsync(data);
     }
 
     public void CloseSocket()
@@ -145,18 +140,126 @@ public abstract class SocketBase : ISocket, IDisposable
         OnClose();
     }
 
-    public virtual void OnClose()
+    public virtual void Dispose()
     {
-        Dispose();
+        _socket.Dispose();
     }
 
     public bool IsOpen()
     {
-        return _socket.Connected;
+        return _socket.Connected && !_closing;
     }
 
-    public void SetNoDelay(bool enable)
+    public void DelayedCloseSocket()
+    {
+        _closing = true;
+    }
+
+    protected virtual void OnClose() { Dispose();}
+
+    protected abstract void ReadHandler();
+
+    protected bool AsyncProcessQueue()
+    {
+        if (_isWritingAsync)
+        {
+            return false;
+        }
+
+        _isWritingAsync = true;
+        _sendSocketAsyncEventArgs.SetBuffer(Array.Empty<byte>());
+
+        if (_socket.SendAsync(_sendSocketAsyncEventArgs))
+        {
+            WriteHandlerWrapper(_sendSocketAsyncEventArgs);
+        }
+
+        return true;
+    }
+
+    protected void SetNoDelay(bool enable)
     {
         _socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, enable);
+    }
+
+    private void ReadHandlerInternal(SocketAsyncEventArgs args)
+    {
+        if (args.SocketError != SocketError.Success)
+        {
+            CloseSocket();
+            return;
+        }
+
+        if (args.BytesTransferred == 0)
+        {
+            CloseSocket();
+            return;
+        }
+
+        _readBuffer.WriteCompleted(args.BytesTransferred);
+
+        ReadHandler();
+    }
+
+    private void WriteHandlerWrapper(SocketAsyncEventArgs args)
+    {
+        _isWritingAsync = false;
+
+        HandleQueue();
+    }
+
+    private bool HandleQueue()
+    {
+
+        if (!_writeQueue.TryPeek(out MessageBuffer? queuedMessage))
+        {
+            return false;
+        }
+
+        int bytesToSent = queuedMessage.GetActiveSize();
+        int bytesSent = _socket.Send(queuedMessage.GetReadPointer().GetBytes(), 0, bytesToSent, SocketFlags.None, out SocketError error);
+
+        if (error != SocketError.Success)
+        {
+            if (error == SocketError.WouldBlock || error == SocketError.TryAgain)
+            {
+                return AsyncProcessQueue();
+            }
+
+            _writeQueue.TryDequeue(out _);
+
+            if (_closing && _writeQueue.IsEmpty)
+            {
+                CloseSocket();
+            }
+
+            return false;
+        }
+        else if (bytesSent == 0)
+        {
+            _writeQueue.TryDequeue(out _);
+
+            if (_closing && _writeQueue.IsEmpty)
+            {
+                CloseSocket();
+            }
+
+            return false;
+        }
+        else if (bytesSent < bytesToSent)
+        {
+            queuedMessage.ReadCompleted(bytesSent);
+
+            return AsyncProcessQueue();
+        }
+
+        _writeQueue.TryDequeue(out _);
+
+        if (_closing && _writeQueue.IsEmpty)
+        {
+            CloseSocket();
+        }
+
+        return !_writeQueue.IsEmpty;
     }
 }

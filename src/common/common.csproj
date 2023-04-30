@@ -19,6 +19,7 @@
   <ItemGroup>
     <PackageReference Include="MySqlConnector" Version="2.2.5" />
     <PackageReference Include="Google.Protobuf" Version="3.22.3" />
+    <PackageReference Include="Lockless-Queue" Version="1.1.1" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Logging\" />
@@ -31,9 +32,13 @@
     <None Remove="Logging\obj\Debug\net6.0\AzerothSharp.Logging.assets.cache" />
     <None Remove="Logging\obj\Debug\net6.0\AzerothSharp.Logging.csproj.AssemblyReference.cache" />
     <None Remove="Logging\obj\Debug\net6.0\AzerothSharp.Logging.GeneratedMSBuildEditorConfig.editorconfig" />
+    <None Remove="Server\" />
+    <None Remove="Server\Protocol\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Logging\" />
+    <Folder Include="Server\" />
+    <Folder Include="Server\Protocol\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Logging\obj\Debug\net6.0\AzerothSharp.Logging.AssemblyInfo.cs" />

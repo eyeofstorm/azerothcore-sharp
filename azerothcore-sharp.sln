@@ -11,6 +11,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "apps", "apps", "{47D288C5-3
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "authserver", "src\server\apps\authserver\authserver.csproj", "{CBBEC0E6-B37E-43B9-89F3-A3B4C2CBF362}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "worldserver", "src\server\apps\worldserver\worldserver.csproj", "{B12F7FD6-9EAF-4081-9B88-F34B9B928026}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "game", "src\server\game\game.csproj", "{572108AD-65AA-4DAB-BFAB-9DD874044BC5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +29,14 @@ Global
 		{CBBEC0E6-B37E-43B9-89F3-A3B4C2CBF362}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBBEC0E6-B37E-43B9-89F3-A3B4C2CBF362}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CBBEC0E6-B37E-43B9-89F3-A3B4C2CBF362}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B12F7FD6-9EAF-4081-9B88-F34B9B928026}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B12F7FD6-9EAF-4081-9B88-F34B9B928026}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B12F7FD6-9EAF-4081-9B88-F34B9B928026}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B12F7FD6-9EAF-4081-9B88-F34B9B928026}.Release|Any CPU.Build.0 = Release|Any CPU
+		{572108AD-65AA-4DAB-BFAB-9DD874044BC5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{572108AD-65AA-4DAB-BFAB-9DD874044BC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{572108AD-65AA-4DAB-BFAB-9DD874044BC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{572108AD-65AA-4DAB-BFAB-9DD874044BC5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -40,5 +52,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{47D288C5-382E-421F-B6FD-6392FD7DBD89} = {D05CF111-11C4-4341-B3A4-31BB814F86F9}
 		{CBBEC0E6-B37E-43B9-89F3-A3B4C2CBF362} = {47D288C5-382E-421F-B6FD-6392FD7DBD89}
+		{B12F7FD6-9EAF-4081-9B88-F34B9B928026} = {47D288C5-382E-421F-B6FD-6392FD7DBD89}
 	EndGlobalSection
 EndGlobal

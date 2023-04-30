@@ -212,7 +212,8 @@ public class SQLFields
 
         if (value.GetType() != typeof(T))
         {
-            return (T)Convert.ChangeType(value, typeof(T));  // TODO: Remove me when all fields are the right type  this is super slow
+            // TODO: common: Remove me when all fields are the right type  this is super slow
+            return (T)Convert.ChangeType(value, typeof(T));
         }
 
         return (T)value;

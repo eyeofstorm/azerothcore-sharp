@@ -32,7 +32,7 @@ public class MessageBuffer
         _storage = new byte[initialSize];
     }
 
-    private void ExpandStorageSize(int size)
+    public void ExpandStorageSize(int size)
     {
         Memory<byte> newStorage = new byte[size];
         _storage.CopyTo(newStorage);

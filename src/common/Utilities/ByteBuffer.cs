@@ -21,12 +21,12 @@ using AzerothCore.Cryptography;
 
 namespace AzerothCore.Utilities;
 
-public sealed class ByteBuffer : IDisposable
+public class ByteBuffer : IDisposable
 {
-    private byte            _bitPosition = 8;
-    private byte            _bitValue;
-    private BinaryWriter?   _writeStream;
-    private BinaryReader?   _readStream;
+    protected byte            _bitPosition = 8;
+    protected byte            _bitValue;
+    protected BinaryWriter?   _writeStream;
+    protected BinaryReader?   _readStream;
 
     public ByteBuffer()
     {

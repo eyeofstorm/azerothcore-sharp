@@ -55,9 +55,9 @@ public class Realm : IEquatable<Realm>
 {
     public RealmHandle  Id;
     public uint         Build;
-    public IPAddress    ExternalAddress = IPAddress.None;
-    public IPAddress    LocalAddress = IPAddress.None;
-    public IPAddress    LocalSubnetMask = IPAddress.None;
+    public IPAddress?   ExternalAddress;
+    public IPAddress?   LocalAddress;
+    public IPAddress?   LocalSubnetMask;
     public ushort       Port;
     public string       Name = string.Empty;
     public string       NormalizedName = string.Empty;
@@ -87,7 +87,8 @@ public class Realm : IEquatable<Realm>
         if (IPAddress.IsLoopback(clientAddr))
         {
             // Try guessing if realm is also connected locally
-            if (IPAddress.IsLoopback(LocalAddress) || IPAddress.IsLoopback(ExternalAddress))
+            if (IPAddress.IsLoopback(LocalAddress ?? IPAddress.None) ||
+                IPAddress.IsLoopback(ExternalAddress ?? IPAddress.None))
             {
                 realmIp = clientAddr;
             }
@@ -95,19 +96,19 @@ public class Realm : IEquatable<Realm>
             {
                 // Assume that user connecting from the machine that authserver is located on
                 // has all realms available in his local network
-                realmIp = LocalAddress;
+                realmIp = LocalAddress ?? IPAddress.None;
             }
         }
         else
         {
             if (clientAddr.AddressFamily == AddressFamily.InterNetwork &&
-                clientAddr.GetNetworkAddress(LocalSubnetMask).Equals(LocalAddress.GetNetworkAddress(LocalSubnetMask)))
+                clientAddr.GetNetworkAddress(LocalSubnetMask ?? IPAddress.None).Equals(LocalAddress?.GetNetworkAddress(LocalSubnetMask ?? IPAddress.None)))
             {
                 realmIp = LocalAddress;
             }
             else
             {
-                realmIp = ExternalAddress;
+                realmIp = ExternalAddress ?? IPAddress.None;
             }
         }
 
@@ -139,9 +140,9 @@ public class Realm : IEquatable<Realm>
             return false;
         }
 
-        return other.ExternalAddress.Equals(ExternalAddress)
-            && other.LocalAddress.Equals(LocalAddress)
-            && other.LocalSubnetMask.Equals(LocalSubnetMask)
+        return object.Equals(other.ExternalAddress, ExternalAddress)
+            && object.Equals(other.LocalAddress, LocalAddress)
+            && object.Equals(other.LocalSubnetMask, LocalSubnetMask)
             && other.Port == Port
             && other.Name == Name
             && other.Type == Type
