@@ -16,6 +16,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\common\common.csproj" />
+    <ProjectReference Include="..\..\game\game.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Logger.xml">

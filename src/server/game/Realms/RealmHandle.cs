@@ -15,11 +15,29 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace AzerothCore.Database;
+namespace AzerothCore.Game;
 
-public static class DB
-{
-    public static LoginDatabase Login = new();
-    public static CharacterDatabase Characters = new();
-    public static WorldDatabase World = new();
+public struct RealmHandle : IEquatable<RealmHandle>
+{   
+    public uint Index   { get; set; }
+
+    public RealmHandle(uint index)
+    {
+        Index = index;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj != null && obj is RealmHandle && Equals((RealmHandle)obj);
+    }
+
+    public bool Equals(RealmHandle other)
+    {
+        return other.Index == Index;
+    }
+
+    public override int GetHashCode()
+    {
+        return new { Index }.GetHashCode();
+    }
 }

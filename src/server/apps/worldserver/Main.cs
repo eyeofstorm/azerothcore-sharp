@@ -15,18 +15,15 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
+
 using AzerothCore.Configuration;
 using AzerothCore.Constants;
 using AzerothCore.Database;
 using AzerothCore.Game;
 using AzerothCore.Logging;
-using AzerothCore.Realms;
-using AzerothCore.Utilities;
-using Google.Protobuf.WellKnownTypes;
 
 namespace AzerothCore;
 

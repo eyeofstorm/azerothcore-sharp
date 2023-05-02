@@ -20,9 +20,9 @@ using System.Timers;
 
 using AzerothCore.Configuration;
 using AzerothCore.Database;
+using AzerothCore.Game;
 using AzerothCore.Logging;
 using AzerothCore.Networking;
-using AzerothCore.Realms;
 
 namespace AzerothCore;
 

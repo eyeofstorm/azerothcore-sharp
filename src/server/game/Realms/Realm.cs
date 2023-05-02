@@ -21,7 +21,7 @@ using System.Net.Sockets;
 using AzerothCore.Constants;
 using AzerothCore.Utilities;
 
-namespace AzerothCore.Realms;
+namespace AzerothCore.Game;
 
 [Flags]
 public enum RealmFlags : byte

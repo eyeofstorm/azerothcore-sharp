@@ -24,7 +24,7 @@ using AzerothCore.Database;
 using AzerothCore.Logging;
 using AzerothCore.Singleton;
 
-namespace AzerothCore.Realms;
+namespace AzerothCore.Game;
 
 public class RealmList : Singleton<RealmList>
 {
@@ -160,8 +160,6 @@ public class RealmList : Singleton<RealmList>
                 realm.PopulationLevel = result.Read<float>(10);
 
                 realm.Build = result.Read<uint>(11);
-
-                
 
                 UpdateRealm(realm);
 

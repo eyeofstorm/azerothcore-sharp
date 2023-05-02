@@ -20,6 +20,7 @@ using System.Runtime.InteropServices;
 
 using AzerothCore.Constants;
 using AzerothCore.Database;
+using AzerothCore.Game;
 using AzerothCore.Logging;
 using AzerothCore.Networking;
 using AzerothCore.Utilities;

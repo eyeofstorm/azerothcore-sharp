@@ -16,7 +16,6 @@
  */
 
 using AzerothCore.Database;
-using AzerothCore.Realms;
 using AzerothCore.Singleton;
 
 namespace AzerothCore.Game;

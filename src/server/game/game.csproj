@@ -18,11 +18,15 @@
     <None Remove="Globals\" />
     <None Remove="World\" />
     <None Remove="Server\" />
+    <None Remove="Databases\" />
+    <None Remove="Realms\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Globals\" />
     <Folder Include="World\" />
     <Folder Include="Server\" />
+    <Folder Include="Databases\" />
+    <Folder Include="Realms\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\common\common.csproj" />

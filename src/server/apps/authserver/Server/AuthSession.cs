@@ -25,8 +25,8 @@ using AzerothCore.Configuration;
 using AzerothCore.Constants;
 using AzerothCore.Cryptography;
 using AzerothCore.Database;
+using AzerothCore.Game;
 using AzerothCore.Logging;
-using AzerothCore.Realms;
 using AzerothCore.Utilities;
 
 namespace AzerothCore.Networking;
