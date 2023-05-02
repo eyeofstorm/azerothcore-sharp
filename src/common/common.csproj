@@ -32,13 +32,9 @@
     <None Remove="Logging\obj\Debug\net6.0\AzerothSharp.Logging.assets.cache" />
     <None Remove="Logging\obj\Debug\net6.0\AzerothSharp.Logging.csproj.AssemblyReference.cache" />
     <None Remove="Logging\obj\Debug\net6.0\AzerothSharp.Logging.GeneratedMSBuildEditorConfig.editorconfig" />
-    <None Remove="Server\" />
-    <None Remove="Server\Protocol\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Logging\" />
-    <Folder Include="Server\" />
-    <Folder Include="Server\Protocol\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Logging\obj\Debug\net6.0\AzerothSharp.Logging.AssemblyInfo.cs" />

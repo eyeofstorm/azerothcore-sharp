@@ -15,7 +15,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System.Drawing;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
@@ -23,7 +22,6 @@ using AzerothCore.Constants;
 using AzerothCore.Database;
 using AzerothCore.Logging;
 using AzerothCore.Networking;
-using AzerothCore.Server.Protocol;
 using AzerothCore.Utilities;
 using LocklessQueue.Queues;
 

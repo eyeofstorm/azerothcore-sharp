@@ -15,7 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace AzerothCore.Server.Protocol;
+namespace AzerothCore.Server;
 
 /// List of Opcodes
 public enum Opcodes : ushort
