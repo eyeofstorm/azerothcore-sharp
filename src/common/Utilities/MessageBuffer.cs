@@ -18,26 +18,24 @@
 using System;
 using System.Buffers;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 namespace AzerothCore.Utilities;
 
 public class MessageBuffer
 {
-    private Memory<byte>    _storage;
-    private int             _wpos;
-    private int             _rpos;
+    private byte[] _storage;
+    private int _wpos;
+    private int _rpos;
 
     public MessageBuffer(int initialSize = 4096)
     {
         _storage = new byte[initialSize];
     }
 
-    public void ExpandStorageSize(int size)
+    public void Resize(int size)
     {
-        Memory<byte> newStorage = new byte[size];
-        _storage.CopyTo(newStorage);
-        _storage = newStorage;
-        newStorage = null;
+        Array.Resize(ref _storage, size);
     }
 
     public void Reset()
@@ -46,19 +44,19 @@ public class MessageBuffer
         _rpos = 0;
     }
 
-    public Memory<byte> GetBasePointer()
+    public byte[] GetBasePointer()
     {
         return _storage;
     }
 
-    public Memory<byte> GetReadPointer()
+    public int GetReadPos()
     {
-        return _storage.Slice(_rpos);
+        return _rpos;
     }
 
-    public Memory<byte> GetWritePointer()
+    public int GetWritePos()
     {
-        return _storage.Slice(_wpos);
+        return _wpos;
     }
 
     public void ReadCompleted(int bytes)
@@ -93,7 +91,11 @@ public class MessageBuffer
         {
             if (_rpos != _wpos)
             {
-                GetReadPointer().Slice(0, GetActiveSize()).CopyTo(GetBasePointer());
+                unsafe
+                {
+                    byte* readPointer = (byte *)Unsafe.AsPointer(ref _storage[_rpos]);
+                    Marshal.Copy((IntPtr)readPointer, _storage, 0, GetActiveSize());
+                }
             }
 
             _wpos -= _rpos;
@@ -107,7 +109,7 @@ public class MessageBuffer
         // resize buffer if it's already full
         if (GetRemainingSpace() == 0)
         {
-            ExpandStorageSize(_storage.Length * 3 / 2);
+            Resize(_storage.Length * 3 / 2);
         }
     }
 
@@ -115,8 +117,16 @@ public class MessageBuffer
     {
         if (size > 0)
         {
-            Memory<byte> arrWrapper = new Memory<byte>(arr);
-            Memory<byte> copyFrom = arrWrapper.Slice(0, size);
+            Write(arr, 0, size);
+        }
+    }
+
+    public void Write(byte[] arr, int offset, int size)
+    {
+        if (size > 0)
+        {
+            Memory<byte> arrWrapper = arr;
+            Memory<byte> copyFrom = arrWrapper.Slice(offset, size);
 
             if (copyFrom.TryCopyTo(_storage))
             {

@@ -193,19 +193,18 @@ public static class Time
 
             switch (timeFormat)
             {
+            case TimeFormat.ShortText:
+                ss.Append("h");
+                break;
+            case TimeFormat.FullText:
 
-                case TimeFormat.ShortText:
-                    ss.Append("h");
-                    break;
-                case TimeFormat.FullText:
-
-                    if (hours <= 1)
-                        ss.Append(" Hour ");
-                    else
-                        ss.Append(" Hours ");
-                    break;
-                default:
-                    return "<Unknown time format>";
+                if (hours <= 1)
+                    ss.Append(" Hour ");
+                else
+                    ss.Append(" Hours ");
+                break;
+            default:
+                return "<Unknown time format>";
             }
         }
 
@@ -217,17 +216,17 @@ public static class Time
 
                 switch (timeFormat)
                 {
-                    case TimeFormat.ShortText:
-                        ss.Append("m");
-                        break;
-                    case TimeFormat.FullText:
-                        if (minutes == 1)
-                            ss.Append(" Minute ");
-                        else
-                            ss.Append(" Minutes ");
-                        break;
-                    default:
-                        return "<Unknown time format>";
+                case TimeFormat.ShortText:
+                    ss.Append("m");
+                    break;
+                case TimeFormat.FullText:
+                    if (minutes == 1)
+                        ss.Append(" Minute ");
+                    else
+                        ss.Append(" Minutes ");
+                    break;
+                default:
+                    return "<Unknown time format>";
                 }
             }
 
@@ -237,17 +236,17 @@ public static class Time
 
                 switch (timeFormat)
                 {
-                    case TimeFormat.ShortText:
-                        ss.Append("s");
-                        break;
-                    case TimeFormat.FullText:
-                        if (secs <= 1)
-                            ss.Append(" Second.");
-                        else
-                            ss.Append(" Seconds.");
-                        break;
-                    default:
-                        return "<Unknown time format>";
+                case TimeFormat.ShortText:
+                    ss.Append("s");
+                    break;
+                case TimeFormat.FullText:
+                    if (secs <= 1)
+                        ss.Append(" Second.");
+                    else
+                        ss.Append(" Seconds.");
+                    break;
+                default:
+                    return "<Unknown time format>";
                 }
             }
         }
@@ -272,20 +271,20 @@ public static class Time
             {
                 switch (c)
                 {
-                    case 'd':
-                        multiplier = Day;
-                        break;
-                    case 'h':
-                        multiplier = Hour;
-                        break;
-                    case 'm':
-                        multiplier = Minute;
-                        break;
-                    case 's':
-                        multiplier = 1;
-                        break;
-                    default:
-                        return 0;                         //bad format
+                case 'd':
+                    multiplier = Day;
+                    break;
+                case 'h':
+                    multiplier = Hour;
+                    break;
+                case 'm':
+                    multiplier = Minute;
+                    break;
+                case 's':
+                    multiplier = 1;
+                    break;
+                default:
+                    return 0;                         //bad format
                 }
                 buffer *= multiplier;
                 secs += buffer;

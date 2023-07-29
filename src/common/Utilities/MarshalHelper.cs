@@ -15,9 +15,31 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace AzerothCore.Game;
+using System.Runtime.InteropServices;
 
-public interface IWorld
+namespace AzerothCore.Utilities;
+
+public static class MarshalHelper
 {
+	public static T CreateStructInstance<T>() where T : struct
+	{
+        var size = Marshal.SizeOf(typeof(T));
+
+        IntPtr ptr = IntPtr.Zero;
+
+        try
+        {
+            ptr = Marshal.AllocHGlobal(size);
+
+            T s = (T?)Marshal.PtrToStructure(ptr, typeof(T)) ?? default(T);
+
+            return s;
+        }
+        
+        finally
+        {
+            Marshal.FreeHGlobal(ptr);
+        }
+    }
 }
 

@@ -24,4 +24,5 @@ public static class Global
     // Main
     public static World     sWorld      { get { return World.Instance; } }
     public static RealmList sRealmList  { get { return RealmList.Instance; } }
+    public static PacketLog sPacketLog  { get { return PacketLog.Instance; } }
 }

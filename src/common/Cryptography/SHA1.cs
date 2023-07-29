@@ -15,63 +15,54 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Reflection;
-using System.Runtime.Intrinsics.Arm;
-using System.Security.Cryptography;
-
 namespace AzerothCore.Cryptography;
 
 public abstract class SHA1
 {
-	private SHA1() { }
+    public byte[] Hash { get; private set; }
 
-    public abstract void Update(byte[]? array);
-    public abstract byte[] Final();
+    public abstract void Update(byte[]? data);
+    public abstract void Final(byte[]? data);
+
+    protected SHA1()
+    {
+        Hash = Array.Empty<byte>();
+    }
 
     public static SHA1 Create()
-	{
-		return new Implement();
-	}
+    {
+        return new Implement();
+    }
 
     private sealed class Implement : SHA1
     {
-        private System.Security.Cryptography.SHA1 serviceProvidorserviceProvider = System.Security.Cryptography.SHA1.Create();
+        private System.Security.Cryptography.SHA1 serviceProvidor;
 
-        public override void Update(byte[]? array)
+        internal Implement()
         {
-            if (array == null)
-            {
-                throw new NullReferenceException(nameof(array));
-            }
-
-            Type invoker = serviceProvidorserviceProvider.GetType();
-
-            invoker.InvokeMember(
-                        "HashCore",
-                        BindingFlags.NonPublic | BindingFlags.InvokeMethod | BindingFlags.Instance,
-                        null,
-                        serviceProvidorserviceProvider,
-                        new object[] { array, 0, array.Length });
+            serviceProvidor = System.Security.Cryptography.SHA1.Create();
+            serviceProvidor.Initialize();
         }
 
-        public override byte[] Final()
+        public override void Update(byte[]? data)
         {
-            Type invoker = serviceProvidorserviceProvider.GetType();
-
-            byte[]? hashedValue = invoker.InvokeMember(
-                                    "HashFinal",
-                                    BindingFlags.NonPublic | BindingFlags.InvokeMethod | BindingFlags.Instance,
-                                    null,
-                                    serviceProvidorserviceProvider,
-                                    Array.Empty<object?>()) as byte[];
-
-            if (hashedValue == null)
+            if (data == null)
             {
-                throw new InvalidOperationException();
+                throw new ArgumentNullException(nameof(data));
             }
 
-            return hashedValue;
+            serviceProvidor?.TransformBlock(data, 0, data.Length, data, 0);
+        }
+
+        public override void Final(byte[]? data)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
+            serviceProvidor?.TransformFinalBlock(data, 0, data.Length);
+            Hash = serviceProvidor?.Hash ?? Array.Empty<byte>();
         }
     }
 }

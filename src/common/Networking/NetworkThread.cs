@@ -24,8 +24,8 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
 {
     private static readonly ILogger logger = LoggerFactory.GetLogger();
 
-    private int _connections;
-    private volatile bool _stopped;
+    private long _connections;
+    private readonly AutoResetEvent _stopEvent = new(false);
 
     private Thread? _thread;
 
@@ -34,7 +34,7 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
 
     public void Stop()
     {
-        _stopped = true;
+        _stopEvent.Set();
     }
 
     public bool Start()
@@ -56,9 +56,9 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
         _thread = null;
     }
 
-    public int GetConnectionCount()
+    public long GetConnectionCount()
     {
-        return _connections;
+        return Interlocked.Read(ref _connections);
     }
 
     public virtual void AddSocket(TSocketType sock)
@@ -101,15 +101,18 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
 
         int sleepTime = 1;
 
-        while (!_stopped)
+        while (true)
         {
-            Thread.Sleep(sleepTime);
+            if (_stopEvent.WaitOne(sleepTime))
+            {
+                break;
+            }
 
             uint tickStart = Time.GetMSTime();
 
             AddNewSockets();
 
-            for (var i =0; i < _Sockets.Count; ++i)
+            for (var i = 0; i < _Sockets.Count; ++i)
             {
                 TSocketType socket = _Sockets[i];
 
@@ -121,8 +124,7 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
                     }
 
                     SocketRemoved(socket);
-
-                    --_connections;
+                    Interlocked.Decrement(ref _connections);
                     _Sockets.Remove(socket);
                 }
             }

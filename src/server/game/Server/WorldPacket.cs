@@ -17,14 +17,30 @@
 
 using AzerothCore.Utilities;
 
-namespace AzerothCore.Server;
+namespace AzerothCore.Game;
+
+public enum Direction : UInt32
+{
+    CLIENT_TO_SERVER,
+    SERVER_TO_CLIENT
+}
 
 public class WorldPacket : ByteBuffer
 {
-    public DateTime     ReceivedTime    { get; set; }
     public ushort       Opcode          { get; set; } = (ushort)OpcodeMisc.NULL_OPCODE;
+    public DateTime     ReceivedTime    { get; set; }
 
     public WorldPacket() : base() {  }
+
+    public WorldPacket(Opcodes opcode, int capacity) :base(capacity)
+    {
+        Opcode = (ushort)opcode;
+    }
+
+    public WorldPacket(Opcodes opcode, byte[] data) : base(data)
+    {
+        Opcode = (ushort)opcode;
+    }
 
     public WorldPacket(byte[] data) : base(data) {  }
 

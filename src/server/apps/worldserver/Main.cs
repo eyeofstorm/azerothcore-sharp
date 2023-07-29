@@ -165,9 +165,6 @@ internal class WorldServer
     {
         Console.WriteLine("Halting process...");
 
-        // TODO: worldserver: what's this?
-        System.Threading.Thread.Sleep(2000);
-
         Environment.Exit(-1);
     }
 }

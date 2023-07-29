@@ -58,7 +58,6 @@ public abstract class SocketBase : ISocket, IDisposable
         _isWritingAsync = false;
 
         _readBuffer = new ();
-
         _writeQueue = new ();
 
         _receiveSocketAsyncEventArgs = new ();
@@ -102,7 +101,7 @@ public abstract class SocketBase : ISocket, IDisposable
         _readBuffer.Normalize();
         _readBuffer.EnsureFreeSpace();
 
-        _receiveSocketAsyncEventArgs.SetBuffer(_readBuffer.GetWritePointer());
+        _receiveSocketAsyncEventArgs.SetBuffer(_readBuffer.GetBasePointer(), _readBuffer.GetWritePos(), _readBuffer.GetRemainingSpace());
 
         if (!_socket.ReceiveAsync(_receiveSocketAsyncEventArgs))
         {
@@ -140,10 +139,27 @@ public abstract class SocketBase : ISocket, IDisposable
         OnClose();
     }
 
-    public virtual void Dispose()
+    #region IDisposable implements
+    private bool _isDisposed = false;
+
+    private void Dispose(bool disposing)
     {
-        _socket.Dispose();
+        if (!_isDisposed)
+        {
+            if (disposing)
+            {
+                _socket.Dispose();
+            }
+
+            _isDisposed = true;
+        }
     }
+
+    public void Dispose()
+    {
+        Dispose(true);
+    }
+    #endregion
 
     public bool IsOpen()
     {
@@ -217,7 +233,7 @@ public abstract class SocketBase : ISocket, IDisposable
         }
 
         int bytesToSent = queuedMessage.GetActiveSize();
-        int bytesSent = _socket.Send(queuedMessage.GetReadPointer().GetBytes(), 0, bytesToSent, SocketFlags.None, out SocketError error);
+        int bytesSent = _socket.Send(queuedMessage.GetBasePointer(), queuedMessage.GetReadPos(), bytesToSent, SocketFlags.None, out SocketError error);
 
         if (error != SocketError.Success)
         {

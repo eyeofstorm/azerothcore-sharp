@@ -24,9 +24,9 @@ public class World : Singleton<World>, IWorld
 {
     private string?     _dbVersion;
 
-    private Realm       _realm = new Realm();
+    private Realm       _realm = new();
 
-    private UInt32[]    _int_configs        = new UInt32[(uint)WorldIntConfigs.INT_CONFIG_VALUE_COUNT];
+    private uint[]      _int_configs        = new uint[(uint)WorldIntConfigs.INT_CONFIG_VALUE_COUNT];
     private bool[]      _bool_configs       = new bool[(uint)WorldBoolConfigs.BOOL_CONFIG_VALUE_COUNT];
     private float[]     _float_configs      = new float[(uint)WorldFloatConfigs.FLOAT_CONFIG_VALUE_COUNT];
 

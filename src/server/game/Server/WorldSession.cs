@@ -17,7 +17,7 @@
 
 namespace AzerothCore.Game;
 
-public interface IWorld
+public class WorldSession
 {
-}
 
+}

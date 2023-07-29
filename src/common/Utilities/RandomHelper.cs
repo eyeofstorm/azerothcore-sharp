@@ -82,7 +82,7 @@ public class RandomHelper
     /// </summary>
     /// <param name="i"></param>
     /// <returns></returns>
-    public static bool randChance(float i)
+    public static bool RandChance(float i)
     {
         return i > randChance();
     }
@@ -99,6 +99,15 @@ public class RandomHelper
     public static void NextBytes(byte[] buffer)
     {
         rand.NextBytes(buffer);
+    }
+
+    public static byte[] NextBytes(int count)
+    {
+        byte[] bytes = new byte[count];
+
+        rand.NextBytes(bytes);
+
+        return bytes;
     }
 
     public static T RAND<T>(params T[] args)

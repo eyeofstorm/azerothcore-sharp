@@ -15,8 +15,11 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System.Reflection.PortableExecutable;
+using System.Runtime.InteropServices;
 using AzerothCore.Utilities;
 using Google.Protobuf.Collections;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace System.Collections.Generic;
 
@@ -197,6 +200,38 @@ public static class CollectionExtensions
         while (list.Count <= index)
         {
             list.Add(defaultValue);
+        }
+    }
+
+    public static T ToStructure<T>(this byte[] target) where T : struct
+    {
+        var size = Marshal.SizeOf(typeof(T));
+
+        if (size > target.Length)
+        {
+            throw new ArgumentException($"can not convert from byte array to struct {typeof(T).FullName}", nameof(target));
+        }
+
+        IntPtr ptr = IntPtr.Zero;
+
+        try
+        {
+            ptr = Marshal.AllocHGlobal(size);
+
+            Marshal.Copy(target, 0, ptr, size);
+            T? s = (T?)Marshal.PtrToStructure(ptr, typeof(T));
+
+            if (s == null)
+            {
+                throw new InvalidCastException($"can not convert from byte array to struct {typeof(T).FullName}");
+            }
+
+            return (T)s;
+        }
+        
+        finally
+        {
+            Marshal.FreeHGlobal(ptr);
         }
     }
 }

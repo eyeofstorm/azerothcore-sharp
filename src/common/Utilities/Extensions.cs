@@ -62,7 +62,29 @@ public static class Extensions
         return Array.ConvertAll(value.Split(separator), byte.Parse);
     }
 
-    static uint LeftRotate(this uint value, int shiftCount)
+    public static byte[] ToByteArray<T>(this T structure) where T : struct
+    {
+        int structureSize = Marshal.SizeOf(structure);
+        byte[] arr = new byte[structureSize];
+
+        IntPtr pointer = IntPtr.Zero;
+
+        try
+        {
+            pointer = Marshal.AllocHGlobal(structureSize);
+
+            Marshal.StructureToPtr(structure, pointer, true);
+            Marshal.Copy(pointer, arr, 0, structureSize);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(pointer);
+        }
+
+        return arr;
+    }
+
+    public static uint LeftRotate(this uint value, int shiftCount)
     {
         return (value << shiftCount) | (value >> (0x20 - shiftCount));
     }

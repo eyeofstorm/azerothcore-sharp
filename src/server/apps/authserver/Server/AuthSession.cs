@@ -229,7 +229,7 @@ internal class AuthSession : SocketBase
     private string?                                 _ipCountry;
     private ushort                                  _build;
     private byte                                    _expversion;
-    private SrpServerAuth?                          _srp6;
+    private SRPServerAuth?                          _srp6;
     private byte[]?                                 _sessionKey;
     private byte[]                                  _reconnectProof = new byte[16];
     private AsyncCallbackProcessor<QueryCallback>   _queryProcessor;
@@ -326,11 +326,16 @@ internal class AuthSession : SocketBase
 
     protected override void ReadHandler()
     {
+        if (!IsOpen())
+        {
+            return;
+        }
+
         MessageBuffer packet = GetReadBuffer();
 
         while (packet.GetActiveSize() > 0)
         {
-            AuthCmd cmd = (AuthCmd)packet.GetReadPointer().Span[0];
+            AuthCmd cmd = (AuthCmd)packet.GetBasePointer()[packet.GetReadPos()];
 
             if (!_handlers.ContainsKey(cmd))
             {
@@ -358,7 +363,7 @@ internal class AuthSession : SocketBase
 
             if (cmd == AuthCmd.AUTH_LOGON_CHALLENGE || cmd == AuthCmd.AUTH_RECONNECT_CHALLENGE)
             {
-                AUTH_LOGON_CHALLENGE_C challenge = packet.GetReadPointer().CastTo<AUTH_LOGON_CHALLENGE_C>();
+                AUTH_LOGON_CHALLENGE_C challenge = packet.CastTo<AUTH_LOGON_CHALLENGE_C>();
                 size += challenge.size;
 
                 if (size > MAX_ACCEPTED_CHALLENGE_SIZE)
@@ -406,7 +411,7 @@ internal class AuthSession : SocketBase
     {
         _status = AuthStatus.STATUS_CLOSED;
 
-        AUTH_LOGON_CHALLENGE_C challenge = GetReadBuffer().GetReadPointer().CastTo<AUTH_LOGON_CHALLENGE_C>();
+        AUTH_LOGON_CHALLENGE_C challenge = GetReadBuffer().CastTo<AUTH_LOGON_CHALLENGE_C>();
 
         if (challenge.size - (Marshal.SizeOf(typeof(AUTH_LOGON_CHALLENGE_C)) - AUTH_LOGON_CHALLENGE_INITIAL_SIZE - 1 - 16) != challenge.I_len)
         {
@@ -552,7 +557,7 @@ internal class AuthSession : SocketBase
         byte[]? salt       = result.ReadBytes(12, 32) ?? Array.Empty<byte>();
         byte[]? verifier   = result.ReadBytes(13, 32) ?? Array.Empty<byte>();
 
-        _srp6 = new SrpServerAuth(accountName, salt, verifier);
+        _srp6 = new SRPServerAuth(accountName, salt, verifier);
 
         if (AuthHelper.IsAcceptedClientBuild(_build))
         {
@@ -560,9 +565,9 @@ internal class AuthSession : SocketBase
             
             pkt.WriteSrpInteger(_srp6.ServerPublicKey);
             pkt.WriteUInt8(1);
-            pkt.WriteSrpInteger(SrpServerAuth.Generator);
+            pkt.WriteSrpInteger(SRPServerAuth.Generator);
             pkt.WriteUInt8(32);
-            pkt.WriteSrpInteger(SrpServerAuth.SafePrime);
+            pkt.WriteSrpInteger(SRPServerAuth.SafePrime);
             pkt.WriteSrpInteger(_srp6.Salt);
             pkt.WriteBytes(VERSION_CHALLENGE);
             pkt.WriteUInt8(securityFlags);          // security flags (0x0...0x04)
@@ -606,7 +611,7 @@ internal class AuthSession : SocketBase
         _status = AuthStatus.STATUS_CLOSED;
 
         // Read the packet
-        AUTH_LOGON_PROOF_C logonProof = GetReadBuffer().GetReadPointer().CastTo<AUTH_LOGON_PROOF_C>();
+        AUTH_LOGON_PROOF_C logonProof = GetReadBuffer().CastTo<AUTH_LOGON_PROOF_C>();
 
         // If the client has no valid version
         if (_expversion == (byte)ExpansionFlags.NO_VALID_EXP_FLAG)
@@ -694,7 +699,7 @@ internal class AuthSession : SocketBase
             // Send response packet
             packet = new ByteBuffer();
 
-            byte[] M2 = SrpServerAuth.ComputeM2(logonProof.A, logonProof.clientM, _sessionKey);
+            byte[] M2 = SRPServerAuth.ComputeM2(logonProof.A, logonProof.clientM, _sessionKey);
 
             if ((_expversion & (byte)ExpansionFlags.POST_BC_EXP_FLAG) != 0x00)                 // 2.x and 3.x clients
             {
@@ -707,7 +712,7 @@ internal class AuthSession : SocketBase
                 proof.SurveyId = 0;
                 proof.LoginFlags = 0;               // 0x1 = has account message
 
-                packet.WriteBytes(proof.GetBytes());
+                packet.WriteBytes(proof.ToByteArray());
             }
             else
             {
@@ -718,7 +723,7 @@ internal class AuthSession : SocketBase
                 proof.error = 0;
                 proof.unk2 = 0x00;
 
-                packet.WriteBytes(proof.GetBytes());
+                packet.WriteBytes(proof.ToByteArray());
             }
 
             SendPacket(packet);
@@ -793,7 +798,7 @@ internal class AuthSession : SocketBase
 
         _status = AuthStatus.STATUS_CLOSED;
 
-        AUTH_LOGON_CHALLENGE_C challenge = GetReadBuffer().GetReadPointer().CastTo<AUTH_LOGON_CHALLENGE_C>();
+        AUTH_LOGON_CHALLENGE_C challenge = GetReadBuffer().CastTo<AUTH_LOGON_CHALLENGE_C>();
 
         if (challenge.size - (Marshal.SizeOf(typeof(AUTH_LOGON_CHALLENGE_C)) - AUTH_LOGON_CHALLENGE_INITIAL_SIZE - 1) != challenge.I_len)
         {
@@ -867,7 +872,7 @@ internal class AuthSession : SocketBase
 
         _status = AuthStatus.STATUS_CLOSED;
 
-        AUTH_RECONNECT_PROOF_C reconnectProof = GetReadBuffer().GetReadPointer().CastTo<AUTH_RECONNECT_PROOF_C>();
+        AUTH_RECONNECT_PROOF_C reconnectProof = GetReadBuffer().CastTo<AUTH_RECONNECT_PROOF_C>();
 
         if (_accountInfo.Login == null)
         {
@@ -880,8 +885,8 @@ internal class AuthSession : SocketBase
         sha.Update(System.Text.Encoding.UTF8.GetBytes(_accountInfo.Login));
         sha.Update(t1.ToByteArray());
         sha.Update(_reconnectProof);
-        sha.Update(_sessionKey);
-        byte[] digest = sha.Final();
+        sha.Final(_sessionKey);
+        byte[] digest = sha.Hash;
 
         if (digest.SequenceEqual(reconnectProof.R2))
         {
@@ -1111,8 +1116,8 @@ internal class AuthSession : SocketBase
 
         SHA1 sha1 = SHA1.Create();
         sha1.Update(clientPublicKey);
-        sha1.Update(versionHash);
-        byte[] version = sha1.Final();
+        sha1.Final(versionHash);
+        byte[] version = sha1.Hash;
 
         return versionProof.SequenceEqual(version);
     }

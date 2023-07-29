@@ -116,9 +116,6 @@ internal class AuthServer
     {
         Console.WriteLine("Halting process...");
 
-        // TODO: authserver: what's this?
-        System.Threading.Thread.Sleep(2000);
-
         Environment.Exit(-1);
     }
 }

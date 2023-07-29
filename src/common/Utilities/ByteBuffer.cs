@@ -17,6 +17,7 @@
 
 using System.Numerics;
 using System.Text;
+
 using AzerothCore.Cryptography;
 
 namespace AzerothCore.Utilities;
@@ -33,23 +34,45 @@ public class ByteBuffer : IDisposable
         _writeStream = new BinaryWriter(new MemoryStream());
     }
 
+    public ByteBuffer(int capacity)
+    {
+        _readStream = new BinaryReader(new MemoryStream(capacity));
+    }
+
     public ByteBuffer(byte[] data)
     {
         _readStream = new BinaryReader(new MemoryStream(data));
     }
 
-    public void Dispose()
-    {
-        if (_writeStream != null)
-        {
-            _writeStream.Dispose();
-        }
+    #region IDisposable implements
+    private bool _isDisposed = false;
 
-        if (_readStream != null)
+    void Dispose(bool disposing)
+    {
+        if (!_isDisposed)
         {
-            _readStream.Dispose();
+            if (disposing)
+            {
+                if (_writeStream != null)
+                {
+                    _writeStream.Dispose();
+                }
+
+                if (_readStream != null)
+                {
+                    _readStream.Dispose();
+                }
+            }
+
+            _isDisposed = true;
         }
     }
+
+    void IDisposable.Dispose()
+    {
+        Dispose(true);
+    }
+    #endregion
 
     #region Read Methods
     public sbyte ReadInt8()

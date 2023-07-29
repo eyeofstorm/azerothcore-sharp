@@ -14,17 +14,18 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
 using System.Runtime.InteropServices;
 
 namespace AzerothCore.Utilities
 {
     public static class MemoryExtension
 	{
-        public static T CastTo<T>(this Memory<byte> from) where T : struct
+        public static T CastTo<T>(this MessageBuffer msgBuff) where T : struct
         {
             Type objType = typeof(T);
 
-            byte[] buffer = from.ToArray();
+            byte[] buffer = new Memory<byte>(msgBuff.GetBasePointer(), msgBuff.GetReadPos(), msgBuff.GetActiveSize()).ToArray();
 
             if (buffer.Length > 0)
             {
@@ -66,17 +67,6 @@ namespace AzerothCore.Utilities
             }
 
             return default(T);
-        }
-
-        public static byte[] GetBytes<T>(this T from) where T : struct
-        {
-            byte[] bytes = new byte[Marshal.SizeOf(typeof(T))];
-
-            GCHandle gch = GCHandle.Alloc(bytes, GCHandleType.Pinned);
-            Marshal.StructureToPtr(from, gch.AddrOfPinnedObject(), false);
-            gch.Free();
-
-            return bytes;
         }
     }
 }

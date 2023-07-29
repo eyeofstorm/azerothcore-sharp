@@ -15,7 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace AzerothCore.Server;
+namespace AzerothCore.Game;
 
 /// List of Opcodes
 public enum Opcodes : ushort
@@ -1338,3 +1338,25 @@ public enum OpcodeMisc : ushort
     NUM_OPCODE_HANDLERS = Opcodes.NUM_MSG_TYPES,
     NULL_OPCODE = 0x0000
 };
+
+public enum SessionStatus
+{
+    STATUS_AUTHED = 0,                                      // Player authenticated (_player == nullptr, m_playerRecentlyLogout = false or will be reset before handler call, m_GUID have garbage)
+    STATUS_LOGGEDIN,                                        // Player in game (_player != nullptr, m_GUID == _player->GetGUID(), inWorld())
+    STATUS_TRANSFER,                                        // Player transferring to another map (_player != nullptr, m_GUID == _player->GetGUID(), !inWorld())
+    STATUS_LOGGEDIN_OR_RECENTLY_LOGGOUT,                    // _player != nullptr or _player == nullptr && m_playerRecentlyLogout && m_playerLogout, m_GUID store last _player guid)
+    STATUS_NEVER,                                           // Opcode not accepted from client (deprecated or server side only)
+    STATUS_UNHANDLED,                                       // Opcode not handled yet
+}
+
+public enum PacketProcessing
+{
+    PROCESS_INPLACE = 0,                                    //process packet whenever we receive it - mostly for non-handled or non-implemented packets
+    PROCESS_THREADUNSAFE,                                   //packet is not thread-safe - process it in World::UpdateSessions()
+    PROCESS_THREADSAFE                                      //packet is thread-safe - process it in Map::Update()
+}
+
+public class OpcodeTable
+{
+
+}

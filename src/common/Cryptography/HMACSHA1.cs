@@ -15,9 +15,38 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace AzerothCore.Game;
+namespace AzerothCore.Cryptography;
 
-public interface IWorld
+public class HMACSHA1 : System.Security.Cryptography.HMACSHA1
 {
-}
+    public byte[]? Digest { get; private set; }
 
+    public HMACSHA1() : base()
+    {
+        Initialize();
+    }
+
+    public HMACSHA1(byte[] key) : base(key)
+    {
+        Initialize();
+    }
+
+    public void UpdateData(byte[] data, int length)
+    {
+        TransformBlock(data, 0, length, data, 0);
+    }
+
+    public void Finalize(byte[] data, int length)
+    {
+        TransformFinalBlock(data, 0, length);
+        Digest = Hash;
+    }
+
+    public byte[]? GetDigestOf(byte[] data)
+    {
+        UpdateData(data, data.Length);
+        Finalize(data, data.Length);
+
+        return Digest;
+    }
+}

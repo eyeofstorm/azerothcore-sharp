@@ -19,7 +19,7 @@ using System.Text;
 
 namespace AzerothCore.Cryptography;
 
-public class SrpServerAuth
+public class SRPServerAuth
 {
     private static readonly System.Security.Cryptography.SHA1 s_sha1;
 
@@ -39,7 +39,7 @@ public class SrpServerAuth
 	private readonly SrpInteger			m_verifier;
 	private readonly SrpInteger			m_serverPrivateKey;
 
-	static SrpServerAuth()
+	static SRPServerAuth()
     {
 		s_sha1 = System.Security.Cryptography.SHA1.Create();
 
@@ -48,7 +48,7 @@ public class SrpServerAuth
 		SafePrime = SrpInteger.FromHex(@"894B645E89E1535BBDAD5B8B290650530801B18EBFBF5E8FAB3C82872A3E9BB7");
 	}
 
-	public SrpServerAuth(string accountName, byte[] salt, byte[] verifier)
+	public SRPServerAuth(string accountName, byte[] salt, byte[] verifier)
 	{
 		m_accountNameHash = s_sha1.ComputeHash(Encoding.UTF8.GetBytes(accountName));
 
@@ -58,7 +58,7 @@ public class SrpServerAuth
 
 		m_serverPrivateKey = 2;
 
-		ServerPublicKey = SrpServerAuth.ComputeB(m_verifier, m_serverPrivateKey);
+		ServerPublicKey = SRPServerAuth.ComputeB(m_verifier, m_serverPrivateKey);
 	}
 
 	public static byte[] ComputeM2(byte[] clientPublicKey, byte[] clientM1, byte[] sessionKey)
@@ -109,8 +109,8 @@ public class SrpServerAuth
 	/// <returns>temprory public key</returns>
 	private static SrpInteger ComputeB(SrpInteger verifier, SrpInteger privateKey)
 	{
-		SrpInteger g = SrpServerAuth.Generator;
-		SrpInteger N = SrpServerAuth.SafePrime;
+		SrpInteger g = SRPServerAuth.Generator;
+		SrpInteger N = SRPServerAuth.SafePrime;
 		SrpInteger b = privateKey;
 		SrpInteger v = verifier;
 		SrpInteger k = 3;
@@ -167,7 +167,7 @@ public class SrpServerAuth
 
 		// M = sha(sha(N) xor sha(g), sha(I), s, A, B, K)
 		byte[] ngXorHash = new byte[SHA1_DIGEST_LENGTH_BYTES];
-        byte[] nHash = s_sha1.ComputeHash(SrpServerAuth.SafePrime.ToByteArray().Reverse().ToArray());
+        byte[] nHash = s_sha1.ComputeHash(SRPServerAuth.SafePrime.ToByteArray().Reverse().ToArray());
         byte[] gHash = s_sha1.ComputeHash(Generator.ToByteArray().Reverse().ToArray());
 
         for (var i = 0; i < SHA1_DIGEST_LENGTH_BYTES; i++)
@@ -247,7 +247,7 @@ public class SrpServerAuth
 
 	private static SrpInteger ComputeS(SrpInteger A, SrpInteger b, SrpInteger u, SrpInteger v)
     {
-		SrpInteger N = SrpServerAuth.SafePrime;
+		SrpInteger N = SRPServerAuth.SafePrime;
 
 		return (A * v.ModPow(u, N)).ModPow(b, N);
 	}
