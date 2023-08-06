@@ -26,7 +26,7 @@ public enum TimeFormat
     Numeric         // 1:2:3:4
 }
 
-public static class Time
+public static class TimeHelper
 {
     public const int Minute = 60;
     public const int Hour = Minute * 60;
@@ -94,12 +94,14 @@ public static class Time
     public static uint GetMSTimeDiff(uint oldMSTime, DateTime newTime)
     {
         uint newMSTime = (uint)(newTime - ApplicationStartTime).TotalMilliseconds;
+
         return GetMSTimeDiff(oldMSTime, newMSTime);
     }
 
     public static uint GetMSTimeDiffToNow(uint oldMSTime)
     {
         var newMSTime = GetMSTime();
+
         if (oldMSTime > newMSTime)
             return (0xFFFFFFFF - oldMSTime) + newMSTime;
         else
@@ -137,7 +139,9 @@ public static class Time
         long hourLocal = midnightLocal + hour * Hour;
 
         if (onlyAfterTime && hourLocal <= time)
+        {
             hourLocal += Day;
+        }
 
         return hourLocal;
     }
@@ -147,7 +151,7 @@ public static class Time
         return DateTimeToUnixTime(UnixTimeToDateTime(time).ToUniversalTime());
     }
 
-    public static string secsToTimeString(ulong timeInSecs, TimeFormat timeFormat = TimeFormat.FullText, bool hoursOnly = false)
+    public static string SecondsToTimeString(ulong timeInSecs, TimeFormat timeFormat = TimeFormat.FullText, bool hoursOnly = false)
     {
         ulong secs = timeInSecs % Minute;
         ulong minutes = timeInSecs % Hour / Minute;
@@ -171,19 +175,20 @@ public static class Time
         if (days != 0)
         {
             ss.Append(days);
+
             switch (timeFormat)
             {
-                case TimeFormat.ShortText:
-                    ss.Append("d");
-                    break;
-                case TimeFormat.FullText:
-                    if (days == 1)
-                        ss.Append(" Day ");
-                    else
-                        ss.Append(" Days ");
-                    break;
-                default:
-                    return "<Unknown time format>";
+            case TimeFormat.ShortText:
+                ss.Append("d");
+                break;
+            case TimeFormat.FullText:
+                if (days == 1)
+                    ss.Append(" Day ");
+                else
+                    ss.Append(" Days ");
+                break;
+            default:
+                return "<Unknown time format>";
             }
         }
 
@@ -254,7 +259,7 @@ public static class Time
         return ss.ToString();
     }
 
-    public static uint TimeStringToSecs(string timestring)
+    public static uint TimeStringToSeconds(string timestring)
     {
         int secs = 0;
         int buffer = 0;

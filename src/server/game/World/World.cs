@@ -15,13 +15,17 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using AzerothCore.Constants;
 using AzerothCore.Database;
+using AzerothCore.Logging;
 using AzerothCore.Singleton;
 
 namespace AzerothCore.Game;
 
 public class World : Singleton<World>, IWorld
 {
+    protected static readonly ILogger logger = LoggerFactory.GetLogger();
+
     private string?     _dbVersion;
 
     private Realm       _realm = new();
@@ -30,7 +34,12 @@ public class World : Singleton<World>, IWorld
     private bool[]      _bool_configs       = new bool[(uint)WorldBoolConfigs.BOOL_CONFIG_VALUE_COUNT];
     private float[]     _float_configs      = new float[(uint)WorldFloatConfigs.FLOAT_CONFIG_VALUE_COUNT];
 
-    private World() { }
+    private AccountTypes _allowedSecurityLevel;
+
+    private World()
+    {
+        _allowedSecurityLevel = AccountTypes.SEC_PLAYER;
+    }
 
     public void LoadDBVersion()
     {
@@ -64,6 +73,25 @@ public class World : Singleton<World>, IWorld
 
     public void SetInitialWorldSettings()
     {
-        // TODO: worldserver: SetInitialWorldSettings
+        // TODO: worldserver: World::SetInitialWorldSettings()
+
+        logger.Info(LogFilter.ServerLoading, "Initializing Opcodes...");
+        OpcodeTable.Instance.Initialize();
+    }
+
+    internal bool IsClosed()
+    {
+        // TODO: worldserver: World::IsClosed()
+        return false;
+    }
+
+    internal AccountTypes GetPlayerSecurityLimit()
+    {
+        return _allowedSecurityLevel;
+    }
+
+    internal void AddSession(WorldSession worldSession)
+    {
+        // TODO: worldserver: World::AddSession(WorldSession worldSession)
     }
 }

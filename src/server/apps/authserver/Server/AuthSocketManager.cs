@@ -15,17 +15,14 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System.Net.Sockets;
-using System.Reflection;
-
-using AzerothCore.Logging;
+using AzerothCore.Game.Server;
 
 namespace AzerothCore.Networking;
 
 internal class AuthSocketManager : SocketManager<AuthSession>
 {
     private static volatile AuthSocketManager? _instance;
-    private static readonly object syncRoot = new();
+    private static readonly object _syncRoot = new();
 
     private AuthSocketManager() {  }
 
@@ -35,16 +32,25 @@ internal class AuthSocketManager : SocketManager<AuthSession>
         {
             if (_instance == null)
             {
-                lock (syncRoot)
+                lock (_syncRoot)
                 {
-                    if (_instance == null)
-                    {
-                        _instance = new AuthSocketManager();
-                    }
+                    _instance ??= new AuthSocketManager();
                 }
             }
 
             return _instance;
         }
+    }
+
+    protected override NetworkThread<AuthSession>[] CreateThreads()
+    {
+        NetworkThread<AuthSession>[] threads = new NetworkThread<AuthSession>[GetNetworkThreadCount()];
+
+        for (int i = 0; i < GetNetworkThreadCount(); ++i)
+        {
+            threads[i] = new NetworkThread<AuthSession>();
+        }
+
+        return threads;
     }
 }

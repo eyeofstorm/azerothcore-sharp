@@ -89,16 +89,16 @@ internal enum ExpansionFlags : byte
 
 internal static class AuthHelper
 {
-    public static readonly Int16 MAX_PRE_BC_CLIENT_BUILD = 6141;
+    public static readonly short MAX_PRE_BC_CLIENT_BUILD = 6141;
 
     public static bool IsPreBCAcceptedClientBuild(uint build)
     {
-        return build <= MAX_PRE_BC_CLIENT_BUILD && AuthHelper.IsAcceptedClientBuild(build);
+        return build <= MAX_PRE_BC_CLIENT_BUILD && IsAcceptedClientBuild(build);
     }
 
     public static bool IsPostBCAcceptedClientBuild(uint build)
     {
-        return build > MAX_PRE_BC_CLIENT_BUILD && AuthHelper.IsAcceptedClientBuild(build);
+        return build > MAX_PRE_BC_CLIENT_BUILD && IsAcceptedClientBuild(build);
     }
 
     public static bool IsAcceptedClientBuild(uint build)

@@ -226,7 +226,6 @@ public abstract class SocketBase : ISocket, IDisposable
 
     private bool HandleQueue()
     {
-
         if (!_writeQueue.TryPeek(out MessageBuffer? queuedMessage))
         {
             return false;

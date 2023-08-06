@@ -177,19 +177,29 @@ public class DatabaseLoader
         }
 
         if (_updateFlags != 0 && !DBExecutableUtil.CheckExecutable())
+        { 
             return false;
+        }
 
         if (!OpenDatabases())
+        {
             return false;
+        }
 
         if (!PopulateDatabases())
+        {
             return false;
+        }
 
         if (!UpdateDatabases())
+        {
             return false;
+        }
 
         if (!PrepareStatements())
+        {
             return false;
+        }
 
         return true;
     }

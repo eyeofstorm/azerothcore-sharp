@@ -15,9 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System.Drawing;
 using System.Net;
-using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
 using AzerothCore.Configuration;
@@ -31,21 +29,21 @@ namespace AzerothCore.Game;
 public struct LogHeader
 {
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public byte[] Signature;
+    public byte[]   Signature;
 
-    public UInt16 FormatVersion;
-    public byte SnifferId;
-    public UInt32 Build;
+    public ushort   FormatVersion;
+    public byte     SnifferId;
+    public uint     Build;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-    public byte[] Locale;
+    public byte[]   Locale;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 40)]
-    public byte[] SessionKey;
+    public byte[]   SessionKey;
 
-    public UInt32 SniffStartUnixtime;
-    public UInt32 SniffStartTicks;
-    public UInt32 OptionalDataSize;
+    public uint     SniffStartUnixtime;
+    public uint     SniffStartTicks;
+    public uint     OptionalDataSize;
 
     public LogHeader()
     {
@@ -67,21 +65,23 @@ public struct OptionalData
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct PacketHeader
 {
-    public UInt32       Direction;
-    public UInt32       ConnectionId;
-    public UInt32       ArrivalTicks;
-    public UInt32       OptionalDataSize;
-    public UInt32       Length;
+    public uint         Direction;
+    public uint         ConnectionId;
+    public uint         ArrivalTicks;
+    public uint         OptionalDataSize;
+    public uint         Length;
     public OptionalData OptionalData;
-    public UInt32       Opcode;
+    public uint         Opcode;
 }
 
-public class PacketLog : Singleton<PacketLog>
+public class PacketFileLogger : Singleton<PacketFileLogger>
 {
     private static readonly object _logPacketLock;
     private static FileStream? _file;
 
-    static PacketLog()
+    private PacketFileLogger() { }
+
+    static PacketFileLogger()
     {
         _logPacketLock = new object();
 
@@ -129,26 +129,24 @@ public class PacketLog : Singleton<PacketLog>
 
                     Array.Fill<byte>(header.SessionKey, 0, 0, header.SessionKey.Length);
 
-                    header.SniffStartUnixtime = (uint)Time.UnixTime;
-                    header.SniffStartTicks = Time.GetMSTime();
+                    header.SniffStartUnixtime = (uint)TimeHelper.UnixTime;
+                    header.SniffStartTicks = TimeHelper.GetMSTime();
                     header.OptionalDataSize = 0;
 
-                    using(var writer = new BinaryWriter(_file))
-                    {
-                        writer.Write(header.ToByteArray());
-                        writer.Flush();
-                    }
+                    using var writer = new BinaryWriter(_file);
+                    writer.Write(header.ToByteArray());
+                    writer.Flush();
                 }
             }
         }
     }
 
-    public bool CanLogPacket()
+    public static bool CanLogPacket()
     {
         return _file != null;
     }
 
-    public void LogPacket(WorldPacket packet, Direction direction, IPEndPoint? ip)
+    public static void LogPacket(WorldPacketData packet, PacketDirection direction, IPEndPoint? ip)
     {
         if (_file == null)
         {
@@ -164,16 +162,16 @@ public class PacketLog : Singleton<PacketLog>
         {
             PacketHeader header = MarshalHelper.CreateStructInstance<PacketHeader>();
 
-            header.Direction = (direction == Direction.CLIENT_TO_SERVER) ? (UInt32)0x47534d43 : (UInt32)0x47534d53;
+            header.Direction = (direction == PacketDirection.CLIENT_TO_SERVER) ? (uint)0x47534d43 : (uint)0x47534d53;
             header.ConnectionId = 0;
-            header.ArrivalTicks = Time.GetMSTime();
+            header.ArrivalTicks = TimeHelper.GetMSTime();
             header.OptionalDataSize = (uint)Marshal.SizeOf(typeof(OptionalData));
 
             IPAddress addr = ip.Address;
             Array.Copy(addr.GetAddressBytes(), header.OptionalData.SocketIPBytes, addr.GetAddressBytes().Length);
 
             header.OptionalData.SocketPort = (uint)ip.Port;
-            header.Length = packet.GetSize() + sizeof(UInt32);
+            header.Length = packet.GetSize() + sizeof(uint);
             header.Opcode = packet.Opcode;
 
             using (var writer = new BinaryWriter(_file))

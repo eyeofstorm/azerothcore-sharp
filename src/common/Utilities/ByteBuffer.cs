@@ -47,7 +47,7 @@ public class ByteBuffer : IDisposable
     #region IDisposable implements
     private bool _isDisposed = false;
 
-    void Dispose(bool disposing)
+    private void Dispose(bool disposing)
     {
         if (!_isDisposed)
         {
@@ -68,7 +68,7 @@ public class ByteBuffer : IDisposable
         }
     }
 
-    void IDisposable.Dispose()
+    public void Dispose()
     {
         Dispose(true);
     }
@@ -276,7 +276,7 @@ public class ByteBuffer : IDisposable
 
     public uint ReadPackedTime()
     {
-        return (uint)Time.GetUnixTimeFromPackedTime(ReadUInt32());
+        return (uint)TimeHelper.GetUnixTimeFromPackedTime(ReadUInt32());
     }
 
     public Vector3 ReadVector3()
@@ -512,12 +512,12 @@ public class ByteBuffer : IDisposable
 
     public void WritePackedTime(long time)
     {
-        WriteUInt32(Time.GetPackedTimeFromUnixTime(time));
+        WriteUInt32(TimeHelper.GetPackedTimeFromUnixTime(time));
     }
 
     public void WritePackedTime()
     {
-        WriteUInt32(Time.GetPackedTimeFromDateTime(DateTime.Now));
+        WriteUInt32(TimeHelper.GetPackedTimeFromDateTime(DateTime.Now));
     }
     #endregion
 
@@ -572,6 +572,11 @@ public class ByteBuffer : IDisposable
     public uint GetSize()
     {
         return (uint)GetCurrentStream().Length;
+    }
+
+    public uint GetReadPosition()
+    {
+        return (uint)GetCurrentStream().Position;
     }
 
     public Stream GetCurrentStream()

@@ -15,15 +15,12 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System.Buffers;
-using System.Runtime.InteropServices;
-
 namespace AzerothCore.Cryptography;
 
 public class AuthCrypt
 {
-    private ARC4 _clientDecrypt;
-    private ARC4 _serverEncrypt;
+    private readonly ARC4 _clientDecrypt;
+    private readonly ARC4 _serverEncrypt;
 
     public bool IsInitialized { get; set; } = false;
 

@@ -15,12 +15,17 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using AzerothCore.Constants;
+using AzerothCore.Singleton;
+
 namespace AzerothCore.Game;
 
-public static class Global
+public class AccountMgr : Singleton<AccountMgr>
 {
-    // Main
-    public static World     sWorld      { get { return World.Instance; } }
-    public static RealmList sRealmList  { get { return RealmList.Instance; } }
-    public static PacketFileLogger sPacketLog  { get { return PacketFileLogger.Instance; } }
+    private AccountMgr() { }
+
+    public bool IsPlayerAccount(AccountTypes gmlevel)
+    {
+        return gmlevel == AccountTypes.SEC_PLAYER;
+    }
 }

@@ -26,18 +26,28 @@ public struct RealmHandle : IEquatable<RealmHandle>
         Index = index;
     }
 
-    public override bool Equals(object? obj)
+    public override readonly bool Equals(object? obj)
     {
-        return obj != null && obj is RealmHandle && Equals((RealmHandle)obj);
+        return obj != null && obj is RealmHandle handle && Equals(handle);
     }
 
-    public bool Equals(RealmHandle other)
+    public readonly bool Equals(RealmHandle other)
     {
         return other.Index == Index;
     }
 
-    public override int GetHashCode()
+    public override readonly int GetHashCode()
     {
         return new { Index }.GetHashCode();
+    }
+
+    public static bool operator ==(RealmHandle left, RealmHandle right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(RealmHandle left, RealmHandle right)
+    {
+        return !(left == right);
     }
 }

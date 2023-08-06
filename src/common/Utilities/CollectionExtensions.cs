@@ -15,11 +15,9 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
+
 using AzerothCore.Utilities;
-using Google.Protobuf.Collections;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace System.Collections.Generic;
 
@@ -59,23 +57,22 @@ public static class CollectionExtensions
     /// <returns>The value (if any).</returns>
     public static TValue? LookupByKey<TKey, TValue>(this IDictionary<TKey, TValue> dict, object key)
     {
-        TValue? val;
         TKey newkey = (TKey)Convert.ChangeType(key, typeof(TKey));
 
-        return dict.TryGetValue(newkey, out val) ? val : default;
+        return dict.TryGetValue(newkey, out TValue? val) ? val : default;
     }
 
     public static TValue? LookupByKey<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key)
     {
-        TValue? val;
-
-        return dict.TryGetValue(key, out val) ? val : default;
+        return dict.TryGetValue(key, out TValue? val) ? val : default;
     }
 
     public static KeyValuePair<TKey, TValue> Find<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key)
     {
         if (!dict.ContainsKey(key))
+        {
             return default;
+        }
 
         return new KeyValuePair<TKey, TValue>(key, dict[key]);
     }
@@ -83,6 +80,7 @@ public static class CollectionExtensions
     public static bool ContainsKey<TKey, TValue>(this IDictionary<TKey, TValue> dict, object key)
     {
         TKey newkey = (TKey)Convert.ChangeType(key, typeof(TKey));
+
         return dict.ContainsKey(newkey);
     }
 
@@ -101,9 +99,7 @@ public static class CollectionExtensions
         //
         // Swaps elements in an array. Doesn't need to return a reference.
         //
-        T temp = array[position1]; // Copy the first position's element
-        array[position1] = array[position2]; // Assign to the second element
-        array[position2] = temp; // Assign to the first element
+        (array[position2], array[position1]) = (array[position1], array[position2]);
     }
 
     public static void Resize<T>(this List<T?> list, uint size)
@@ -141,11 +137,15 @@ public static class CollectionExtensions
             var obj = list[i];
 
             if (!predicate(obj))
+            {
                 list.Remove(obj);
+            }
         }
 
         if (size != 0)
+        {
             list.Resize(size);
+        }
     }
 
     public static T SelectRandom<T>(this IEnumerable<T> source)
@@ -161,6 +161,7 @@ public static class CollectionExtensions
     public static T? SelectRandomElementByWeight<T>(this IEnumerable<T> sequence, Func<T, float> weightSelector)
     {
         float totalWeight = sequence.Sum(weightSelector);
+
         // The weight we are after...
         float itemWeightIndex = (float)RandomHelper.NextDouble() * totalWeight;
         float currentWeightIndex = 0;
@@ -171,8 +172,9 @@ public static class CollectionExtensions
 
             // If we've hit or passed the weight we are after for this item then it's the one we want....
             if (currentWeightIndex >= itemWeightIndex)
+            {
                 return item.Value;
-
+            }
         }
 
         return default;
@@ -221,14 +223,9 @@ public static class CollectionExtensions
             Marshal.Copy(target, 0, ptr, size);
             T? s = (T?)Marshal.PtrToStructure(ptr, typeof(T));
 
-            if (s == null)
-            {
-                throw new InvalidCastException($"can not convert from byte array to struct {typeof(T).FullName}");
-            }
-
-            return (T)s;
+            return s == null ? throw new InvalidCastException($"can not convert from byte array to struct {typeof(T).FullName}") : (T)s;
         }
-        
+
         finally
         {
             Marshal.FreeHGlobal(ptr);

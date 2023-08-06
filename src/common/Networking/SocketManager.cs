@@ -21,13 +21,15 @@ using AzerothCore.Logging;
 
 namespace AzerothCore.Networking;
 
-public abstract class SocketManager<TSocketType> where TSocketType : ISocket
+public abstract class SocketManager<SocketType> where SocketType : ISocket
 {
     protected static readonly ILogger logger = LoggerFactory.GetLogger();
 
     protected AsyncAcceptor? _acceptor;
-    protected NetworkThread<TSocketType>[] _threads = Array.Empty<NetworkThread<TSocketType>>();
+    protected NetworkThread<SocketType>[] _threads = Array.Empty<NetworkThread<SocketType>>();
     protected int _threadCount = 0;
+
+    protected abstract NetworkThread<SocketType>[] CreateThreads();
 
     public virtual bool StartNetwork(string bindIp, int port, int threadCount = 1)
     {
@@ -40,11 +42,10 @@ public abstract class SocketManager<TSocketType> where TSocketType : ISocket
         }
 
         _threadCount = threadCount;
-        _threads = new NetworkThread<TSocketType>[GetNetworkThreadCount()];
+        _threads = CreateThreads();
 
         for (int i = 0; i < _threadCount; ++i)
         {
-            _threads[i] = new NetworkThread<TSocketType>();
             _threads[i].Start();
         }
 
@@ -68,11 +69,11 @@ public abstract class SocketManager<TSocketType> where TSocketType : ISocket
         Wait();
 
         _acceptor = null;
-        _threads = Array.Empty<NetworkThread<TSocketType>>(); ;
+        _threads = Array.Empty<NetworkThread<SocketType>>(); ;
         _threadCount = 0;
     }
 
-    void Wait()
+    public void Wait()
     {
         if (_threadCount != 0)
         {
@@ -87,7 +88,7 @@ public abstract class SocketManager<TSocketType> where TSocketType : ISocket
     {
         try
         {
-            TSocketType? newSocket = (TSocketType?)Activator.CreateInstance(typeof(TSocketType), sock);
+            SocketType? newSocket = (SocketType?)Activator.CreateInstance(typeof(SocketType), sock);
 
             if (newSocket != null)
             {
@@ -106,7 +107,7 @@ public abstract class SocketManager<TSocketType> where TSocketType : ISocket
         return _threadCount;
     }
 
-    uint SelectThreadWithMinConnections()
+    public uint SelectThreadWithMinConnections()
     {
         uint min = 0;
 

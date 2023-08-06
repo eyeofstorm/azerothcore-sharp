@@ -19,7 +19,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 using AzerothCore.Collections;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace AzerothCore.Configuration;
 

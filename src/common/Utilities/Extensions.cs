@@ -156,9 +156,7 @@ public static class Extensions
 
     public static void Swap<T>(ref T left, ref T right)
     {
-        T temp = left;
-        left = right;
-        right = temp;
+        (right, left) = (left, right);
     }
 
     public static uint[] SerializeObject<T>(this T obj)
@@ -218,44 +216,40 @@ public static class Extensions
 
     public static float GetAt(this Vector3 vector, long index)
     {
-        switch (index)
+        return index switch
         {
-            case 0:
-                return vector.X;
-            case 1:
-                return vector.Y;
-            case 2:
-                return vector.Z;
-            default:
-                throw new IndexOutOfRangeException();
-        }
+            0 => vector.X,
+            1 => vector.Y,
+            2 => vector.Z,
+            _ => throw new IndexOutOfRangeException(),
+        };
     }
 
     public static void SetAt(this ref Vector3 vector, float value, long index)
     {
         switch (index)
         {
-            case 0:
-                vector.X = value;
-                break;
-            case 1:
-                vector.Y = value;
-                break;
-            case 2:
-                vector.Z = value;
-                break;
-            default:
-                throw new IndexOutOfRangeException();
+        case 0:
+            vector.X = value;
+            break;
+        case 1:
+            vector.Y = value;
+            break;
+        case 2:
+            vector.Z = value;
+            break;
+        default:
+            throw new IndexOutOfRangeException();
         }
     }
 
     public static int primaryAxis(this Vector3 vector)
     {
-        var a = 0;
-
         double nx = Math.Abs(vector.X);
         double ny = Math.Abs(vector.Y);
         double nz = Math.Abs(vector.Z);
+
+        int a;
 
         if (nx > ny)
         {
@@ -407,9 +401,9 @@ public static class Extensions
         return Encoding.UTF8.GetByteCount(str);
     }
 
-    public static bool isExtendedLatinCharacter(char wchar)
+    public static bool IsExtendedLatinCharacter(char wchar)
     {
-        if (isBasicLatinCharacter(wchar))
+        if (IsBasicLatinCharacter(wchar))
             return true;
 
         if (wchar >= 0x00C0 && wchar <= 0x00D6)                  // LATIN CAPITAL LETTER A WITH GRAVE - LATIN CAPITAL LETTER O WITH DIAERESIS
@@ -436,7 +430,7 @@ public static class Extensions
         return false;
     }
 
-    public static bool isBasicLatinCharacter(char wchar)
+    public static bool IsBasicLatinCharacter(char wchar)
     {
         if (wchar >= 'a' && wchar <= 'z')                      // LATIN SMALL LETTER A - LATIN SMALL LETTER Z
             return true;

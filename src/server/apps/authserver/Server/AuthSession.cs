@@ -60,7 +60,7 @@ internal struct AccountInfo
         // aa.gmlevel (, more query-specific fields)
         // FROM account a LEFT JOIN account_access aa ON a.id = aa.id LEFT JOIN account_banned ab ON ab.id = a.id AND ab.active = 1 LEFT JOIN ip_banned ipb ON ipb.ip = ? WHERE a.username = ?
 
-        Id = fields.Read<UInt32>(0);
+        Id = fields.Read<uint>(0);
         Login = fields.Read<string>(1);
         IsLockedToIP = fields.Read<bool>(2);
         LockCountry = fields.Read<string> (3);
@@ -160,11 +160,11 @@ internal struct AUTH_LOGON_PROOF_S
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 20)]
     internal byte[] M2;
 
-    internal UInt32 AccountFlags;
+    internal uint AccountFlags;
 
-    internal UInt32 SurveyId;
+    internal uint SurveyId;
 
-    internal UInt16 LoginFlags;
+    internal ushort LoginFlags;
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -177,7 +177,7 @@ internal struct AUTH_LOGON_PROOF_S_OLD
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 20)]
     internal byte[] M2;
 
-    internal UInt32 unk2;
+    internal uint unk2;
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -204,7 +204,7 @@ internal struct AuthHandler
     public AuthHandler(AuthStatus status, int size, AuthSessionHandler handler)
     {
         this.status = status;
-        this.packetSize = size;
+        packetSize = size;
         this.handler = handler;
     }
 
@@ -732,7 +732,7 @@ internal class AuthSession : SocketBase
         }
         else
         {
-            ByteBuffer packet = new ByteBuffer();
+            ByteBuffer packet = new();
 
             packet.WriteUInt8((byte)AuthCmd.AUTH_LOGON_PROOF);
             packet.WriteUInt8((byte)AuthResult.WOW_FAIL_UNKNOWN_ACCOUNT);
@@ -742,7 +742,7 @@ internal class AuthSession : SocketBase
 
             logger.Info(LogFilter.Server, $"'{ipAddress.Address.ToString()}:{ipAddress.Port}' [AuthChallenge] account {_accountInfo.Login} tried to login with invalid password!");
 
-            UInt32 maxWrongPassCount = ConfigMgr.GetValueOrDefault<UInt32>("WrongPass.MaxCount", 0);
+            uint maxWrongPassCount = ConfigMgr.GetValueOrDefault<UInt32>("WrongPass.MaxCount", 0);
 
             // We can not include the failed account login hook. However, this is a workaround to still log this.
             if (ConfigMgr.GetValueOrDefault<bool>("WrongPass.Logging", false))
@@ -764,7 +764,7 @@ internal class AuthSession : SocketBase
 
                 if (++_accountInfo.FailedLogins >= maxWrongPassCount)
                 {
-                    UInt32 wrongPassBanTime = ConfigMgr.GetValueOrDefault<UInt32>("WrongPass.BanTime", 600);
+                    uint wrongPassBanTime = ConfigMgr.GetValueOrDefault<UInt32>("WrongPass.BanTime", 600);
                     bool wrongPassBanType = ConfigMgr.GetValueOrDefault<bool>("WrongPass.BanType", false);
 
                     if (wrongPassBanType)
@@ -800,7 +800,7 @@ internal class AuthSession : SocketBase
 
         AUTH_LOGON_CHALLENGE_C challenge = GetReadBuffer().CastTo<AUTH_LOGON_CHALLENGE_C>();
 
-        if (challenge.size - (Marshal.SizeOf(typeof(AUTH_LOGON_CHALLENGE_C)) - AUTH_LOGON_CHALLENGE_INITIAL_SIZE - 1) != challenge.I_len)
+        if (challenge.size - (Marshal.SizeOf(typeof(AUTH_LOGON_CHALLENGE_C)) - AUTH_LOGON_CHALLENGE_INITIAL_SIZE - 1 - 16) != challenge.I_len)
         {
             return false;
         }

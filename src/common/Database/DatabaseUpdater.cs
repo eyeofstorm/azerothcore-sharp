@@ -267,13 +267,13 @@ public class DatabaseUpdater<T> where T : notnull
     uint ApplyTimedFile(string path)
     {
         // Benchmark query speed
-        uint oldMSTime = Time.GetMSTime();
+        uint oldMSTime = TimeHelper.GetMSTime();
 
         // Update database
         ApplyFile(path);
 
         // Return time the query took to apply
-        return Time.GetMSTimeDiffToNow(oldMSTime);
+        return TimeHelper.GetMSTimeDiffToNow(oldMSTime);
     }
 
     void ApplyFile(string path)

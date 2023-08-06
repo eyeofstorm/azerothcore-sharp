@@ -22,17 +22,24 @@ public class UniqueLock : IDisposable
     private readonly Mutex _mutex;
     private bool disposedValue;
 
-    public UniqueLock(string? name , bool isDeferLock)
-	{
-        _mutex = new Mutex(isDeferLock, name);
+    public UniqueLock(bool isDeferLock) : this(null, isDeferLock) { }
 
+    public UniqueLock(Mutex? mutex, bool isDeferLock)
+    {
+        if (mutex == null)
+        {
+            _mutex = new Mutex(isDeferLock, null);
+        }
+        else
+        {
+            _mutex = mutex;
+        }
+        
         if (!isDeferLock)
         {
             _mutex.WaitOne(Timeout.Infinite);
         }
-	}
-
-    public UniqueLock(bool isDeferLock) : this(null, isDeferLock) { }
+    }
 
     public bool Lock()
     {

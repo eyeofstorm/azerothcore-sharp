@@ -139,7 +139,8 @@ public abstract class MySqlBase<T> where T : notnull
 
     public bool DirectExecute(string sql, params object[] args)
     {
-        return DirectExecute(new PreparedStatement(string.Format(sql, args)));
+        string finalSql = string.Format(sql, args);
+        return DirectExecute(new PreparedStatement(finalSql));
     }
 
     public bool DirectExecute(PreparedStatement stmt)
@@ -368,9 +369,11 @@ public abstract class MySqlBase<T> where T : notnull
         }
 
         // Invokes a mysql process which doesn't leak credentials to logs
-        Process process = new();
+        Process process = new()
+        {
+            StartInfo = new(DBExecutableUtil.GetMySQLExecutable())
+        };
 
-        process.StartInfo = new(DBExecutableUtil.GetMySQLExecutable());
         process.StartInfo.UseShellExecute = false;
         process.StartInfo.RedirectStandardOutput = true;
         process.StartInfo.RedirectStandardError = true;

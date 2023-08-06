@@ -23,6 +23,7 @@ using AzerothCore.Configuration;
 using AzerothCore.Constants;
 using AzerothCore.Database;
 using AzerothCore.Game;
+using AzerothCore.Game.Server;
 using AzerothCore.Logging;
 
 namespace AzerothCore;
@@ -35,22 +36,30 @@ internal class WorldServer
     {
         // Set Culture
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-        System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+        Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
         AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
+        Console.CancelKeyPress += Console_CancelKeyPress;
 
-        if (!ConfigMgr.LoadAppConfigs(Process.GetCurrentProcess().ProcessName + ".conf"))
+        if (!ConfigMgr.LoadAppConfigs("worldserver.conf"))
         {
-            ExitNow();
+            ExitNow(-1);
         }
 
+        Banner.Show();
+
+        // Initialize the database connection
         if (!StartDB())
         {
-            ExitNow();
+            ExitNow(-1);
         }
 
         // set server offline (not connectable)
-        DB.Login.DirectExecute($"UPDATE realmlist SET flag = (flag & ~{RealmFlags.REALM_FLAG_OFFLINE}) | {RealmFlags.REALM_FLAG_VERSION_MISMATCH} WHERE id = '{Global.sWorld.GetRealm().Id.Index}'");
+        DB.Login.DirectExecute(
+                    "UPDATE realmlist SET flag = (flag & ~{0}) | {1} WHERE id = '{2}'",
+                    (byte)RealmFlags.REALM_FLAG_OFFLINE,
+                    (byte)RealmFlags.REALM_FLAG_VERSION_MISMATCH,
+                    Global.sWorld.GetRealm().Id.Index);
 
         LoadRealmInfo();
 
@@ -59,7 +68,49 @@ internal class WorldServer
 
         // TODO: worldserver: Start the Remote Access port (acceptor) if enabled
 
-        // TODO: worldserver: Launch the worldserver listener socket
+        // worldserver: Launch the worldserver listener socket
+        string bindIp = ConfigMgr.GetValueOrDefault("BindIP", "0.0.0.0");
+        int port = ConfigMgr.GetValueOrDefault("WorldServerPort", 3724);
+        
+        if (port < 0 || port > 0xFFFF)
+        {
+            logger.Error(LogFilter.ServerLoading, "Specified port out of allowed range (1-65535)");
+            ExitNow(-1);
+        }
+
+        int networkThreads = ConfigMgr.GetValueOrDefault("Network.Threads", 1);
+
+        if (networkThreads <= 0)
+        {
+            logger.Error(LogFilter.ServerLoading, "Network.Threads must be greater than 0");
+
+            ExitNow(-1);
+        }
+
+        if (!WorldSocketManager.Instance.StartNetwork(bindIp, port, networkThreads))
+        {
+            logger.Error(LogFilter.ServerLoading, "Failed to start worldserver Network");
+
+            ExitNow(-1);
+        }
+
+        // Set server online (allow connecting now)
+        Realm realm = Global.sWorld.GetRealm();
+        DB.Login.DirectExecute("UPDATE realmlist SET flag = flag & ~{0}, population = 0 WHERE id = '{1}'", (byte)RealmFlags.REALM_FLAG_VERSION_MISMATCH, realm.Id.Index);
+        realm.PopulationLevel = 0.0f;
+        realm.Flags &= ~RealmFlags.REALM_FLAG_VERSION_MISMATCH;
+
+        logger.Info(LogFilter.ServerLoading, "worldserver-daemon ready...");
+
+        WorldUpdateLoop();
+
+        // set server offline
+        DB.Login.DirectExecute("UPDATE realmlist SET flag = flag | {0} WHERE id = '{1}'", (byte)RealmFlags.REALM_FLAG_OFFLINE, realm.Id.Index);
+    }
+
+    private static void WorldUpdateLoop()
+    {
+        // TODO: worldserver: WorldUpdateLoop()
     }
 
     private static bool StartDB()
@@ -96,7 +147,7 @@ internal class WorldServer
 
         Global.sWorld.LoadDBVersion();
 
-        logger.Info(LogFilter.ServerLoading, "Using World DB: {Global.WorldMgr.GetDBVersion()}");
+        logger.Info(LogFilter.ServerLoading, $"Using World DB: {Global.sWorld.GetDBVersion()}");
 
         return true;
     }
@@ -148,7 +199,7 @@ internal class WorldServer
     private static void ClearOnlineAccounts()
     {
         // Reset online status for all accounts with characters on the current realm
-        DB.Login.DirectExecute($"UPDATE account SET online = 0 WHERE online = {Global.sWorld.GetRealm().Id.Index}");
+        DB.Login.DirectExecute("UPDATE account SET online = 0 WHERE online = {0}", Global.sWorld.GetRealm().Id.Index);
 
         // Reset online status for all characters
         DB.Characters.DirectExecute("UPDATE characters SET online = 0 WHERE online <> 0");
@@ -161,11 +212,26 @@ internal class WorldServer
         logger.Fatal(LogFilter.Server, ex);
     }
 
-    private static void ExitNow()
+    private static void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
+    {
+        e.Cancel = true;
+
+        ExitNow();
+    }
+
+    private static void ExitNow(int exitCode = 0)
     {
         Console.WriteLine("Halting process...");
 
-        Environment.Exit(-1);
+        // TODO: WorldServer::ExitNow do some Cleannig stuff.
+        //sWorld->KickAll();              // save and kick all players
+        //sWorld->UpdateSessions(1);      // real players unload required UpdateSessions call
+
+        WorldSocketManager.Instance.StopNetwork();
+
+        // Clean database before leaving
+        ClearOnlineAccounts();
+
+        Environment.Exit(exitCode);
     }
 }
-

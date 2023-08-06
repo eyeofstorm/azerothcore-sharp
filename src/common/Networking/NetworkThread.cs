@@ -29,8 +29,8 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
 
     private Thread? _thread;
 
-    private List<TSocketType> _Sockets = new();
-    private List<TSocketType> _newSockets = new();
+    private readonly List<TSocketType> _sockets = new();
+    private readonly List<TSocketType> _newSockets = new();
 
     public void Stop()
     {
@@ -44,7 +44,11 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
             return false;
         }
 
-        _thread = new Thread(Run);
+        _thread = new Thread(Run)
+        {
+            IsBackground = true
+        };
+
         _thread.Start();
 
         return true;
@@ -63,8 +67,8 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
 
     public virtual void AddSocket(TSocketType sock)
     {
-        Interlocked.Increment(ref _connections);
         _newSockets.Add(sock);
+        Interlocked.Increment(ref _connections);
         SocketAdded(sock);
     }
 
@@ -83,12 +87,11 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
             if (!socket.IsOpen())
             {
                 SocketRemoved(socket);
-
                 Interlocked.Decrement(ref _connections);
             }
             else
             {
-                _Sockets.Add(socket);
+                _sockets.Add(socket);
             }
         }
 
@@ -97,7 +100,7 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
 
     private void Run()
     {
-        logger.Debug(LogFilter.Network, "Network Thread Starting");
+        logger.Debug(LogFilter.Network, $"Network Thread [{Environment.CurrentManagedThreadId}] Starting");
 
         int sleepTime = 1;
 
@@ -108,13 +111,13 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
                 break;
             }
 
-            uint tickStart = Time.GetMSTime();
+            uint tickStart = TimeHelper.GetMSTime();
 
             AddNewSockets();
 
-            for (var i = 0; i < _Sockets.Count; ++i)
+            for (var i = 0; i < _sockets.Count; ++i)
             {
-                TSocketType socket = _Sockets[i];
+                TSocketType socket = _sockets[i];
 
                 if (!socket.Update())
                 {
@@ -125,17 +128,17 @@ public class NetworkThread<TSocketType> where TSocketType : ISocket
 
                     SocketRemoved(socket);
                     Interlocked.Decrement(ref _connections);
-                    _Sockets.Remove(socket);
+                    _sockets.Remove(socket);
                 }
             }
 
-            uint diff = Time.GetMSTimeDiffToNow(tickStart);
+            uint diff = TimeHelper.GetMSTimeDiffToNow(tickStart);
             sleepTime = (int)(diff > 1 ? 0 : 1 - diff);
         }
 
-        logger.Debug(LogFilter.Network, "Network Thread exits");
+        logger.Debug(LogFilter.Network, $"Network Thread [{Environment.CurrentManagedThreadId}] Exits");
 
         _newSockets.Clear();
-        _Sockets.Clear();
+        _sockets.Clear();
     }
 }

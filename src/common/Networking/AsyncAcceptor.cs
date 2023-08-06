@@ -15,7 +15,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
 using System.Net;
 using System.Net.Sockets;
 
@@ -34,9 +33,7 @@ public class AsyncAcceptor
 
     public bool Start(string ip, int port)
     {
-        IPAddress? bindIP;
-
-        if (!IPAddress.TryParse(ip, out bindIP))
+        if (!IPAddress.TryParse(ip, out IPAddress? bindIP))
         {
             logger.Error(LogFilter.Network, $"Server can't be started: Invalid IP-Address: {ip}");
             return false;
@@ -98,10 +95,7 @@ public class AsyncAcceptor
             {
                 T? newSocket = (T?)Activator.CreateInstance(typeof(T), socket);
 
-                if (newSocket != null)
-                {
-                    newSocket.Start();
-                }
+                newSocket?.Start();
 
                 if (!_closed)
                 {

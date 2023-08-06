@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<configuration>
+
+    <appender name="FILE" level="INFO" class="AzerothCore.Logging.RollingFileAppender">
+        <file>logs/worldserver.log</file>
+        <max-file-size>1048576</max-file-size>
+        <max-backup-index>30</max-backup-index>
+        <pattern>%d{yyyy/MM/dd HH:mm:ss.fff} [%level] [%method] - %message %newline</pattern>
+    </appender>
+
+    <appender name="STDOUT" level="DEBUG" class="AzerothCore.Logging.ConsoleAppender">
+        <pattern>%d{yyyy/MM/dd HH:mm:ss.fff} [%level] - %message %newline</pattern>
+    </appender>
+
+    <logger level="DEBUG">
+        <appender-ref ref="FILE" />
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+</configuration>

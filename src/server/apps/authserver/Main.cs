@@ -36,13 +36,14 @@ internal class AuthServer
     {
         // Set Culture
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-        System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+        Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
         AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
+        Console.CancelKeyPress += Console_CancelKeyPress;
 
         if (!ConfigMgr.LoadAppConfigs("authserver.conf"))
         {
-            ExitNow();
+            ExitNow(-1);
         }
 
         Banner.Show();
@@ -50,7 +51,7 @@ internal class AuthServer
         // Initialize the database connection
         if (!StartDB())
         {
-            ExitNow();
+            ExitNow(-1);
         }
 
         // Get the list of realms for the server
@@ -59,7 +60,7 @@ internal class AuthServer
         if (RealmList.Instance == null || RealmList.Instance.GetRealms().Empty())
         {
             logger.Error(LogFilter.ServerLoading, "No valid realms specified.");
-            ExitNow();
+            ExitNow(-1);
         }
 
         // Start the listening port(acceptor) for auth connections
@@ -69,13 +70,13 @@ internal class AuthServer
         if (port < 0 || port > 0xFFFF)
         {
             logger.Error(LogFilter.ServerLoading, "Specified port out of allowed range (1-65535)");
-            ExitNow();
+            ExitNow(-1);
         }
 
         if (!AuthSocketManager.Instance.StartNetwork(bindIp, port))
         {
             logger.Error(LogFilter.ServerLoading, "Failed to start authserver Network");
-            ExitNow();
+            ExitNow(-1);
         }
 
         _banExpiryCheckTimer = new System.Timers.Timer(ConfigMgr.GetValueOrDefault("BanExpiryCheckInterval", 60u));
@@ -112,10 +113,19 @@ internal class AuthServer
         logger.Fatal(LogFilter.Server, ex);
     }
 
-    private static void ExitNow()
+    private static void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
+    {
+        e.Cancel = true;
+
+        ExitNow();
+    }
+
+    private static void ExitNow(int exitCode = 0)
     {
         Console.WriteLine("Halting process...");
 
-        Environment.Exit(-1);
+        AuthSocketManager.Instance.StopNetwork();
+
+        Environment.Exit(exitCode);
     }
 }

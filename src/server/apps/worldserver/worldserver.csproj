@@ -17,4 +17,15 @@
     <ProjectReference Include="..\..\..\common\common.csproj" />
     <ProjectReference Include="..\..\game\game.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="authserver.conf.dist">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Logger.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="worldserver.conf.dist">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

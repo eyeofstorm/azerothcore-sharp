@@ -19,7 +19,7 @@ using System.Runtime.InteropServices;
 
 namespace AzerothCore.Utilities
 {
-    public static class MemoryExtension
+    public static class MessageBufferExtensions
 	{
         public static T CastTo<T>(this MessageBuffer msgBuff) where T : struct
         {
@@ -37,16 +37,17 @@ namespace AzerothCore.Utilities
 
                     if (objSize > 0)
                     {
-                        if (buffer.Length < objSize)
+                        if (buffer.Length > objSize)
                         {
-                            throw new Exception($"Buffer smaller than needed for creation of object of type {objType}");
+                            throw new Exception($"Buffer greater than needed for creation of object of type {objType}");
                         }
 
                         ptrObj = Marshal.AllocHGlobal(objSize);
 
                         if (ptrObj != IntPtr.Zero)
                         {
-                            Marshal.Copy(buffer, 0, ptrObj, objSize);
+                            int copySize = buffer.Length <= objSize ? buffer.Length : objSize;
+                            Marshal.Copy(buffer, 0, ptrObj, copySize);
                             object? obj = Marshal.PtrToStructure(ptrObj, objType);
 
                             return (T)(obj ?? default(T));
