@@ -15,13 +15,10 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Net;
 using System.Net.Sockets;
-using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
-using System.Security.Principal;
 using System.Text;
+
 using AzerothCore.Configuration;
 using AzerothCore.Constants;
 using AzerothCore.Cryptography;
@@ -33,7 +30,6 @@ using AzerothCore.Threading;
 using AzerothCore.Utilities;
 
 using LocklessQueue.Queues;
-using static Google.Protobuf.Reflection.SourceCodeInfo.Types;
 
 namespace AzerothCore.Game;
 
@@ -583,7 +579,7 @@ public partial class WorldSocket : SocketBase
         }
 
         OpcodeTable opcodeTable = OpcodeTable.Instance;
-        WorldPacketHandler? opcodeHandler = opcodeTable[opcode];
+        ClientOpcodeHandler? opcodeHandler = opcodeTable[opcode];
 
         if (opcodeHandler == null)
         {
@@ -728,7 +724,7 @@ public partial class WorldSocket : SocketBase
         //    _ipCountry = location->CountryCode;
         //}
 
-        ///- Re-check ip locking (same check as in auth).
+        // Re-check ip locking (same check as in auth).
         if (account.IsLockedToIP)
         {
             if (account.LastIP != address)

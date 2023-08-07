@@ -15,6 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System.Security.Principal;
 using AzerothCore.Constants;
 using AzerothCore.Database;
 using AzerothCore.Logging;

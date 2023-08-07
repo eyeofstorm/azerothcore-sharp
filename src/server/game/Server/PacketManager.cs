@@ -36,74 +36,54 @@ public enum PacketProcessing
     PROCESS_THREADSAFE                                      //packet is thread-safe - process it in Map::Update()
 }
 
+public delegate void OpcodeHandlerFunction(WorldPacketData recvData);
+
 internal abstract class OpcodeHandler
 {
-    public SessionStatus Status { get; protected set; }
+    internal SessionStatus Status { get; private set; }
 
-    public OpcodeHandler(SessionStatus status)
+    internal OpcodeHandler(SessionStatus status)
     {
         Status = status;
     }
 }
 
-internal class ServerOpcodeHandler : OpcodeHandler
-{
-    public ServerOpcodeHandler(SessionStatus status) : base(status) { }
-}
-
 internal abstract class ClientOpcodeHandler : OpcodeHandler
 {
-    public PacketProcessing ProcessingPlace { get; protected set; }
+    internal PacketProcessing ProcessingPlace { get; private set; }
 
-    public ClientOpcodeHandler(SessionStatus status, PacketProcessing processing) : base(status)
+    internal ClientOpcodeHandler(SessionStatus status, PacketProcessing processing) : base(status)
     {
         ProcessingPlace = processing;
     }
 
-    protected abstract void Call(WorldSession session, WorldPacketData packet);
+    internal abstract void Call(WorldSession session, WorldPacketData packet);
 }
 
 internal sealed class WorldPacketHandler : ClientOpcodeHandler
 {
-    private readonly Action<WorldSession, ClientPacket>? _methodCaller;
-    private readonly Type? _packetType;
+    private readonly OpcodeHandlerFunction _method;
 
-    public WorldPacketHandler(SessionStatus status, PacketProcessing processing) : base(status, processing) {  }
-
-    public WorldPacketHandler(MethodInfo info, SessionStatus status, PacketProcessing processing, Type type) : this(status, processing)
+    internal WorldPacketHandler(SessionStatus status, PacketProcessing processing, OpcodeHandlerFunction method) : base(status, processing)
     {
-        _methodCaller = (Action<WorldSession, ClientPacket>?)GetType()
-                            .GetMethod("CreateDelegate", BindingFlags.Static | BindingFlags.NonPublic)?
-                            .MakeGenericMethod(type)
-                            .Invoke(null, new object[] { info });
-
-        _packetType = type;
+        _method = method;
     }
 
-    protected override void Call(WorldSession session, WorldPacketData packet)
+    internal override void Call(WorldSession session, WorldPacketData packet)
     {
-        if (_packetType == null)
-        {
-            return;
-        }
-
-        using var clientPacket = (ClientPacket?)Activator.CreateInstance(_packetType, packet);
-
-        if (clientPacket != null)
-        {
-            clientPacket.Read();
-            _methodCaller?.Invoke(session, clientPacket);
-        }
+        // call opcode handler function
+        _method.GetMethodInfo().Invoke(session, new object[] { packet });
     }
+}
 
-    public static Action<WorldSession, WorldPacketData> CreateDelegate<P1>(MethodInfo method) where P1 : WorldPacketData
+internal sealed class PacketHandler : ClientOpcodeHandler
+{
+    internal PacketHandler(SessionStatus status) : base(status, PacketProcessing.PROCESS_INPLACE) { }
+
+    internal override void Call(WorldSession session, WorldPacketData packet)
     {
-        // create first delegate. It is not fine because its 
-        // signature contains unknown types T and P1
-        Action<WorldSession, P1> d = (Action<WorldSession, P1>)method.CreateDelegate(typeof(Action<WorldSession, P1>));
-
-        // create another delegate having necessary signature. 
-        // It encapsulates first delegate with a closure
-        return delegate (WorldSession target, WorldPacketData p) { d(target, (P1)p); };
+        // call opcode handler function
+        OpcodeHandlerFunction method = WorldSession.OpcodeHandler.Handle_ServerSide;
+        method.GetMethodInfo()?.Invoke(session, new object[] { packet });
     }
 }
