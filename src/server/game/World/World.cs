@@ -15,7 +15,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System.Security.Principal;
 using AzerothCore.Constants;
 using AzerothCore.Database;
 using AzerothCore.Logging;
@@ -53,7 +52,7 @@ public class World : Singleton<World>, IWorld
             _dbVersion = fields.Read<string> (0);
 
             // will be overwrite by config values if different and non-0
-            _int_configs[(uint)WorldIntConfigs.CONFIG_CLIENTCACHE_VERSION] = fields.Read<UInt32>(1);
+            _int_configs[(uint)WorldIntConfigs.CONFIG_CLIENTCACHE_VERSION] = fields.Read<uint>(1);
         }
 
         if (string.IsNullOrEmpty(_dbVersion))

@@ -15,7 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using AzerothCore.Game.Server;
+using System.Net.Sockets;
 
 namespace AzerothCore.Networking;
 
@@ -42,6 +42,18 @@ internal class AuthSocketManager : SocketManager<AuthSession>
         }
     }
 
+    public override bool StartNetwork(string bindIp, int port, int threadCount = 1)
+    {
+        if (!base.StartNetwork(bindIp, port, threadCount))
+        {
+            return false;
+        }
+
+        _acceptor?.AsyncAcceptWithCallback(OnSocketAccept);
+
+        return true;
+    }
+
     protected override NetworkThread<AuthSession>[] CreateThreads()
     {
         NetworkThread<AuthSession>[] threads = new NetworkThread<AuthSession>[GetNetworkThreadCount()];
@@ -52,5 +64,10 @@ internal class AuthSocketManager : SocketManager<AuthSession>
         }
 
         return threads;
+    }
+
+    private void OnSocketAccept(Socket newSocket)
+    {
+        OnSocketOpen(newSocket);
     }
 }

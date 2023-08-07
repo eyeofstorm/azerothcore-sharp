@@ -49,7 +49,8 @@ public abstract class SocketManager<SocketType> where SocketType : ISocket
             _threads[i].Start();
         }
 
-        _acceptor.AsyncAcceptWithCallback(OnSocketOpen);
+        // TODO: game: SocketManager<SocketType>::StartNetwork(string bindIp, int port, int threadCount = 1) => _acceptor->SetSocketFactory([this]() { return GetSocketForAccept(); });
+        //_acceptor->SetSocketFactory([this]() { return GetSocketForAccept(); });
 
         return true;
     }

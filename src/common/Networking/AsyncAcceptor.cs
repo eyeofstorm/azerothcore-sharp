@@ -80,34 +80,34 @@ public class AsyncAcceptor
         }
     }
 
-    public async void AsyncAccept<T>() where T : ISocket
-    {
-        try
-        {
-            Socket? socket = null;
+    //public async void AsyncAccept<T>() where T : ISocket
+    //{
+    //    try
+    //    {
+    //        Socket? socket = null;
 
-            if (_listener != null)
-            {
-                socket = await _listener.AcceptSocketAsync();
-            }
+    //        if (_listener != null)
+    //        {
+    //            socket = await _listener.AcceptSocketAsync();
+    //        }
 
-            if (socket != null)
-            {
-                T? newSocket = (T?)Activator.CreateInstance(typeof(T), socket);
+    //        if (socket != null)
+    //        {
+    //            T? newSocket = (T?)Activator.CreateInstance(typeof(T), socket);
 
-                newSocket?.Start();
+    //            newSocket?.Start();
 
-                if (!_closed)
-                {
-                    AsyncAccept<T>();
-                }
-            }
-        }
-        catch (ObjectDisposedException ex)
-        {
-            logger.Fatal(LogFilter.Network, ex);
-        }
-    }
+    //            if (!_closed)
+    //            {
+    //                AsyncAccept<T>();
+    //            }
+    //        }
+    //    }
+    //    catch (ObjectDisposedException ex)
+    //    {
+    //        logger.Fatal(LogFilter.Network, ex);
+    //    }
+    //}
 
     public void Close()
     {
