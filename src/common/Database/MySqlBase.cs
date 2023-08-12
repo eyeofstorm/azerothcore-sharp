@@ -121,15 +121,13 @@ public abstract class MySqlBase<T> where T : notnull
 
         try
         {
-            using (var connection = _connectionInfo.GetConnection())
-            {
-                connection.Open();
+            using var connection = _connectionInfo.GetConnection();
+            connection.Open();
 
-                version = DBVersion.Parse(connection.ServerVersion);
-                logger.Info(LogFilter.SqlDriver, $"Connected to DB: {_connectionInfo.Database} Server: {(version.IsMariaDB ? "MariaDB" : "MySQL")} Ver: {connection.ServerVersion}");
+            version = DBVersion.Parse(connection.ServerVersion);
+            logger.Info(LogFilter.SqlDriver, $"Connected to DB: {_connectionInfo.Database} Server: {(version.IsMariaDB ? "MariaDB" : "MySQL")} Ver: {connection.ServerVersion}");
 
-                return MySqlErrorCode.None;
-            }
+            return MySqlErrorCode.None;
         }
         catch (MySqlException ex)
         {
@@ -152,24 +150,20 @@ public abstract class MySqlBase<T> where T : notnull
                 throw new NullReferenceException(nameof(_connectionInfo));
             }
 
-            using (var Connection = _connectionInfo.GetConnection())
+            using var Connection = _connectionInfo.GetConnection();
+            Connection.Open();
+
+            using MySqlCommand cmd = Connection.CreateCommand();
+            cmd.CommandText = stmt.CommandText;
+
+            foreach (var parameter in stmt.Parameters)
             {
-                Connection.Open();
-
-                using (MySqlCommand cmd = Connection.CreateCommand())
-                {
-                    cmd.CommandText = stmt.CommandText;
-
-                    foreach (var parameter in stmt.Parameters)
-                    {
-                        cmd.Parameters.AddWithValue("@" + parameter.Key, parameter.Value);
-                    }
-
-                    cmd.ExecuteNonQuery();
-
-                    return true;
-                }
+                cmd.Parameters.AddWithValue("@" + parameter.Key, parameter.Value);
             }
+
+            cmd.ExecuteNonQuery();
+
+            return true;
         }
         catch (MySqlException ex)
         {
@@ -193,9 +187,13 @@ public abstract class MySqlBase<T> where T : notnull
     public void ExecuteOrAppend(SQLTransaction trans, PreparedStatement stmt)
     {
         if (trans == null)
+        {
             Execute(stmt);
+        }
         else
+        {
             trans.Append(stmt);
+        }
     }
 
     public SQLResult Query(string sql, params object[] args)

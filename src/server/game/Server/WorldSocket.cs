@@ -357,7 +357,7 @@ public partial class WorldSocket : SocketBase
         SendPacket(packet);
     }
 
-    private void SendPacket(WorldPacketData packet)
+    public void SendPacket(WorldPacketData packet)
     {
         if (!IsOpen())
         {

@@ -17,9 +17,11 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="MySqlConnector" Version="2.2.5" />
-    <PackageReference Include="Google.Protobuf" Version="3.22.3" />
+    <PackageReference Include="MySqlConnector" Version="2.2.7" />
+    <PackageReference Include="Google.Protobuf" Version="3.24.0" />
     <PackageReference Include="Lockless-Queue" Version="1.1.1" />
+    <PackageReference Include="DequeNET" Version="1.0.2" />
+    <PackageReference Include="Zlib.Bindings" Version="1.11.0" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Logging\" />

@@ -15,6 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
@@ -25,6 +26,7 @@ using AzerothCore.Database;
 using AzerothCore.Game;
 using AzerothCore.Game.Server;
 using AzerothCore.Logging;
+using AzerothCore.Utilities;
 
 namespace AzerothCore;
 
@@ -43,7 +45,7 @@ internal class WorldServer
 
         if (!ConfigMgr.LoadAppConfigs("worldserver.conf"))
         {
-            ExitNow(-1);
+            ExitNow(1);
         }
 
         Banner.Show();
@@ -51,7 +53,7 @@ internal class WorldServer
         // Initialize the database connection
         if (!StartDB())
         {
-            ExitNow(-1);
+            ExitNow(1);
         }
 
         // set server offline (not connectable)
@@ -75,7 +77,7 @@ internal class WorldServer
         if (port < 0 || port > 0xFFFF)
         {
             logger.Error(LogFilter.ServerLoading, "Specified port out of allowed range (1-65535)");
-            ExitNow(-1);
+            ExitNow(1);
         }
 
         int networkThreads = ConfigMgr.GetValueOrDefault("Network.Threads", 1);
@@ -84,7 +86,7 @@ internal class WorldServer
         {
             logger.Error(LogFilter.ServerLoading, "Network.Threads must be greater than 0");
 
-            ExitNow(-1);
+            ExitNow(1);
         }
 
         if (!WorldSocketManager.Instance.StartNetwork(bindIp, port, networkThreads))
@@ -111,6 +113,43 @@ internal class WorldServer
     private static void WorldUpdateLoop()
     {
         // TODO: worldserver: WorldUpdateLoop()
+        uint minUpdateDiff = ConfigMgr.GetValueOrDefault<uint>("MinWorldUpdateTime", 1);
+        uint realPrevTime = TimeHelper.GetMSTime();
+
+        uint maxCoreStuckTime = ConfigMgr.GetValueOrDefault<uint>("MaxCoreStuckTime", 60) * 1000;
+        uint halfMaxCoreStuckTime = maxCoreStuckTime / 2;
+
+        if (halfMaxCoreStuckTime == 0)
+        {
+            halfMaxCoreStuckTime = uint.MaxValue;
+        }
+
+        // While we have not World::m_stopEvent, update the world
+        while (!Global.sWorld.IsStopped())
+        {
+            uint realCurrTime = TimeHelper.GetMSTime();
+
+            uint diff = TimeHelper.GetMSTimeDiff(realPrevTime, realCurrTime);
+
+            if (diff < minUpdateDiff)
+            {
+                uint sleepTime = minUpdateDiff - diff;
+
+                if (sleepTime >= halfMaxCoreStuckTime)
+                {
+                    logger.Error(LogFilter.Server, $"WorldUpdateLoop() waiting for {sleepTime} ms with MaxCoreStuckTime set to {maxCoreStuckTime} ms");
+                }
+
+                // sleep until enough time passes that we can update all timers
+                Thread.Sleep((int)sleepTime);
+
+                continue;
+            }
+
+            Global.sWorld.Update(diff);
+
+            realPrevTime = realCurrTime;
+        }
     }
 
     private static bool StartDB()

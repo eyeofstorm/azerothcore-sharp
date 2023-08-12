@@ -17,7 +17,7 @@
 
 namespace AzerothCore.Game;
 
-/// List of Opcodes
+// List of Opcodes
 public enum Opcodes : ushort
 {
     CMSG_BOOTME = 0x001,

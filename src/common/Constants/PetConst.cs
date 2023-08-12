@@ -15,13 +15,19 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace AzerothCore.Game;
+namespace AzerothCore.Constants;
 
-public static class Global
+// stored in character_pet.slot
+public enum PetSaveMode : sbyte
 {
-    // Main
-    public static World             sWorld      { get { return World.Instance;              } }
-    public static RealmList         sRealmList  { get { return RealmList.Instance;          } }
-    public static PacketFileLogger  sPacketLog  { get { return PacketFileLogger.Instance;   } }
-    public static ObjectMgr         sObjectMgr  { get { return ObjectMgr.Instance;          } }
+    PET_SAVE_AS_DELETED = -1,                                       // not saved in fact
+    PET_SAVE_AS_CURRENT = 0,                                        // in current slot (with player)
+    PET_SAVE_FIRST_STABLE_SLOT = 1,
+    PET_SAVE_LAST_STABLE_SLOT = PetConst.MAX_PET_STABLES,           // last in DB stable slot index (including), all higher have same meaning as PET_SAVE_NOT_IN_SLOT
+    PET_SAVE_NOT_IN_SLOT = 100                                      // for avoid conflict with stable size grow will use 100
+}
+
+public static class PetConst
+{
+    public const sbyte MAX_PET_STABLES = 4;
 }

@@ -15,6 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System.IO;
 using System.Numerics;
 using System.Text;
 
@@ -398,6 +399,7 @@ public class ByteBuffer : IDisposable
     public void WriteDouble(double data)
     {
         FlushBits();
+
         _writeStream?.Write(data);
     }
 
@@ -445,6 +447,36 @@ public class ByteBuffer : IDisposable
     public void WriteBytes(ByteBuffer buffer)
     {
         WriteBytes(buffer.GetData());
+    }
+
+    public void PutBytes(long pos, byte[] data, uint count)
+    {
+        FlushBits();
+
+        if (_writeStream != null)
+        {
+            Stream stream =_writeStream.BaseStream;
+            long curPos = stream.Position;
+
+            stream.Seek(pos, SeekOrigin.Begin);
+            stream.Write(data, 0, (int)count);
+            stream.Seek(curPos, SeekOrigin.Begin);
+        }
+    }
+
+    public void PutByte(long pos, byte value)
+    {
+        FlushBits();
+
+        if (_writeStream != null)
+        {
+            Stream stream = _writeStream.BaseStream;
+            long curPos = stream.Position;
+
+            stream.Seek(pos, SeekOrigin.Begin);
+            stream.WriteByte(value);
+            stream.Seek(curPos, SeekOrigin.Begin);
+        }
     }
 
     public void WriteSrpInteger(SrpInteger srpInteger)

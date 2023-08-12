@@ -15,412 +15,117 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System.Collections.Concurrent;
+using System.IO.Compression;
+
 using AzerothCore.Constants;
+using AzerothCore.Database;
+using AzerothCore.Game.Server;
 using AzerothCore.Logging;
+using AzerothCore.Threading;
 using AzerothCore.Utilities;
 
 namespace AzerothCore.Game;
 
-public interface IOpcodeHandler
+// class to deal with packet processing
+// allows to determine if next packet is safe to be processed
+public class PacketFilter : IChecker<WorldPacketData>
 {
-    void HandleAcceptGrantLevel(WorldPacketData recvData);
-    void HandleAcceptTradeOpcode(WorldPacketData recvData);
-    void HandleActivateTaxiExpressOpcode(WorldPacketData recvData);
-    void HandleActivateTaxiOpcode(WorldPacketData recvData);
-    void HandleAddFriendOpcode(WorldPacketData recvData);
-    void HandleAddIgnoreOpcode(WorldPacketData recvData);
-    void HandleAlterAppearance(WorldPacketData recvData);
-    void HandleAreaSpiritHealerQueryOpcode(WorldPacketData recvData);
-    void HandleAreaSpiritHealerQueueOpcode(WorldPacketData recvData);
-    void HandleAreaTriggerOpcode(WorldPacketData recvData);
-    void HandleArenaTeamAcceptOpcode(WorldPacketData recvData);
-    void HandleArenaTeamDeclineOpcode(WorldPacketData recvData);
-    void HandleArenaTeamDisbandOpcode(WorldPacketData recvData);
-    void HandleArenaTeamInviteOpcode(WorldPacketData recvData);
-    void HandleArenaTeamLeaderOpcode(WorldPacketData recvData);
-    void HandleArenaTeamLeaveOpcode(WorldPacketData recvData);
-    void HandleArenaTeamQueryOpcode(WorldPacketData recvData);
-    void HandleArenaTeamRemoveOpcode(WorldPacketData recvData);
-    void HandleArenaTeamRosterOpcode(WorldPacketData recvData);
-    void HandleAttackStopOpcode(WorldPacketData recvData);
-    void HandleAttackSwingOpcode(WorldPacketData recvData);
-    void HandleAuctionHelloOpcode(WorldPacketData recvData);
-    void HandleAuctionListBidderItems(WorldPacketData recvData);
-    void HandleAuctionListItems(WorldPacketData recvData);
-    void HandleAuctionListOwnerItems(WorldPacketData recvData);
-    void HandleAuctionListPendingSales(WorldPacketData recvData);
-    void HandleAuctionPlaceBid(WorldPacketData recvData);
-    void HandleAuctionRemoveItem(WorldPacketData recvData);
-    void HandleAuctionSellItem(WorldPacketData recvData);
-    void HandleAutoBankItemOpcode(WorldPacketData recvData);
-    void HandleAutoEquipItemOpcode(WorldPacketData recvData);
-    void HandleAutoEquipItemSlotOpcode(WorldPacketData recvData);
-    void HandleAutoStoreBagItemOpcode(WorldPacketData recvData);
-    void HandleAutoStoreBankItemOpcode(WorldPacketData recvData);
-    void HandleAutostoreLootItemOpcode(WorldPacketData recvData);
-    void HandleBankerActivateOpcode(WorldPacketData recvData);
-    void HandleBattlefieldLeaveOpcode(WorldPacketData recvData);
-    void HandleBattlefieldListOpcode(WorldPacketData recvData);
-    void HandleBattleFieldPortOpcode(WorldPacketData recvData);
-    void HandleBattlefieldStatusOpcode(WorldPacketData recvData);
-    void HandleBattlegroundPlayerPositionsOpcode(WorldPacketData recvData);
-    void HandleBattlemasterHelloOpcode(WorldPacketData recvData);
-    void HandleBattlemasterJoinArena(WorldPacketData recvData);
-    void HandleBattlemasterJoinOpcode(WorldPacketData recvData);
-    void HandleBeginTradeOpcode(WorldPacketData recvData);
-    void HandleBfEntryInviteResponse(WorldPacketData recvData);
-    void HandleBfExitRequest(WorldPacketData recvData);
-    void HandleBfQueueInviteResponse(WorldPacketData recvData);
-    void HandleBinderActivateOpcode(WorldPacketData recvData);
-    void HandleBugOpcode(WorldPacketData recvData);
-    void HandleBusyTradeOpcode(WorldPacketData recvData);
-    void HandleBuybackItem(WorldPacketData recvData);
-    void HandleBuyBankSlotOpcode(WorldPacketData recvData);
-    void HandleBuyItemInSlotOpcode(WorldPacketData recvData);
-    void HandleBuyItemOpcode(WorldPacketData recvData);
-    void HandleBuyStableSlot(WorldPacketData recvData);
-    void HandleCalendarAddEvent(WorldPacketData recvData);
-    void HandleCalendarArenaTeam(WorldPacketData recvData);
-    void HandleCalendarComplain(WorldPacketData recvData);
-    void HandleCalendarCopyEvent(WorldPacketData recvData);
-    void HandleCalendarEventInvite(WorldPacketData recvData);
-    void HandleCalendarEventModeratorStatus(WorldPacketData recvData);
-    void HandleCalendarEventRemoveInvite(WorldPacketData recvData);
-    void HandleCalendarEventRsvp(WorldPacketData recvData);
-    void HandleCalendarEventSignup(WorldPacketData recvData);
-    void HandleCalendarEventStatus(WorldPacketData recvData);
-    void HandleCalendarGetCalendar(WorldPacketData recvData);
-    void HandleCalendarGetEvent(WorldPacketData recvData);
-    void HandleCalendarGetNumPending(WorldPacketData recvData);
-    void HandleCalendarGuildFilter(WorldPacketData recvData);
-    void HandleCalendarRemoveEvent(WorldPacketData recvData);
-    void HandleCalendarUpdateEvent(WorldPacketData recvData);
-    void HandleCancelAuraOpcode(WorldPacketData recvData);
-    void HandleCancelAutoRepeatSpellOpcode(WorldPacketData recvData);
-    void HandleCancelCastOpcode(WorldPacketData recvData);
-    void HandleCancelChanneling(WorldPacketData recvData);
-    void HandleCancelGrowthAuraOpcode(WorldPacketData recvData);
-    void HandleCancelMountAuraOpcode(WorldPacketData recvData);
-    void HandleCancelTempEnchantmentOpcode(WorldPacketData recvData);
-    void HandleCancelTradeOpcode(WorldPacketData recvData);
-    void HandleCastSpellOpcode(WorldPacketData recvData);
-    void HandleChangeSeatsOnControlledVehicle(WorldPacketData recvData);
-    void HandleChannelAnnouncements(WorldPacketData recvData);
-    void HandleChannelBan(WorldPacketData recvData);
-    void HandleChannelDeclineInvite(WorldPacketData recvData);
-    void HandleChannelDisplayListQuery(WorldPacketData recvData);
-    void HandleChannelInvite(WorldPacketData recvData);
-    void HandleChannelKick(WorldPacketData recvData);
-    void HandleChannelList(WorldPacketData recvData);
-    void HandleChannelModerateOpcode(WorldPacketData recvData);
-    void HandleChannelModerator(WorldPacketData recvData);
-    void HandleChannelMute(WorldPacketData recvData);
-    void HandleChannelOwner(WorldPacketData recvData);
-    void HandleChannelPassword(WorldPacketData recvData);
-    void HandleChannelSetOwner(WorldPacketData recvData);
-    void HandleChannelUnban(WorldPacketData recvData);
-    void HandleChannelUnmoderator(WorldPacketData recvData);
-    void HandleChannelUnmute(WorldPacketData recvData);
-    void HandleChannelVoiceOnOpcode(WorldPacketData recvData);
-    void HandleCharCreateOpcode(WorldPacketData recvData);
-    void HandleCharCustomize(WorldPacketData recvData);
-    void HandleCharDeleteOpcode(WorldPacketData recvData);
-    void HandleCharEnumOpcode(WorldPacketData recvData);
-    void HandleCharFactionOrRaceChange(WorldPacketData recvData);
-    void HandleCharRenameOpcode(WorldPacketData recvData);
-    void HandleChatIgnoredOpcode(WorldPacketData recvData);
-    void HandleClearChannelWatch(WorldPacketData recvData);
-    void HandleClearTradeItemOpcode(WorldPacketData recvData);
-    void HandleComplainOpcode(WorldPacketData recvData);
-    void HandleCompleteCinematic(WorldPacketData recvData);
-    void HandleContactListOpcode(WorldPacketData recvData);
-    void HandleCorpseMapPositionQuery(WorldPacketData recvData);
-    void HandleCorpseQueryOpcode(WorldPacketData recvData);
-    void HandleCreatureQueryOpcode(WorldPacketData recvData);
-    void HandleDelFriendOpcode(WorldPacketData recvData);
-    void HandleDelIgnoreOpcode(WorldPacketData recvData);
-    void HandleDestroyItemOpcode(WorldPacketData recvData);
-    void HandleDismissControlledVehicle(WorldPacketData recvData);
-    void HandleDismissCritter(WorldPacketData recvData);
-    void HandleDuelAcceptedOpcode(WorldPacketData recvData);
-    void HandleDuelCancelledOpcode(WorldPacketData recvData);
-    void HandleEjectPassenger(WorldPacketData recvData);
-    void HandleEmoteOpcode(WorldPacketData recvData);
-    void HandleEnterPlayerVehicle(WorldPacketData recvData);
-    void HandleEquipmentSetDelete(WorldPacketData recvData);
-    void HandleEquipmentSetSave(WorldPacketData recvData);
-    void HandleEquipmentSetUse(WorldPacketData recvData);
-    void HandleFarSightOpcode(WorldPacketData recvData);
-    void HandleFeatherFallAck(WorldPacketData recvData);
-    void HandleForceSpeedChangeAck(WorldPacketData recvData);
-    void HandleGameObjectQueryOpcode(WorldPacketData recvData);
-    void HandleGameobjectReportUse(WorldPacketData recvData);
-    void HandleGameObjectUseOpcode(WorldPacketData recvData);
-    void HandleGetChannelMemberCount(WorldPacketData recvData);
-    void HandleGetMailList(WorldPacketData recvData);
-    void HandleGMResponseResolve(WorldPacketData recvData);
-    void HandleGMSurveySubmit(WorldPacketData recvData);
-    void HandleGMTicketCreateOpcode(WorldPacketData recvData);
-    void HandleGMTicketDeleteOpcode(WorldPacketData recvData);
-    void HandleGMTicketGetTicketOpcode(WorldPacketData recvData);
-    void HandleGMTicketSystemStatusOpcode(WorldPacketData recvData);
-    void HandleGMTicketUpdateOpcode(WorldPacketData recvData);
-    void HandleGossipHelloOpcode(WorldPacketData recvData);
-    void HandleGossipSelectOptionOpcode(WorldPacketData recvData);
-    void HandleGrantLevel(WorldPacketData recvData);
-    void HandleGroupAcceptOpcode(WorldPacketData recvData);
-    void HandleGroupAssistantLeaderOpcode(WorldPacketData recvData);
-    void HandleGroupChangeSubGroupOpcode(WorldPacketData recvData);
-    void HandleGroupDeclineOpcode(WorldPacketData recvData);
-    void HandleGroupDisbandOpcode(WorldPacketData recvData);
-    void HandleGroupInviteOpcode(WorldPacketData recvData);
-    void HandleGroupRaidConvertOpcode(WorldPacketData recvData);
-    void HandleGroupSetLeaderOpcode(WorldPacketData recvData);
-    void HandleGroupSwapSubGroupOpcode(WorldPacketData recvData);
-    void HandleGroupUninviteGuidOpcode(WorldPacketData recvData);
-    void HandleGroupUninviteOpcode(WorldPacketData recvData);
-    void HandleGuildAcceptOpcode(WorldPacketData recvData);
-    void HandleGuildAddRankOpcode(WorldPacketData recvData);
-    void HandleGuildBankBuyTab(WorldPacketData recvData);
-    void HandleGuildBankDepositMoney(WorldPacketData recvData);
-    void HandleGuildBankerActivate(WorldPacketData recvData);
-    void HandleGuildBankLogQuery(WorldPacketData recvData);
-    void HandleGuildBankMoneyWithdrawn(WorldPacketData recvData);
-    void HandleGuildBankQueryTab(WorldPacketData recvData);
-    void HandleGuildBankSwapItems(WorldPacketData recvData);
-    void HandleGuildBankUpdateTab(WorldPacketData recvData);
-    void HandleGuildBankWithdrawMoney(WorldPacketData recvData);
-    void HandleGuildChangeInfoTextOpcode(WorldPacketData recvData);
-    void HandleGuildCreateOpcode(WorldPacketData recvData);
-    void HandleGuildDeclineOpcode(WorldPacketData recvData);
-    void HandleGuildDelRankOpcode(WorldPacketData recvData);
-    void HandleGuildDemoteOpcode(WorldPacketData recvData);
-    void HandleGuildDisbandOpcode(WorldPacketData recvData);
-    void HandleGuildEventLogQueryOpcode(WorldPacketData recvData);
-    void HandleGuildInfoOpcode(WorldPacketData recvData);
-    void HandleGuildInviteOpcode(WorldPacketData recvData);
-    void HandleGuildLeaderOpcode(WorldPacketData recvData);
-    void HandleGuildLeaveOpcode(WorldPacketData recvData);
-    void HandleGuildMOTDOpcode(WorldPacketData recvData);
-    void HandleGuildPermissions(WorldPacketData recvData);
-    void HandleGuildPromoteOpcode(WorldPacketData recvData);
-    void HandleGuildQueryOpcode(WorldPacketData recvData);
-    void HandleGuildRankOpcode(WorldPacketData recvData);
-    void HandleGuildRemoveOpcode(WorldPacketData recvData);
-    void HandleGuildRosterOpcode(WorldPacketData recvData);
-    void HandleGuildSetOfficerNoteOpcode(WorldPacketData recvData);
-    void HandleGuildSetPublicNoteOpcode(WorldPacketData recvData);
-    void HandleHearthAndResurrect(WorldPacketData recvData);
-    void HandleIgnoreTradeOpcode(WorldPacketData recvData);
-    void HandleInitiateTradeOpcode(WorldPacketData recvData);
-    void HandleInspectArenaTeamsOpcode(WorldPacketData recvData);
-    void HandleInspectHonorStatsOpcode(WorldPacketData recvData);
-    void HandleInspectOpcode(WorldPacketData recvData);
-    void HandleInstanceLockResponse(WorldPacketData recvData);
-    void HandleItemNameQueryOpcode(WorldPacketData recvData);
-    void HandleItemQuerySingleOpcode(WorldPacketData recvData);
-    void HandleItemRefund(WorldPacketData recvData);
-    void HandleItemRefundInfoRequest(WorldPacketData recvData);
-    void HandleItemTextQuery(WorldPacketData recvData);
-    void HandleJoinChannel(WorldPacketData recvData);
-    void HandleLearnPreviewTalents(WorldPacketData recvData);
-    void HandleLearnPreviewTalentsPet(WorldPacketData recvData);
-    void HandleLearnTalentOpcode(WorldPacketData recvData);
-    void HandleLeaveChannel(WorldPacketData recvData);
-    void HandleLfgGetStatus(WorldPacketData recvData);
-    void HandleLfgJoinOpcode(WorldPacketData recvData);
-    void HandleLfgLeaveOpcode(WorldPacketData recvData);
-    void HandleLfgPartyLockInfoRequestOpcode(WorldPacketData recvData);
-    void HandleLfgPlayerLockInfoRequestOpcode(WorldPacketData recvData);
-    void HandleLfgProposalResultOpcode(WorldPacketData recvData);
-    void HandleLfgSetBootVoteOpcode(WorldPacketData recvData);
-    void HandleLfgSetCommentOpcode(WorldPacketData recvData);
-    void HandleLfgSetRolesOpcode(WorldPacketData recvData);
-    void HandleLfgTeleportOpcode(WorldPacketData recvData);
-    void HandleLfrSearchJoinOpcode(WorldPacketData recvData);
-    void HandleLfrSearchLeaveOpcode(WorldPacketData recvData);
-    void HandleListInventoryOpcode(WorldPacketData recvData);
-    void HandleListStabledPetsOpcode(WorldPacketData recvData);
-    void HandleLogoutCancelOpcode(WorldPacketData recvData);
-    void HandleLogoutRequestOpcode(WorldPacketData recvData);
-    void HandleLootMasterGiveOpcode(WorldPacketData recvData);
-    void HandleLootMethodOpcode(WorldPacketData recvData);
-    void HandleLootMoneyOpcode(WorldPacketData recvData);
-    void HandleLootOpcode(WorldPacketData recvData);
-    void HandleLootReleaseOpcode(WorldPacketData recvData);
-    void HandleLootRoll(WorldPacketData recvData);
-    void HandleMailCreateTextItem(WorldPacketData recvData);
-    void HandleMailDelete(WorldPacketData recvData);
-    void HandleMailMarkAsRead(WorldPacketData recvData);
-    void HandleMailReturnToSender(WorldPacketData recvData);
-    void HandleMailTakeItem(WorldPacketData recvData);
-    void HandleMailTakeMoney(WorldPacketData recvData);
-    void HandleMessagechatOpcode(WorldPacketData recvData);
-    void HandleMinimapPingOpcode(WorldPacketData recvData);
-    void HandleMirrorImageDataRequest(WorldPacketData recvData);
-    void HandleMountSpecialAnimOpcode(WorldPacketData recvData);
-    void HandleMoveHoverAck(WorldPacketData recvData);
-    void HandleMoveKnockBackAck(WorldPacketData recvData);
-    void HandleMovementOpcodes(WorldPacketData recvData);
-    void HandleMoveNotActiveMover(WorldPacketData recvData);
-    void HandleMoveRootAck(WorldPacketData recvData);
-    void HandleMoveSetCanFlyAckOpcode(WorldPacketData recvData);
-    void HandleMoveSplineDoneOpcode(WorldPacketData recvData);
-    void HandleMoveTeleportAck(WorldPacketData recvData);
-    void HandleMoveTimeSkippedOpcode(WorldPacketData recvData);
-    void HandleMoveUnRootAck(WorldPacketData recvData);
-    void HandleMoveWaterWalkAck(WorldPacketData recvData);
-    void HandleMoveWorldportAckOpcode(WorldPacketData recvData);
-    void HandleNameQueryOpcode(WorldPacketData recvData);
-    void HandleNextCinematicCamera(WorldPacketData recvData);
-    void HandleNpcTextQueryOpcode(WorldPacketData recvData);
-    void HandleOfferPetitionOpcode(WorldPacketData recvData);
-    void HandleOpenItemOpcode(WorldPacketData recvData);
-    void HandleOptOutOfLootOpcode(WorldPacketData recvData);
-    void HandlePageTextQueryOpcode(WorldPacketData recvData);
-    void HandlePartyAssignmentOpcode(WorldPacketData recvData);
-    void HandlePetAbandon(WorldPacketData recvData);
-    void HandlePetAction(WorldPacketData recvData);
-    void HandlePetCancelAuraOpcode(WorldPacketData recvData);
-    void HandlePetCastSpellOpcode(WorldPacketData recvData);
-    void HandlePetitionBuyOpcode(WorldPacketData recvData);
-    void HandlePetitionDeclineOpcode(WorldPacketData recvData);
-    void HandlePetitionQueryOpcode(WorldPacketData recvData);
-    void HandlePetitionRenameOpcode(WorldPacketData recvData);
-    void HandlePetitionShowListOpcode(WorldPacketData recvData);
-    void HandlePetitionShowSignOpcode(WorldPacketData recvData);
-    void HandlePetitionSignOpcode(WorldPacketData recvData);
-    void HandlePetLearnTalent(WorldPacketData recvData);
-    void HandlePetNameQuery(WorldPacketData recvData);
-    void HandlePetRename(WorldPacketData recvData);
-    void HandlePetSetAction(WorldPacketData recvData);
-    void HandlePetSpellAutocastOpcode(WorldPacketData recvData);
-    void HandlePetStopAttack(WorldPacketData recvData);
-    void HandlePlayedTime(WorldPacketData recvData);
-    void HandlePlayerLoginOpcode(WorldPacketData recvData);
-    void HandlePlayerLogoutOpcode(WorldPacketData recvData);
-    void HandlePushQuestToParty(WorldPacketData recvData);
-    void HandlePVPLogDataOpcode(WorldPacketData recvData);
-    void HandleQueryGuildBankTabText(WorldPacketData recvData);
-    void HandleQueryInspectAchievements(WorldPacketData recvData);
-    void HandleQueryNextMailTime(WorldPacketData recvData);
-    void HandleQueryQuestsCompleted(WorldPacketData recvData);
-    void HandleQueryTimeOpcode(WorldPacketData recvData);
-    void HandleQuestConfirmAccept(WorldPacketData recvData);
-    void HandleQuestgiverAcceptQuestOpcode(WorldPacketData recvData);
-    void HandleQuestgiverCancel(WorldPacketData recvData);
-    void HandleQuestgiverChooseRewardOpcode(WorldPacketData recvData);
-    void HandleQuestgiverCompleteQuest(WorldPacketData recvData);
-    void HandleQuestgiverHelloOpcode(WorldPacketData recvData);
-    void HandleQuestgiverQueryQuestOpcode(WorldPacketData recvData);
-    void HandleQuestgiverQuestAutoLaunch(WorldPacketData recvData);
-    void HandleQuestgiverRequestRewardOpcode(WorldPacketData recvData);
-    void HandleQuestgiverStatusMultipleQuery(WorldPacketData recvData);
-    void HandleQuestgiverStatusQueryOpcode(WorldPacketData recvData);
-    void HandleQuestLogRemoveQuest(WorldPacketData recvData);
-    void HandleQuestLogSwapQuest(WorldPacketData recvData);
-    void HandleQuestPOIQuery(WorldPacketData recvData);
-    void HandleQuestPushResult(WorldPacketData recvData);
-    void HandleQuestQueryOpcode(WorldPacketData recvData);
-    void HandleRaidReadyCheckFinishedOpcode(WorldPacketData recvData);
-    void HandleRaidReadyCheckOpcode(WorldPacketData recvData);
-    void HandleRaidTargetUpdateOpcode(WorldPacketData recvData);
-    void HandleRandomRollOpcode(WorldPacketData recvData);
-    void HandleReadItem(WorldPacketData recvData);
-    void HandleReadyForAccountDataTimes(WorldPacketData recvData);
-    void HandleRealmSplitOpcode(WorldPacketData recvData);
-    void HandleReclaimCorpseOpcode(WorldPacketData recvData);
-    void HandleRemoveGlyph(WorldPacketData recvData);
-    void HandleRepairItemOpcode(WorldPacketData recvData);
-    void HandleRepopRequestOpcode(WorldPacketData recvData);
-    void HandleReportLag(WorldPacketData recvData);
-    void HandleReportPvPAFK(WorldPacketData recvData);
-    void HandleRequestAccountData(WorldPacketData recvData);
-    void HandleRequestPartyMemberStatsOpcode(WorldPacketData recvData);
-    void HandleRequestPetInfo(WorldPacketData recvData);
-    void HandleRequestRaidInfoOpcode(WorldPacketData recvData);
-    void HandleRequestVehicleExit(WorldPacketData recvData);
-    void HandleResetInstancesOpcode(WorldPacketData recvData);
-    void HandleResurrectResponseOpcode(WorldPacketData recvData);
-    void HandleSaveGuildEmblemOpcode(WorldPacketData recvData);
-    void HandleSelfResOpcode(WorldPacketData recvData);
-    void HandleSellItemOpcode(WorldPacketData recvData);
-    void HandleSendMail(WorldPacketData recvData);
-    void HandleSetActionBarToggles(WorldPacketData recvData);
-    void HandleSetActionButtonOpcode(WorldPacketData recvData);
-    void HandleSetActiveMoverOpcode(WorldPacketData recvData);
-    void HandleSetActiveVoiceChannel(WorldPacketData recvData);
-    void HandleSetAmmoOpcode(WorldPacketData recvData);
-    void HandleSetChannelWatch(WorldPacketData recvData);
-    void HandleSetContactNotesOpcode(WorldPacketData recvData);
-    void HandleSetDungeonDifficultyOpcode(WorldPacketData recvData);
-    void HandleSetFactionAtWar(WorldPacketData recvData);
-    void HandleSetFactionCheat(WorldPacketData recvData);
-    void HandleSetFactionInactiveOpcode(WorldPacketData recvData);
-    void HandleSetGuildBankTabText(WorldPacketData recvData);
-    void HandleSetPlayerDeclinedNames(WorldPacketData recvData);
-    void HandleSetRaidDifficultyOpcode(WorldPacketData recvData);
-    void HandleSetSavedInstanceExtend(WorldPacketData recvData);
-    void HandleSetSelectionOpcode(WorldPacketData recvData);
-    void HandleSetSheathedOpcode(WorldPacketData recvData);
-    void HandleSetTaxiBenchmarkOpcode(WorldPacketData recvData);
-    void HandleSetTitleOpcode(WorldPacketData recvData);
-    void HandleSetTradeGoldOpcode(WorldPacketData recvData);
-    void HandleSetTradeItemOpcode(WorldPacketData recvData);
-    void HandleSetWatchedFactionOpcode(WorldPacketData recvData);
-    void HandleShowingCloakOpcode(WorldPacketData recvData);
-    void HandleShowingHelmOpcode(WorldPacketData recvData);
-    void HandleSocketOpcode(WorldPacketData recvData);
-    void HandleSpellClick(WorldPacketData recvData);
-    void HandleSpiritHealerActivateOpcode(WorldPacketData recvData);
-    void HandleSplitItemOpcode(WorldPacketData recvData);
-    void HandleStablePet(WorldPacketData recvData);
-    void HandleStableRevivePet(WorldPacketData recvData);
-    void HandleStableSwapPet(WorldPacketData recvData);
-    void HandleStandStateChangeOpcode(WorldPacketData recvData);
-    void HandleSummonResponseOpcode(WorldPacketData recvData);
-    void HandleSwapInvItemOpcode(WorldPacketData recvData);
-    void HandleSwapItem(WorldPacketData recvData);
-    void HandleTabardVendorActivateOpcode(WorldPacketData recvData);
-    void HandleTalentWipeConfirmOpcode(WorldPacketData recvData);
-    void HandleTaxiNodeStatusQueryOpcode(WorldPacketData recvData);
-    void HandleTaxiQueryAvailableNodes(WorldPacketData recvData);
-    void HandleTextEmoteOpcode(WorldPacketData recvData);
-    void HandleTimeSyncResp(WorldPacketData recvData);
-    void HandleTogglePvP(WorldPacketData recvData);
-    void HandleTotemDestroyed(WorldPacketData recvData);
-    void HandleTrainerBuySpellOpcode(WorldPacketData recvData);
-    void HandleTrainerListOpcode(WorldPacketData recvData);
-    void HandleTurnInPetitionOpcode(WorldPacketData recvData);
-    void HandleTutorialClear(WorldPacketData recvData);
-    void HandleTutorialFlag(WorldPacketData recvData);
-    void HandleTutorialReset(WorldPacketData recvData);
-    void HandleUnacceptTradeOpcode(WorldPacketData recvData);
-    void HandleUnlearnSkillOpcode(WorldPacketData recvData);
-    void HandleUnstablePet(WorldPacketData recvData);
-    void HandleUpdateAccountData(WorldPacketData recvData);
-    void HandleUpdateMissileTrajectory(WorldPacketData recvData);
-    void HandleUpdateProjectilePosition(WorldPacketData recvData);
-    void HandleUseItemOpcode(WorldPacketData recvData);
-    void HandleVoiceSessionEnableOpcode(WorldPacketData recvData);
-    void HandleWardenDataOpcode(WorldPacketData recvData);
-    void HandleWhoisOpcode(WorldPacketData recvData);
-    void HandleWhoOpcode(WorldPacketData recvData);
-    void HandleWorldStateUITimerUpdate(WorldPacketData recvData);
-    void HandleWorldTeleportOpcode(WorldPacketData recvData);
-    void HandleWrapItemOpcode(WorldPacketData recvData);
-    void HandleZoneUpdateOpcode(WorldPacketData recvData);
-    void Handle_EarlyProccess(WorldPacketData recvData);
-    void Handle_NULL(WorldPacketData recvData);
-    void Handle_ServerSide(WorldPacketData recvData);
+    protected readonly WorldSession _session;
+
+    public PacketFilter(WorldSession session)
+    {
+        _session = session;
+    }
+
+    public virtual bool Process(WorldPacketData packet)
+    {
+        return true;
+    }
+
+    public virtual bool ProcessUnsafe()
+    {
+        return true;
+    }
 }
+
+// class used to filer only thread-unsafe packets from queue
+// in order to update only be used in World::UpdateSessions()
+public class WorldSessionFilter : PacketFilter
+{
+    public WorldSessionFilter(WorldSession session) : base(session) {  }
+
+    public override bool Process(WorldPacketData packet)
+    {
+        ClientOpcodeHandler? opHandle = OpcodeTable.Instance[(Opcodes)packet.Opcode];
+
+        // check if packet handler is supposed to be safe
+        if (opHandle?.ProcessingPlace == PacketProcessing.PROCESS_INPLACE)
+        {
+            return true;
+        }
+
+        //thread-unsafe packets should be processed in World::UpdateSessions()
+        if (opHandle?.ProcessingPlace == PacketProcessing.PROCESS_THREADUNSAFE)
+        {
+            return true;
+        }
+
+        // no player attached? -> our client! ^^
+        Player? player = _session.GetPlayer();
+
+        if (player == null)
+        {
+            return true;
+        }
+
+        // lets process all packets for non-in-the-world player
+        return !player.IsInWorld();
+    }
+}
+
+public enum AccountInfoQueryLoad : uint
+{
+    GLOBAL_ACCOUNT_DATA = 0,
+    TUTORIALS,
+    MAX_QUERIES
+}
+
+public class AccountInfoQueryHolderPerRealm : SQLQueryHolder<AccountInfoQueryLoad>
+{
+    public void Initialize(uint accountId)
+    {
+        PreparedStatement stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_ACCOUNT_DATA);
+        stmt.AddValue(0, accountId);
+        SetQuery(AccountInfoQueryLoad.GLOBAL_ACCOUNT_DATA, stmt);
+
+        stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_TUTORIALS);
+        stmt.AddValue(0, accountId);
+        SetQuery(AccountInfoQueryLoad.TUTORIALS, stmt);
+    }
+}
+
+public struct AccountData
+{
+    public long Time;
+    public string? Data;
+
+    public AccountData()
+    {
+        Data = string.Empty;
+    }
+};
 
 public partial class WorldSession : IOpcodeHandler
 {
+    public static readonly int NUM_ACCOUNT_DATA_TYPES = 8;
+    public static readonly byte GLOBAL_CACHE_MASK = 0x15;
+    public static readonly byte PER_CHARACTER_CACHE_MASK = 0xEA;
+
     private static readonly ILogger logger = LoggerFactory.GetLogger();
+    private static readonly IOpcodeHandler _opcodeHandler = new WorldSession();
 
-    private static readonly IOpcodeHandler _opcodeHandler = new WorldSession() { _accountName = "dummy" };
-
+    private ConcurrentHashSet<ObjectGuid> _legitCharacters;
     private uint _accountId;
     private string? _accountName;
     private WorldSocket? _socket;
@@ -431,7 +136,16 @@ public partial class WorldSession : IOpcodeHandler
     private uint _recruiterId;
     private bool _isRecruiter;
     private bool _skipQueue;
+    private bool _inQueue;
     private uint _totalTime;
+    private AccountData[] _accountData;
+    private uint[] _tutorials;
+    private bool _tutorialsChanged;
+    private List<AddonInfo> _addonsList;
+    private LockedQueue<WorldPacketData> _recvQueue;
+    private AsyncCallbackProcessor<QueryCallback> _queryProcessor;
+    private AsyncCallbackProcessor<TransactionCallback> _transactionCallbacks;
+    private AsyncCallbackProcessor<ISqlCallback> _queryHolderProcessor;
 
     public static IOpcodeHandler OpcodeHandler
     {
@@ -441,9 +155,37 @@ public partial class WorldSession : IOpcodeHandler
         }
     }
 
-    private WorldSession() { }
+    public uint GetAccountId() { return _accountId; }
+    public byte GetExpansion() { return _expansion; }
+    public AccountData GetAccountData(AccountDataType type) { return _accountData[(byte)type]; }
 
-    public WorldSession(uint id, string account, WorldSocket? worldSocket, AccountTypes security, byte expansion, long muteTime, Locale locale, uint recruiter, bool isARecruiter, bool skipQueue, uint totalTime)
+    public void SetInQueue(bool state) { _inQueue = state; }
+
+    private WorldSession()
+    {
+        _legitCharacters = new ConcurrentHashSet<ObjectGuid>();
+        _inQueue = false;
+        _recvQueue = new();
+        _queryProcessor = new();
+        _transactionCallbacks = new();
+        _queryHolderProcessor = new();
+        _accountData = new AccountData[NUM_ACCOUNT_DATA_TYPES];
+        _tutorials = new uint[SharedConst.MAX_ACCOUNT_TUTORIAL_VALUES];
+        _addonsList = new ();
+    }
+
+    public WorldSession(
+                uint id,
+                string account,
+                WorldSocket? worldSocket,
+                AccountTypes security,
+                byte expansion,
+                long muteTime,
+                Locale locale,
+                uint recruiter,
+                bool isARecruiter,
+                bool skipQueue,
+                uint totalTime) : this()
     {
         _accountId = id;
         _accountName = account;
@@ -458,6 +200,402 @@ public partial class WorldSession : IOpcodeHandler
         _totalTime = totalTime;
     }
 
+    internal void InitializeSession()
+    {
+        uint cacheVersion = Global.sWorld.GetIntConfig(WorldIntConfigs.CONFIG_CLIENTCACHE_VERSION);
+
+        AccountInfoQueryHolderPerRealm realmHolder = new();
+        realmHolder.Initialize(GetAccountId());
+
+        AddQueryHolderCallback(DB.Characters.DelayQueryHolder(realmHolder)).AfterComplete(result =>
+        {
+            if (result != null)
+            {
+                InitializeSessionCallback(result, cacheVersion);
+            }
+        });
+    }
+
+    private void InitializeSessionCallback(SQLQueryHolder<AccountInfoQueryLoad> realmHolder, uint clientCacheVersion)
+    {
+        LoadAccountData(realmHolder.GetResult(AccountInfoQueryLoad.GLOBAL_ACCOUNT_DATA), GLOBAL_CACHE_MASK);
+        LoadTutorialsData(realmHolder.GetResult(AccountInfoQueryLoad.TUTORIALS));
+
+        if (!_inQueue)
+        {
+            SendAuthResponse(ResponseCodes.AUTH_OK, true);
+        }
+        else
+        {
+            SendAuthWaitQueue(0);
+        }
+
+        SetInQueue(false);
+        ResetTimeOutTime(false);
+
+        SendAddonsInfo();
+        SendClientCacheVersion(clientCacheVersion);
+        SendTutorialsData();
+    }
+
+    internal void SendAuthResponse(ResponseCodes code, bool shortForm, uint queuePos = 0)
+    {
+        WorldPacketData packet = new(Opcodes.SMSG_AUTH_RESPONSE, 1 + 4 + 1 + 4 + 1 + (shortForm ? 0 : (4 + 1)));
+
+        packet.WriteUInt8((byte)code);
+        packet.WriteUInt32(0);                                   // BillingTimeRemaining
+        packet.WriteUInt8(0);                                    // BillingPlanFlags
+        packet.WriteUInt32(0);                                   // BillingTimeRested
+        packet.WriteUInt8(GetExpansion());                       // 0 - normal, 1 - TBC, 2 - WOTLK, must be set in database manually for each account
+
+        if (!shortForm)
+        {
+            packet.WriteUInt32(queuePos);                        // Queue position
+            packet.WriteUInt8(0);                                // Realm has a free character migration - bool
+        }
+
+        SendPacket(packet);
+    }
+
+    /// Send a packet to the client
+    internal void SendPacket(WorldPacketData packet)
+    {
+        if ((ushort)OpcodeMisc.NULL_OPCODE == packet.Opcode)
+        {
+            logger.Error(LogFilter.Network, $"{GetPlayerInfo()} send NULL_OPCODE");
+            return;
+        }
+
+        if (_socket == null)
+        {
+            return;
+        }
+
+        logger.Trace(LogFilter.Network, $"S->C: {GetPlayerInfo()} {Enum.GetName((Opcodes)packet.Opcode) ?? "Unkown Opcode"}");
+
+        _socket.SendPacket(packet);
+    }
+
+    internal void SendAuthWaitQueue(uint position)
+    {
+        if (position == 0)
+        {
+            WorldPacketData packet = new(Opcodes.SMSG_AUTH_RESPONSE, 1);
+
+            packet.WriteUInt8((byte)ResponseCodes.AUTH_OK);
+
+            SendPacket(packet);
+        }
+        else
+        {
+            WorldPacketData packet = new(Opcodes.SMSG_AUTH_RESPONSE, 6);
+
+            packet.WriteUInt8((byte)ResponseCodes.AUTH_WAIT_QUEUE);
+            packet.WriteUInt32(position);
+            packet.WriteUInt8(0);                                 // unk
+
+            SendPacket(packet);
+        }
+    }
+
+    internal void ReadAddonsInfo(ByteBuffer data)
+    {
+        if (data.GetReadPosition() + 4 > data.GetSize())
+        {
+            return;
+        }
+
+        uint size = data.ReadUInt32();
+
+        if (size == 0)
+        {
+            return;
+        }
+
+        if (size > 0xFFFFF)
+        {
+            logger.Error(LogFilter.Network, $"WorldSession::ReadAddonsInfo addon info too big, size {size}");
+
+            return;
+        }
+
+        int uSize = (int)size;
+        int pos = (int)data.GetReadPosition();
+        ByteBuffer addonInfo = new(uSize);
+        ReadOnlySpan<byte> souce = new(data.GetData(), pos, (int)(data.GetSize() - pos));
+
+        if (Zlib.Unpack(addonInfo.GetData(), ref uSize, souce, souce.Length) == ZlibError.Okay)
+        {
+
+        }
+        else
+        {
+            logger.Error(LogFilter.Network, $"Addon packet uncompress error!");
+        }
+
+        uint addonsCount = addonInfo.ReadUInt32();  // addons count                       
+
+        for (uint i = 0; i < addonsCount; ++i)
+        {
+            string addonName;
+            byte enabled;
+            uint crc, unk1;
+
+            // check next addon data format correctness
+            if (addonInfo.GetReadPosition() + 1 > addonInfo.GetSize())
+            {
+                return;
+            }
+
+            addonName = addonInfo.ReadCString();
+            enabled = addonInfo.ReadUInt8();
+            crc = addonInfo.ReadUInt32();
+            unk1 = addonInfo.ReadUInt32();
+
+            logger.Debug(LogFilter.Network, $"ADDON: Name: {addonName}, Enabled: 0x{enabled:x}, CRC: 0x{crc:x}, Unknown2: 0x{unk1:x}");
+
+            AddonInfo addon = new(addonName, enabled, crc, 2, true);
+            SavedAddon? savedAddon = AddonMgr.GetAddonInfo(addonName);
+
+            if (savedAddon != null)
+            {
+                bool match = true;
+
+                if (addon.CRC != savedAddon?.CRC)
+                {
+                    match = false;
+                }
+
+                if (!match)
+                {
+                    logger.Debug(LogFilter.Network, $"ADDON: {addon.Name} was known, but didn't match known CRC (0x{savedAddon?.CRC:x})!");
+                }
+                else
+                {
+                    logger.Debug(LogFilter.Network, $"ADDON: {addon.Name} was known, CRC is correct (0x{savedAddon?.CRC:x})");
+                }
+            }
+            else
+            {
+                AddonMgr.SaveAddon(addon);
+
+                logger.Debug(LogFilter.Network, $"ADDON: {addon.Name} (0x{addon.CRC:x}) was not known, saving...");
+            }
+
+            // @todo: Find out when to not use CRC/pubkey, and other possible states.
+            _addonsList.Add(addon);
+        }
+
+        uint currentTime = addonInfo.ReadUInt32();
+
+        logger.Debug(LogFilter.Network, $"ADDON: CurrentTime: {currentTime}");
+
+        if (addonInfo.GetReadPosition() != addonInfo.GetSize())
+        {
+            logger.Debug(LogFilter.Network, $"packet under-read!");
+        }
+    }
+
+    private void SendAddonsInfo()
+    {
+        byte[] addonPublicKey = new byte[]
+        {
+            0xC3, 0x5B, 0x50, 0x84, 0xB9, 0x3E, 0x32, 0x42, 0x8C, 0xD0, 0xC7, 0x48, 0xFA, 0x0E, 0x5D, 0x54,
+            0x5A, 0xA3, 0x0E, 0x14, 0xBA, 0x9E, 0x0D, 0xB9, 0x5D, 0x8B, 0xEE, 0xB6, 0x84, 0x93, 0x45, 0x75,
+            0xFF, 0x31, 0xFE, 0x2F, 0x64, 0x3F, 0x3D, 0x6D, 0x07, 0xD9, 0x44, 0x9B, 0x40, 0x85, 0x59, 0x34,
+            0x4E, 0x10, 0xE1, 0xE7, 0x43, 0x69, 0xEF, 0x7C, 0x16, 0xFC, 0xB4, 0xED, 0x1B, 0x95, 0x28, 0xA8,
+            0x23, 0x76, 0x51, 0x31, 0x57, 0x30, 0x2B, 0x79, 0x08, 0x50, 0x10, 0x1C, 0x4A, 0x1A, 0x2C, 0xC8,
+            0x8B, 0x8F, 0x05, 0x2D, 0x22, 0x3D, 0xDB, 0x5A, 0x24, 0x7A, 0x0F, 0x13, 0x50, 0x37, 0x8F, 0x5A,
+            0xCC, 0x9E, 0x04, 0x44, 0x0E, 0x87, 0x01, 0xD4, 0xA3, 0x15, 0x94, 0x16, 0x34, 0xC6, 0xC2, 0xC3,
+            0xFB, 0x49, 0xFE, 0xE1, 0xF9, 0xDA, 0x8C, 0x50, 0x3C, 0xBE, 0x2C, 0xBB, 0x57, 0xED, 0x46, 0xB9,
+            0xAD, 0x8B, 0xC6, 0xDF, 0x0E, 0xD6, 0x0F, 0xBE, 0x80, 0xB3, 0x8B, 0x1E, 0x77, 0xCF, 0xAD, 0x22,
+            0xCF, 0xB7, 0x4B, 0xCF, 0xFB, 0xF0, 0x6B, 0x11, 0x45, 0x2D, 0x7A, 0x81, 0x18, 0xF2, 0x92, 0x7E,
+            0x98, 0x56, 0x5D, 0x5E, 0x69, 0x72, 0x0A, 0x0D, 0x03, 0x0A, 0x85, 0xA2, 0x85, 0x9C, 0xCB, 0xFB,
+            0x56, 0x6E, 0x8F, 0x44, 0xBB, 0x8F, 0x02, 0x22, 0x68, 0x63, 0x97, 0xBC, 0x85, 0xBA, 0xA8, 0xF7,
+            0xB5, 0x40, 0x68, 0x3C, 0x77, 0x86, 0x6F, 0x4B, 0xD7, 0x88, 0xCA, 0x8A, 0xD7, 0xCE, 0x36, 0xF0,
+            0x45, 0x6E, 0xD5, 0x64, 0x79, 0x0F, 0x17, 0xFC, 0x64, 0xDD, 0x10, 0x6F, 0xF3, 0xF5, 0xE0, 0xA6,
+            0xC3, 0xFB, 0x1B, 0x8C, 0x29, 0xEF, 0x8E, 0xE5, 0x34, 0xCB, 0xD1, 0x2A, 0xCE, 0x79, 0xC3, 0x9A,
+            0x0D, 0x36, 0xEA, 0x01, 0xE0, 0xAA, 0x91, 0x20, 0x54, 0xF0, 0x72, 0xD8, 0x1E, 0xC7, 0x89, 0xD2
+        };
+
+        WorldPacketData data = new (Opcodes.SMSG_ADDON_INFO, 4);
+
+        foreach (AddonInfo addonInfo in _addonsList)
+        {
+            data.WriteUInt8(addonInfo.State);
+
+            byte crcpub = addonInfo.UsePublicKeyOrCRC ? (byte)0x01: (byte)0x00;
+            data.WriteUInt8(crcpub);
+
+            if (crcpub != 0)
+            {
+                byte usepk = (addonInfo.CRC != AddonMgr.STANDARD_ADDON_CRC) ? (byte)0x01 : (byte)0x00; // If addon is Standard addon CRC
+                data.WriteUInt8(usepk);
+
+                if (usepk != 0)                                      // if CRC is wrong, add public key (client need it)
+                {
+                    logger.Debug(LogFilter.Network, $"ADDON: CRC (0x{addonInfo.CRC:x}) for addon {addonInfo.Name} is wrong (does not match expected 0x{AddonMgr.STANDARD_ADDON_CRC:x}), sending pubkey");
+
+                    data.WriteBytes(addonPublicKey);
+                }
+
+                data.WriteUInt8(0);                              /// @todo: Find out the meaning of this.
+            }
+
+            byte unk3 = 0;                                     // 0 is sent here
+            data.WriteUInt8(unk3);
+
+            if (unk3 != 0)
+            {
+                // String, length 256 (null terminated)
+                data.WriteUInt8(0);
+            }
+        }
+
+        _addonsList.Clear();
+
+        LockedQueue<BannedAddon> bannedAddons = AddonMgr.GetBannedAddons();
+        data.WriteUInt32((uint)bannedAddons.Size());
+
+        while (bannedAddons.Next(out var bannedAddon))
+        {
+            data.WriteUInt32(bannedAddon.Id);
+            data.WriteBytes(bannedAddon.NameMD5);
+            data.WriteBytes(bannedAddon.VersionMD5);
+            data.WriteUInt32(bannedAddon.Timestamp);
+            data.WriteUInt32(1);  // IsBanned
+        }
+
+        SendPacket(data);
+    }
+
+    internal void SendClientCacheVersion(uint clientCacheVersion)
+    {
+        WorldPacketData data = new (Opcodes.SMSG_CLIENTCACHE_VERSION, 4);
+
+        data.WriteUInt32(clientCacheVersion);
+
+        SendPacket(data);
+    }
+
+    internal void LoadAccountData(SQLResult result, uint mask)
+    {
+        for (uint i = 0; i < NUM_ACCOUNT_DATA_TYPES; ++i)
+        {
+            if ((mask & (1 << (byte)i)) != 0)
+            {
+                _accountData[i] = new AccountData();
+            }
+        }
+
+        if (result.IsEmpty())
+        {
+            return;
+        }
+
+        do
+        {
+            SQLFields fields = result.GetFields();
+
+            byte type = fields.Read<byte>(0);
+
+            string tableName = mask == GLOBAL_CACHE_MASK ? "account_data" : "character_account_data";
+
+            if (type >= NUM_ACCOUNT_DATA_TYPES)
+            {
+                logger.Error(LogFilter.Network, $"Table `{tableName}` have invalid account data type ({type}), ignore.");
+
+                continue;
+            }
+
+            if ((mask & (1 << type)) == 0)
+            {
+                logger.Error(LogFilter.Network, $"Table `{tableName}` have non appropriate for table  account data type ({type}), ignore.");
+
+                continue;
+            }
+
+            _accountData[type].Time = fields.Read<uint>(1);
+            _accountData[type].Data = fields.Read<string> (2);
+        }
+        while (result.NextRow());
+    }
+
+    internal void SendAccountDataTimes(uint mask)
+    {
+        WorldPacketData data = new (Opcodes.SMSG_ACCOUNT_DATA_TIMES, 4 + 1 + 4 + 8 * 4);    // changed in WotLK
+
+        data.WriteUInt32((uint)TimeHelper.UnixTime);                                        // unix time of something
+        data.WriteUInt8(1);
+        data.WriteUInt32(mask);                                                             // type mask
+
+        for (uint i = 0; i < NUM_ACCOUNT_DATA_TYPES; ++i)
+        {
+            if ((mask & (1 << (byte)i)) != 0)
+            {
+                data.WriteUInt32((uint)GetAccountData((AccountDataType)i).Time);            // also unix time
+            }
+        }
+
+        SendPacket(data);
+    }
+
+    internal void LoadTutorialsData(SQLResult result)
+    {
+        for (byte i = 0; i < SharedConst.MAX_ACCOUNT_TUTORIAL_VALUES; i++ )
+        {
+            _tutorials[i] = 0;
+        }
+
+        if (!result.IsEmpty())
+        {
+            for (byte i = 0; i < SharedConst.MAX_ACCOUNT_TUTORIAL_VALUES; ++i)
+            {
+                _tutorials[i] = result.Read<uint>(i);
+            }
+        }
+
+        _tutorialsChanged = false;
+    }
+
+    internal void SendTutorialsData()
+    {
+        WorldPacketData data = new (Opcodes.SMSG_TUTORIAL_FLAGS, 4 * SharedConst.MAX_ACCOUNT_TUTORIAL_VALUES);
+
+        for (byte i = 0; i < SharedConst.MAX_ACCOUNT_TUTORIAL_VALUES; ++i)
+        {
+            data.WriteUInt32(_tutorials[i]);
+        }
+
+        SendPacket(data);
+    }
+
+    internal void SaveTutorialsData(SQLTransaction trans)
+    {
+        if (!_tutorialsChanged)
+        {
+            return;
+        }
+
+        var stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_HAS_TUTORIALS);
+        stmt.AddValue(0, GetAccountId());
+
+        bool hasTutorials = !DB.Characters.Query(stmt).IsEmpty();
+
+        stmt = CharacterDatabase.GetPreparedStatement(hasTutorials ? CharStatements.CHAR_UPD_TUTORIALS : CharStatements.CHAR_INS_TUTORIALS);
+
+        for (byte i = 0; i < SharedConst.MAX_ACCOUNT_TUTORIAL_VALUES; ++i)
+        {
+            stmt.AddValue(i, _tutorials[i]);
+        }
+
+        stmt.AddValue(SharedConst.MAX_ACCOUNT_TUTORIAL_VALUES, GetAccountId());
+
+        trans.Append(stmt);
+
+        _tutorialsChanged = false;
+    }
+
     internal void ResetTimeOutTime(bool onlyActive)
     {
         // TODO: game: WorldSession::ResetTimeOutTime(bool onlyActive)
@@ -465,12 +603,13 @@ public partial class WorldSession : IOpcodeHandler
 
     internal void QueuePacket(WorldPacketData packetToQueue)
     {
-        // TODO: game: WorldSession::QueuePacket(WorldPacketData packetToQueue)
+        _recvQueue.Add(packetToQueue);
     }
 
-    internal object GetPlayerInfo()
+    internal string GetPlayerInfo()
     {
         // TODO: game: WorldSession::GetPlayerInfo()
+
         return "Dummy";
     }
 
@@ -482,6 +621,7 @@ public partial class WorldSession : IOpcodeHandler
     internal AccountTypes GetSecurity()
     {
         // TODO: game: WorldSession::GetSecurity()
+
         return AccountTypes.SEC_PLAYER;
     }
 
@@ -490,1958 +630,73 @@ public partial class WorldSession : IOpcodeHandler
         // TODO: game: WorldSession::InitWarden(byte[] sessionKey, string? os)
     }
 
-    internal void ReadAddonsInfo(ByteBuffer addonInfo)
+    internal Player? GetPlayer()
     {
-        // TODO: game: WorldSession::ReadAddonsInfo(ByteBuffer addonInfo)
-    }
-
-    public void HandleAcceptGrantLevel(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAcceptTradeOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleActivateTaxiExpressOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleActivateTaxiOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAddFriendOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAddIgnoreOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAlterAppearance(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAreaSpiritHealerQueryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAreaSpiritHealerQueueOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAreaTriggerOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleArenaTeamAcceptOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleArenaTeamDeclineOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleArenaTeamDisbandOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleArenaTeamInviteOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleArenaTeamLeaderOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleArenaTeamLeaveOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleArenaTeamQueryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleArenaTeamRemoveOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleArenaTeamRosterOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAttackStopOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAttackSwingOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAuctionHelloOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAuctionListBidderItems(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAuctionListItems(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAuctionListOwnerItems(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAuctionListPendingSales(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAuctionPlaceBid(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAuctionRemoveItem(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAuctionSellItem(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAutoBankItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAutoEquipItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAutoEquipItemSlotOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAutoStoreBagItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAutoStoreBankItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleAutostoreLootItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBankerActivateOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBattlefieldLeaveOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBattlefieldListOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBattleFieldPortOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBattlefieldStatusOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBattlegroundPlayerPositionsOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBattlemasterHelloOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBattlemasterJoinArena(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBattlemasterJoinOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBeginTradeOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBfEntryInviteResponse(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBfExitRequest(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBfQueueInviteResponse(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBinderActivateOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBugOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBusyTradeOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBuybackItem(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBuyBankSlotOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBuyItemInSlotOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBuyItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleBuyStableSlot(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarAddEvent(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarArenaTeam(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarComplain(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarCopyEvent(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarEventInvite(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarEventModeratorStatus(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarEventRemoveInvite(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarEventRsvp(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarEventSignup(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarEventStatus(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarGetCalendar(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarGetEvent(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarGetNumPending(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarGuildFilter(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarRemoveEvent(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCalendarUpdateEvent(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCancelAuraOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCancelAutoRepeatSpellOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCancelCastOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCancelChanneling(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCancelGrowthAuraOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCancelMountAuraOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCancelTempEnchantmentOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCancelTradeOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCastSpellOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChangeSeatsOnControlledVehicle(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelAnnouncements(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelBan(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelDeclineInvite(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelDisplayListQuery(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelInvite(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelKick(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelList(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelModerateOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelModerator(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelMute(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelOwner(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelPassword(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelSetOwner(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelUnban(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelUnmoderator(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelUnmute(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChannelVoiceOnOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCharCreateOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCharCustomize(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCharDeleteOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCharEnumOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCharFactionOrRaceChange(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCharRenameOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleChatIgnoredOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleClearChannelWatch(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleClearTradeItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleComplainOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCompleteCinematic(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleContactListOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCorpseMapPositionQuery(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCorpseQueryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleCreatureQueryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleDelFriendOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleDelIgnoreOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleDestroyItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleDismissControlledVehicle(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleDismissCritter(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleDuelAcceptedOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleDuelCancelledOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleEjectPassenger(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleEmoteOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleEnterPlayerVehicle(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleEquipmentSetDelete(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleEquipmentSetSave(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleEquipmentSetUse(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleFarSightOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleFeatherFallAck(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleForceSpeedChangeAck(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGameObjectQueryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGameobjectReportUse(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGameObjectUseOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGetChannelMemberCount(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGetMailList(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGMResponseResolve(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGMSurveySubmit(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGMTicketCreateOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGMTicketDeleteOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGMTicketGetTicketOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGMTicketSystemStatusOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGMTicketUpdateOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGossipHelloOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGossipSelectOptionOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGrantLevel(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGroupAcceptOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGroupAssistantLeaderOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGroupChangeSubGroupOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGroupDeclineOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGroupDisbandOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGroupInviteOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGroupRaidConvertOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGroupSetLeaderOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGroupSwapSubGroupOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGroupUninviteGuidOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGroupUninviteOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildAcceptOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildAddRankOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildBankBuyTab(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildBankDepositMoney(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildBankerActivate(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildBankLogQuery(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildBankMoneyWithdrawn(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildBankQueryTab(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildBankSwapItems(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildBankUpdateTab(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildBankWithdrawMoney(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildChangeInfoTextOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildCreateOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildDeclineOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildDelRankOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildDemoteOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildDisbandOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildEventLogQueryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildInfoOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildInviteOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildLeaderOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildLeaveOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildMOTDOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildPermissions(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildPromoteOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildQueryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildRankOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildRemoveOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildRosterOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildSetOfficerNoteOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleGuildSetPublicNoteOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleHearthAndResurrect(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleIgnoreTradeOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleInitiateTradeOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleInspectArenaTeamsOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleInspectHonorStatsOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleInspectOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleInstanceLockResponse(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleItemNameQueryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleItemQuerySingleOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleItemRefund(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleItemRefundInfoRequest(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleItemTextQuery(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleJoinChannel(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLearnPreviewTalents(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLearnPreviewTalentsPet(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLearnTalentOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLeaveChannel(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLfgGetStatus(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLfgJoinOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLfgLeaveOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLfgPartyLockInfoRequestOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLfgPlayerLockInfoRequestOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLfgProposalResultOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLfgSetBootVoteOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLfgSetCommentOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLfgSetRolesOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLfgTeleportOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLfrSearchJoinOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLfrSearchLeaveOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleListInventoryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleListStabledPetsOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLogoutCancelOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLogoutRequestOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLootMasterGiveOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLootMethodOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLootMoneyOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLootOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLootReleaseOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleLootRoll(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMailCreateTextItem(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMailDelete(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMailMarkAsRead(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMailReturnToSender(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMailTakeItem(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMailTakeMoney(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMessagechatOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMinimapPingOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMirrorImageDataRequest(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMountSpecialAnimOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMoveHoverAck(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMoveKnockBackAck(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMovementOpcodes(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMoveNotActiveMover(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMoveRootAck(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMoveSetCanFlyAckOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMoveSplineDoneOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMoveTeleportAck(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMoveTimeSkippedOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMoveUnRootAck(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMoveWaterWalkAck(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleMoveWorldportAckOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleNameQueryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleNextCinematicCamera(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleNpcTextQueryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleOfferPetitionOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleOpenItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleOptOutOfLootOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePageTextQueryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePartyAssignmentOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetAbandon(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetAction(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetCancelAuraOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetCastSpellOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetitionBuyOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetitionDeclineOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetitionQueryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetitionRenameOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetitionShowListOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetitionShowSignOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetitionSignOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetLearnTalent(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetNameQuery(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetRename(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetSetAction(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetSpellAutocastOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePetStopAttack(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePlayedTime(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePlayerLoginOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePlayerLogoutOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePushQuestToParty(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePVPLogDataOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQueryGuildBankTabText(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQueryInspectAchievements(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQueryNextMailTime(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQueryQuestsCompleted(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQueryTimeOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestConfirmAccept(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestgiverAcceptQuestOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestgiverCancel(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestgiverChooseRewardOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestgiverCompleteQuest(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestgiverHelloOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestgiverQueryQuestOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestgiverQuestAutoLaunch(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestgiverRequestRewardOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestgiverStatusMultipleQuery(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestgiverStatusQueryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestLogRemoveQuest(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestLogSwapQuest(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestPOIQuery(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestPushResult(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleQuestQueryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleRaidReadyCheckFinishedOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleRaidReadyCheckOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleRaidTargetUpdateOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleRandomRollOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleReadItem(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleReadyForAccountDataTimes(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleRealmSplitOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleReclaimCorpseOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleRemoveGlyph(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleRepairItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleRepopRequestOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleReportLag(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleReportPvPAFK(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleRequestAccountData(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleRequestPartyMemberStatsOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleRequestPetInfo(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleRequestRaidInfoOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleRequestVehicleExit(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleResetInstancesOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleResurrectResponseOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSaveGuildEmblemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSelfResOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSellItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSendMail(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetActionBarToggles(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetActionButtonOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetActiveMoverOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetActiveVoiceChannel(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetAmmoOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetChannelWatch(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetContactNotesOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetDungeonDifficultyOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetFactionAtWar(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetFactionCheat(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetFactionInactiveOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetGuildBankTabText(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetPlayerDeclinedNames(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetRaidDifficultyOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetSavedInstanceExtend(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetSelectionOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetSheathedOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetTaxiBenchmarkOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
+        // TODO: game: WorldSession::GetPlayer()
 
-    public void HandleSetTitleOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetTradeGoldOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetTradeItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSetWatchedFactionOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleShowingCloakOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleShowingHelmOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSocketOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSpellClick(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSpiritHealerActivateOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSplitItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleStablePet(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleStableRevivePet(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleStableSwapPet(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleStandStateChangeOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSummonResponseOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSwapInvItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleSwapItem(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleTabardVendorActivateOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleTalentWipeConfirmOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleTaxiNodeStatusQueryOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleTaxiQueryAvailableNodes(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleTextEmoteOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
+        return null;
     }
 
-    public void HandleTimeSyncResp(WorldPacketData recvData)
+    internal bool Update(uint diff, PacketFilter updater)
     {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleTogglePvP(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleTotemDestroyed(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleTrainerBuySpellOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleTrainerListOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleTurnInPetitionOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleTutorialClear(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleTutorialFlag(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleTutorialReset(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleUnacceptTradeOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleUnlearnSkillOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleUnstablePet(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleUpdateAccountData(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleUpdateMissileTrajectory(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleUpdateProjectilePosition(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleUseItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleVoiceSessionEnableOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandleWardenDataOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
+        // TODO: game: WorldSession::Update(uint diff, PacketFilter updater)
 
-    public void HandleWhoisOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
+        while (_socket != null && _recvQueue.Next(out WorldPacketData? packet, updater))
+        {
+            if (packet != null)
+            {
+                Opcodes opcode = (Opcodes)packet.Opcode;
 
-    public void HandleWhoOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
+                ClientOpcodeHandler? opHandle = OpcodeTable.Instance[opcode];
 
-    public void HandleWorldStateUITimerUpdate(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
+                try
+                {
+                    switch (opHandle?.Status)
+                    {
+                        //case SessionStatus.STATUS_LOGGEDIN:
+                        //    break;
+                        case SessionStatus.STATUS_AUTHED:
+                            // TODO: game: WorldSession::Update(uint diff, PacketFilter updater)
+                            opHandle?.Call(this, packet);
+                            break;
+                        //case SessionStatus.STATUS_TRANSFER:
+                        //    break;
+                        //case SessionStatus.STATUS_LOGGEDIN_OR_RECENTLY_LOGGOUT:
+                        //    break;
+                        //case SessionStatus.STATUS_NEVER:
+                        //    break;
+                        //case SessionStatus.STATUS_UNHANDLED:
+                        //    break;
+                        default:
+                            logger.Error(LogFilter.Network, $"Received not handled opcode 0x{packet.Opcode:x} from {GetPlayerInfo()}");
+                            break;
+                    }
+                }
+                catch (Exception e)
+                {
+                    logger.Error(LogFilter.Session, $"WorldSession::Update({diff}, PacketFilter updater) => ¥n{e.StackTrace}");
+                }
+            }
+        }
 
-    public void HandleWorldTeleportOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
+        // TODO: game: WorldSession::Update(uint diff, PacketFilter updater)
 
-    public void HandleWrapItemOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
+        ProcessQueryCallbacks();
 
-    public void HandleZoneUpdateOpcode(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
+        // TODO: game: WorldSession::Update(uint diff, PacketFilter updater)
 
-    public void Handle_EarlyProccess(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
+        return true;
     }
 
-    public void Handle_NULL(WorldPacketData recvData)
+    private void ProcessQueryCallbacks()
     {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
+        _queryProcessor.ProcessReadyCallbacks();
+        _transactionCallbacks.ProcessReadyCallbacks();
+        _queryHolderProcessor.ProcessReadyCallbacks();
     }
 
-    public void Handle_ServerSide(WorldPacketData recvData)
+    private SQLQueryHolderCallback<TQueryIndexEnum> AddQueryHolderCallback<TQueryIndexEnum>(SQLQueryHolderCallback<TQueryIndexEnum> callback) where TQueryIndexEnum : Enum
     {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
+        return (SQLQueryHolderCallback<TQueryIndexEnum>)_queryHolderProcessor.AddCallback(callback);
     }
 }

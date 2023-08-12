@@ -22,7 +22,7 @@ using AzerothCore.Collections;
 
 namespace AzerothCore.Configuration;
 
-public class ConfigMgr
+public partial class ConfigMgr
 {
     private static Dictionary<string, string> _configList = new();
 
@@ -41,7 +41,7 @@ public class ConfigMgr
 
         try
         {
-            Regex regex = new Regex(@"\s*\[.+\]\s*");
+            Regex sectionRegex = SectionDefineLineRegex();
 
             foreach (var line in ConfigContent)
             {
@@ -53,7 +53,7 @@ public class ConfigMgr
                 }
 
                 // match section
-                MatchCollection matches = regex.Matches(line);
+                MatchCollection matches = sectionRegex.Matches(line);
 
                 if (matches.Count > 0)
                 {
@@ -96,4 +96,7 @@ public class ConfigMgr
     {
         return _configList.Where(p => p.Key.Contains(name)).Select(p => p.Key);
     }
+
+    [GeneratedRegex("\\s*\\[.+\\]\\s*")]
+    private static partial Regex SectionDefineLineRegex();
 }

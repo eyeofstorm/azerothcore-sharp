@@ -24,7 +24,7 @@ public enum AccountTypes : byte
     SEC_GAMEMASTER = 2,
     SEC_ADMINISTRATOR = 3,
     SEC_CONSOLE = 4                                  // must be always last in list, accounts must have less security level always also
-};
+}
 
 public enum Locale : byte
 {
@@ -39,7 +39,7 @@ public enum Locale : byte
     LOCALE_ruRU = 8,
 
     TOTAL_LOCALES
-};
+}
 
 public enum ResponseCodes : byte
 {
@@ -158,4 +158,59 @@ public enum ResponseCodes : byte
     CHAR_NAME_RUSSIAN_CONSECUTIVE_SILENT_CHARACTERS = 0x65,
     CHAR_NAME_RUSSIAN_SILENT_CHARACTER_AT_BEGINNING_OR_END = 0x66,
     CHAR_NAME_DECLENSION_DOESNT_MATCH_BASE_NAME = 0x67
-};
+}
+
+public enum AccountDataType : byte
+{
+    GLOBAL_CONFIG_CACHE = 0,                            // 0x01 g
+    PER_CHARACTER_CONFIG_CACHE = 1,                     // 0x02 p
+    GLOBAL_BINDINGS_CACHE = 2,                          // 0x04 g
+    PER_CHARACTER_BINDINGS_CACHE = 3,                   // 0x08 p
+    GLOBAL_MACROS_CACHE = 4,                            // 0x10 g
+    PER_CHARACTER_MACROS_CACHE = 5,                     // 0x20 p
+    PER_CHARACTER_LAYOUT_CACHE = 6,                     // 0x40 p
+    PER_CHARACTER_CHAT_CACHE = 7,                       // 0x80 p
+}
+
+public enum Races
+{
+    RACE_NONE = 0,                  // SKIP
+    RACE_HUMAN = 1,                 // TITLE Human
+    RACE_ORC = 2,                   // TITLE Orc
+    RACE_DWARF = 3,                 // TITLE Dwarf
+    RACE_NIGHTELF = 4,              // TITLE Night Elf
+    RACE_UNDEAD_PLAYER = 5,         // TITLE Undead
+    RACE_TAUREN = 6,                // TITLE Tauren
+    RACE_GNOME = 7,                 // TITLE Gnome
+    RACE_TROLL = 8,                 // TITLE Troll
+    RACE_BLOODELF = 10,             // TITLE Blood Elf
+    RACE_DRAENEI = 11               // TITLE Draenei
+}
+
+public enum Classes
+{
+    CLASS_NONE = 0,         // SKIP
+    CLASS_WARRIOR = 1,      // TITLE Warrior
+    CLASS_PALADIN = 2,      // TITLE Paladin
+    CLASS_HUNTER = 3,       // TITLE Hunter
+    CLASS_ROGUE = 4,        // TITLE Rogue
+    CLASS_PRIEST = 5,       // TITLE Priest
+    CLASS_DEATH_KNIGHT = 6, // TITLE Death Knight
+    CLASS_SHAMAN = 7,       // TITLE Shaman
+    CLASS_MAGE = 8,         // TITLE Mage
+    CLASS_WARLOCK = 9,      // TITLE Warlock,
+    CLASS_DRUID = 11        // TITLE Druid
+}
+
+public static class SharedConst
+{
+    public static readonly Locale DEFAULT_LOCALE = Locale.LOCALE_enUS;
+
+    public static readonly int MAX_LOCALES = 8;
+    public static readonly int MAX_ACCOUNT_TUTORIAL_VALUES = 8;
+
+    public static readonly int MAX_STATS = 5;
+
+    public static readonly int MAX_RACES = 12;
+    public static readonly int MAX_CLASSES = 12;
+}

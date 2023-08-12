@@ -15,10 +15,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 namespace AzerothCore.Database;
 
 public class SQLQueryHolder<T> where T : notnull
@@ -44,7 +40,9 @@ public class SQLQueryHolder<T> where T : notnull
     public SQLResult GetResult(T index)
     {
         if (!_results.ContainsKey(index))
+        {
             return new SQLResult();
+        }
 
         return _results[index];
     }
@@ -64,11 +62,15 @@ class SQLQueryHolderTask<R> : ISqlOperation where R : notnull
     public bool Execute<T>(MySqlBase<T> mySqlBase) where T : notnull
     {
         if (m_holder == null)
+        {
             return false;
+        }
 
         // execute all queries in the holder and pass the results
         foreach (var pair in m_holder.m_queries)
+        {
             m_holder.SetResult(pair.Key, mySqlBase.Query(pair.Value));
+        }
 
         return m_result.TrySetResult(m_holder);
     }

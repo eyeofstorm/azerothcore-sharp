@@ -43,7 +43,7 @@ internal class AuthServer
 
         if (!ConfigMgr.LoadAppConfigs("authserver.conf"))
         {
-            ExitNow(-1);
+            ExitNow(1);
         }
 
         Banner.Show();
@@ -51,7 +51,7 @@ internal class AuthServer
         // Initialize the database connection
         if (!StartDB())
         {
-            ExitNow(-1);
+            ExitNow(1);
         }
 
         // Get the list of realms for the server
@@ -70,13 +70,13 @@ internal class AuthServer
         if (port < 0 || port > 0xFFFF)
         {
             logger.Error(LogFilter.ServerLoading, "Specified port out of allowed range (1-65535)");
-            ExitNow(-1);
+            ExitNow(1);
         }
 
         if (!AuthSocketManager.Instance.StartNetwork(bindIp, port))
         {
             logger.Error(LogFilter.ServerLoading, "Failed to start authserver Network");
-            ExitNow(-1);
+            ExitNow(1);
         }
 
         _banExpiryCheckTimer = new System.Timers.Timer(ConfigMgr.GetValueOrDefault("BanExpiryCheckInterval", 60u));

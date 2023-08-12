@@ -21,6 +21,11 @@
     <None Remove="Databases\" />
     <None Remove="Realms\" />
     <None Remove="Accounts\" />
+    <None Remove="Handlers\" />
+    <None Remove="Entities\" />
+    <None Remove="Entities\Player\" />
+    <None Remove="Addons\" />
+    <None Remove="Entities\Object\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Globals\" />
@@ -29,6 +34,11 @@
     <Folder Include="Databases\" />
     <Folder Include="Realms\" />
     <Folder Include="Accounts\" />
+    <Folder Include="Handlers\" />
+    <Folder Include="Entities\" />
+    <Folder Include="Entities\Player\" />
+    <Folder Include="Addons\" />
+    <Folder Include="Entities\Object\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\common\common.csproj" />
