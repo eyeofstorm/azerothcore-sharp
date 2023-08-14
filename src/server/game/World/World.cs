@@ -15,6 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using AzerothCore.Configuration;
 using AzerothCore.Constants;
 using AzerothCore.Database;
 using AzerothCore.Logging;
@@ -142,6 +143,10 @@ public class World : Singleton<World>, IWorld
 
         logger.Info(LogFilter.ServerLoading, $"Initializing Opcodes...");
         OpcodeTable.Instance.Initialize();
+
+        // Load the DBC files
+        logger.Info(LogFilter.ServerLoading, $"Initialize Data Stores...");
+        DataStores.LoadDBCStores(ConfigMgr.GetValueOrDefault("DataDir", "./"));
     }
 
     public bool IsClosed()

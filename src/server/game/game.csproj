@@ -26,6 +26,7 @@
     <None Remove="Entities\Player\" />
     <None Remove="Addons\" />
     <None Remove="Entities\Object\" />
+    <None Remove="DataStores\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Globals\" />
@@ -39,6 +40,7 @@
     <Folder Include="Entities\Player\" />
     <Folder Include="Addons\" />
     <Folder Include="Entities\Object\" />
+    <Folder Include="DataStores\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\common\common.csproj" />

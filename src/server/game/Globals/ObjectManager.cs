@@ -17,6 +17,7 @@
 
 using AzerothCore.Constants;
 using AzerothCore.Database;
+using AzerothCore.DataStores;
 using AzerothCore.Logging;
 using AzerothCore.Singleton;
 using AzerothCore.Utilities;
@@ -84,19 +85,19 @@ public class ObjectMgr : Singleton<ObjectMgr>
                         continue;
                     }
 
-                    //ChrRacesEntry rEntry = Global.sChrRacesStore.LookupEntry(currentRace);
+                    ChrRacesEntry? rEntry = Global.sChrRacesStore?.LookupEntry(currentRace);
 
-                    //if (!rEntry)
-                    //{
-                    //    logger.Error(LogFilter.Sql, $"Wrong race {currentRace} in `playercreateinfo` table, ignoring.");
-                    //    continue;
-                    //}
+                    if (rEntry != null)
+                    {
+                        logger.Error(LogFilter.Sql, $"Wrong race {currentRace} in `playercreateinfo` table, ignoring.");
+                        continue;
+                    }
 
-                    //if (currentClass >= SharedConst.MAX_CLASSES)
-                    //{
-                    //    logger.Error(LogFilter.Sql, $"Wrong class {currentClass} in `playercreateinfo` table, ignoring.");
-                    //    continue;
-                    //}
+                    if (currentClass >= SharedConst.MAX_CLASSES)
+                    {
+                        logger.Error(LogFilter.Sql, $"Wrong class {currentClass} in `playercreateinfo` table, ignoring.");
+                        continue;
+                    }
 
                     //if (Global.sChrClassesStore.LookupEntry(currentClass) == null)
                     //{

@@ -19,14 +19,11 @@ using AzerothCore.DataStores;
 
 namespace AzerothCore.Game;
 
-public static class Global
+public class DataStores
 {
-    // Main
-    public static World             sWorld      { get { return World.Instance;              } }
-    public static RealmList         sRealmList  { get { return RealmList.Instance;          } }
-    public static PacketFileLogger  sPacketLog  { get { return PacketFileLogger.Instance;   } }
-    public static ObjectMgr         sObjectMgr  { get { return ObjectMgr.Instance;          } }
-
-    // Data stores
-    public static DBCStorage<ChrRacesEntry>? sChrRacesStore;
+    public static void LoadDBCStores(string dataPath)
+    {
+        Global.sChrRacesStore = DBCStorage<ChrRacesEntry>.LoadDBC(dataPath, "ChrRaces.dbc", DBCFmt.ChrRacesEntryfmt);
+    }
 }
+

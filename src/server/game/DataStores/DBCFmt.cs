@@ -15,18 +15,9 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using AzerothCore.DataStores;
+namespace AzerothCore.DataStores;
 
-namespace AzerothCore.Game;
-
-public static class Global
+public class DBCFmt
 {
-    // Main
-    public static World             sWorld      { get { return World.Instance;              } }
-    public static RealmList         sRealmList  { get { return RealmList.Instance;          } }
-    public static PacketFileLogger  sPacketLog  { get { return PacketFileLogger.Instance;   } }
-    public static ObjectMgr         sObjectMgr  { get { return ObjectMgr.Instance;          } }
-
-    // Data stores
-    public static DBCStorage<ChrRacesEntry>? sChrRacesStore;
+    public const string ChrRacesEntryfmt = "niixiixixxxxixssssssssssssssssxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxi";
 }
