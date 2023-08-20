@@ -18,6 +18,8 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
+using AzerothCore.Logging;
+
 namespace AzerothCore.DataStores;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -32,39 +34,45 @@ public struct DBCFileHeader
 
 public enum DBCFieldFormat
 {
-    FT_NA = 'x',            //not used or unknown, 4 byte size
-    FT_NA_BYTE = 'X',            //not used or unknown, byte
-    FT_STRING = 's',            //char*
-    FT_FLOAT = 'f',            //float
-    FT_INT = 'i',            //uint32
-    FT_BYTE = 'b',            //uint8
-    FT_SORT = 'd',            //sorted by this field, field is not included
-    FT_IND = 'n',            //the same, but parsed to data
-    FT_LOGIC = 'l'             //Logical (boolean)
+    FT_NA = 'x',                    // not used or unknown, 4 byte size
+    FT_NA_BYTE = 'X',               // not used or unknown, byte
+    FT_STRING = 's',                // char*
+    FT_FLOAT = 'f',                 // float
+    FT_INT = 'i',                   // uint32
+    FT_BYTE = 'b',                  // uint8
+    FT_SORT = 'd',                  // sorted by this field, field is not included
+    FT_IND = 'n',                   // the same, but parsed to data
+    FT_LOGIC = 'l'                  // Logical (boolean)
 }
 
 public struct DBCFieldInfo<T>
 {
-    public int FieldIdx;
-    public DBCFieldFormat FieldType;
-    public T FieldValue;
-    public int StringTableOffset;
+    public int              FieldIdx;
+    public DBCFieldFormat   FieldType;
+    public T                FieldValue;
 }
 
 public abstract class DBCFileEntry
 {
     public DBCFileEntry() { }
 
-    public abstract void ParseToField<T>(DBCFieldInfo<T> fieldInfo);
+    public abstract void SetField<T>(DBCFieldInfo<T> fieldInfo);
 }
 
 public sealed class DBCFileLoader
 {
-    internal static bool Load<T>(string fullPath, string filename, string fieldFormat, out DBCStorage<T>? dbcStore) where T : DBCFileEntry, new ()
+    private static readonly ILogger logger = LoggerFactory.GetLogger();
+
+    internal static bool LoadFromFile<T>(DBCStorage<T> dbcStore, string dbcFilename) where T : DBCFileEntry, new ()
     {
         try
         {
-            using var dbc = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (!File.Exists(dbcFilename))
+            {
+                return false;
+            }
+
+            using var dbc = new FileStream(dbcFilename, FileMode.Open, FileAccess.Read, FileShare.Read);
 
             // read dbc file header
             int headerSize = Marshal.SizeOf(typeof(DBCFileHeader));
@@ -72,16 +80,17 @@ public sealed class DBCFileLoader
 
             if (dbc.Read(headerBuff, 0, headerSize) < headerSize)
             {
-                dbcStore = default;
-
                 return false;
             }
 
             DBCFileHeader dbcFileHeader = ReinterpretCast<DBCFileHeader>(headerBuff);
 
-            // read records
-            Dictionary<uint, DBCFileEntry> _entries = new();
+            if (dbcStore.FieldFormat.Length != dbcFileHeader.FieldCount)
+            {
+                return false;
+            }
 
+            // read records
             Memory<byte> dataTable = new byte[dbcFileHeader.RecordSize * dbcFileHeader.RecordCount];
             dbc.Read(dataTable.Span);
 
@@ -101,7 +110,7 @@ public sealed class DBCFileLoader
                 // parse record raw data into entry fields.
                 for (int fieldIdx = 0; fieldIdx < dbcFileHeader.FieldCount; fieldIdx++)
                 {
-                    switch (fieldFormat[fieldIdx])
+                    switch (dbcStore.FieldFormat[fieldIdx])
                     { 
                     case (char)DBCFieldFormat.FT_FLOAT:
                         {
@@ -112,7 +121,7 @@ public sealed class DBCFileLoader
                                 FieldValue = BitConverter.ToSingle(dataTable.Slice(dataOffset, sizeof(float)).Span)
                             };
 
-                            dbcEntry.ParseToField(floatField);
+                            dbcEntry.SetField(floatField);
                         }
                         dataOffset += sizeof(float);
                         break;
@@ -126,7 +135,7 @@ public sealed class DBCFileLoader
                             };
 
                             key = (int)intField.FieldValue;
-                            dbcEntry.ParseToField(intField);
+                            dbcEntry.SetField(intField);
                         }
                         dataOffset += sizeof(uint);
                         break;
@@ -139,7 +148,7 @@ public sealed class DBCFileLoader
                                 FieldValue = BitConverter.ToUInt32(dataTable.Slice(dataOffset, sizeof(uint)).Span)
                             };
 
-                            dbcEntry.ParseToField(intField);
+                            dbcEntry.SetField(intField);
                         }
                         dataOffset += sizeof(uint);
                         break;
@@ -152,7 +161,7 @@ public sealed class DBCFileLoader
                                 FieldValue = dataTable.Span[dataOffset]
                             };
 
-                            dbcEntry.ParseToField(byteField);
+                            dbcEntry.SetField(byteField);
                         }
                         dataOffset += sizeof(byte);
                         break;
@@ -166,21 +175,23 @@ public sealed class DBCFileLoader
 
                             uint stringTableOffset = BitConverter.ToUInt32(dataTable.Slice(dataOffset, sizeof(uint)).Span);
 
-                            List<byte> cstring = new();
+                            
 
                             if (stringTableOffset != 0 && stringTableOffset < dbcFileHeader.StringBlockSize)
                             {
+                                List<byte> cstring = new();
+
                                 // get c string.
                                 while (stringTable[(int)stringTableOffset] != 0x00)
                                 {
                                     cstring.Add(stringTable[(int)stringTableOffset]);
                                     stringTableOffset++;
                                 }
+
+                                stringField.FieldValue = Encoding.UTF8.GetString(cstring.ToArray());
+
+                                dbcEntry.SetField(stringField);
                             }
-
-                            stringField.FieldValue = Encoding.UTF8.GetString(cstring.ToArray());
-
-                            dbcEntry.ParseToField(stringField);
                         }
                         dataOffset += sizeof(uint);
                         break;
@@ -191,16 +202,7 @@ public sealed class DBCFileLoader
                         dataOffset += sizeof(byte);
                         break;
                     case (char)DBCFieldFormat.FT_SORT:
-                        {
-                            DBCFieldInfo<uint> intField = new()
-                            {
-                                FieldIdx = fieldIdx,
-                                FieldType = DBCFieldFormat.FT_SORT,
-                                FieldValue = BitConverter.ToUInt32(dataTable.Slice(dataOffset, sizeof(uint)).Span)
-                            };
-
-                            key = (int)intField.FieldValue;
-                        }
+                        key = (int)BitConverter.ToUInt32(dataTable.Slice(dataOffset, sizeof(uint)).Span);
                         dataOffset += sizeof(uint);
                         break;
                     case (char)DBCFieldFormat.FT_LOGIC:
@@ -208,22 +210,153 @@ public sealed class DBCFileLoader
                     }
                 }
 
-                if (key > 0)
+                if (key != int.MinValue)
                 {
-                    _entries.Add((uint)key, dbcEntry);
+                    dbcStore.Entries.Add((uint)key, dbcEntry);
                 }
             }
 
-            dbcStore = new DBCStorage<T>(filename, _entries);
-
             return true;
         }
-        catch
+        catch(Exception e)
         {
-            dbcStore = default;
+            logger.Fatal(LogFilter.ServerLoading, e);
 
             return false;
         }
+    }
+
+    internal static bool LoadStringsFromFile<T>(DBCStorage<T> dbcStore, string dbcFilename) where T : DBCFileEntry, new()
+    {
+        try
+        {
+            if (!File.Exists(dbcFilename))
+            {
+                return false;
+            }
+
+            using var dbc = new FileStream(dbcFilename, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+            // read dbc file header
+            int headerSize = Marshal.SizeOf(typeof(DBCFileHeader));
+            byte[] headerBuff = new byte[headerSize];
+
+            if (dbc.Read(headerBuff, 0, headerSize) < headerSize)
+            {
+                return false;
+            }
+
+            DBCFileHeader dbcFileHeader = ReinterpretCast<DBCFileHeader>(headerBuff);
+
+            if (dbcStore.FieldFormat.Length != dbcFileHeader.FieldCount)
+            {
+                return false;
+            }
+
+            // read records
+            Memory<byte> dataTable = new byte[dbcFileHeader.RecordSize * dbcFileHeader.RecordCount];
+            dbc.Read(dataTable.Span);
+
+            // read strings table
+            byte[] stringTable = new byte[dbcFileHeader.StringBlockSize];
+            dbc.Read(stringTable);
+
+            int dataOffset = 0;
+            List<DBCFieldInfo<string>> stringsToUpdate = new();
+
+            // read fields
+            for (int recordIdx = 0; recordIdx < dbcFileHeader.RecordCount; recordIdx++)
+            {
+                int key = int.MinValue;
+
+                // parse record raw data into entry fields.
+                for (int fieldIdx = 0; fieldIdx < dbcFileHeader.FieldCount; fieldIdx++)
+                {
+                    switch (dbcStore.FieldFormat[fieldIdx])
+                    {
+                    case (char)DBCFieldFormat.FT_FLOAT:
+                        dataOffset += sizeof(float);
+                        break;
+                    case (char)DBCFieldFormat.FT_IND:
+                        key = (int)BitConverter.ToUInt32(dataTable.Slice(dataOffset, sizeof(uint)).Span);
+                        dataOffset += sizeof(uint);
+                        break;
+                    case (char)DBCFieldFormat.FT_INT:
+                        dataOffset += sizeof(uint);
+                        break;
+                    case (char)DBCFieldFormat.FT_BYTE:
+                        dataOffset += sizeof(byte);
+                        break;
+                    case (char)DBCFieldFormat.FT_STRING:
+                        {
+                            DBCFieldInfo<string> stringField = new()
+                            {
+                                FieldIdx = fieldIdx,
+                                FieldType = DBCFieldFormat.FT_STRING,
+                            };
+
+                            uint stringTableOffset = BitConverter.ToUInt32(dataTable.Slice(dataOffset, sizeof(uint)).Span);
+
+                            if (stringTableOffset != 0 && stringTableOffset < dbcFileHeader.StringBlockSize)
+                            {
+                                List<byte> cstring = new();
+
+                                // get c string.
+                                while (stringTable[(int)stringTableOffset] != 0x00)
+                                {
+                                    cstring.Add(stringTable[(int)stringTableOffset]);
+                                    stringTableOffset++;
+                                }
+
+                                stringField.FieldValue = Encoding.UTF8.GetString(cstring.ToArray());
+
+                                stringsToUpdate.Add(stringField);
+                            }
+                        }
+                        dataOffset += sizeof(uint);
+                        break;
+                    case (char)DBCFieldFormat.FT_NA:
+                        dataOffset += sizeof(uint);
+                        break;
+                    case (char)DBCFieldFormat.FT_NA_BYTE:
+                        dataOffset += sizeof(byte);
+                        break;
+                    case (char)DBCFieldFormat.FT_SORT:
+                        key = (int)BitConverter.ToUInt32(dataTable.Slice(dataOffset, sizeof(uint)).Span);
+                        dataOffset += sizeof(uint);
+                        break;
+                    case (char)DBCFieldFormat.FT_LOGIC:
+                        throw new ApplicationException("Attempted to load DBC files that does not have field types that match what is in the core. Check DbcFieldFormat or your DBC files.");
+                    }
+                }
+
+                if (key != int.MinValue)
+                {
+                    if (dbcStore.Entries.ContainsKey(key))
+                    {
+                        T entryToUpdate = (T)dbcStore.Entries[(uint)key];
+
+                        for (int i = 0; i < stringsToUpdate.Count; i++)
+                        {
+                            entryToUpdate.SetField(stringsToUpdate[i]);
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            logger.Fatal(LogFilter.ServerLoading, e);
+
+            return false;
+        }
+    }
+
+    internal static void LoadFromDB<T>(DBCStorage<T> storage, string dbTable) where T : DBCFileEntry, new()
+    {
+        // TODO: game: DBCFileLoader::LoadFromDB<T>(DBCStorage<T> storage, string dbTable)
     }
 
     private static T ReinterpretCast<T>(byte[] buffer) where T : struct

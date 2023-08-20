@@ -40,8 +40,8 @@ public abstract class SocketBase : ISocket, IDisposable
 
     private Socket _socket;
     private IPEndPoint? _remoteIPEndPoint;
-    private SocketAsyncEventArgs _receiveSocketAsyncEventArgs;
-    private SocketAsyncEventArgs _sendSocketAsyncEventArgs;
+    //private SocketAsyncEventArgs _receiveSocketAsyncEventArgs;
+    //private SocketAsyncEventArgs _sendSocketAsyncEventArgs;
     private volatile bool _closing;
     private volatile bool _isWritingAsync;
 
@@ -60,11 +60,17 @@ public abstract class SocketBase : ISocket, IDisposable
         _readBuffer = new ();
         _writeQueue = new ();
 
-        _receiveSocketAsyncEventArgs = new ();
-        _receiveSocketAsyncEventArgs.Completed += (sender, args) => ReadHandlerInternal(args);
+        //_receiveSocketAsyncEventArgs = new ();
+        //_receiveSocketAsyncEventArgs.Completed += (sender, args) =>
+        //{
+        //    ReadHandlerInternal(args.SocketError, args.BytesTransferred);
+        //};
 
-        _sendSocketAsyncEventArgs = new ();
-        _receiveSocketAsyncEventArgs.Completed += (sender, args) => WriteHandlerWrapper(args);
+        //_sendSocketAsyncEventArgs = new ();
+        //_sendSocketAsyncEventArgs.Completed += (sender, args) =>
+        //{
+        //    WriteHandlerWrapper(args);
+        //};
     }
 
     public abstract void Start();
@@ -91,6 +97,27 @@ public abstract class SocketBase : ISocket, IDisposable
         return _remoteIPEndPoint;
     }
 
+    public void Read()
+    {
+        if (!IsOpen())
+        {
+            return;
+        }
+
+        _readBuffer.Normalize();
+        _readBuffer.EnsureFreeSpace();
+
+        int bytesTransferred =
+                _socket.Receive(
+                    _readBuffer.GetBasePointer(),
+                    _readBuffer.GetWritePos(),
+                    _readBuffer.GetRemainingSpace(),
+                    SocketFlags.None,
+                    out SocketError socketError);
+
+        ReadHandlerInternal(socketError, bytesTransferred);
+    }
+
     public void AsyncRead()
     {
         if (!IsOpen())
@@ -101,12 +128,27 @@ public abstract class SocketBase : ISocket, IDisposable
         _readBuffer.Normalize();
         _readBuffer.EnsureFreeSpace();
 
-        _receiveSocketAsyncEventArgs.SetBuffer(_readBuffer.GetBasePointer(), _readBuffer.GetWritePos(), _readBuffer.GetRemainingSpace());
+        SocketAsyncEventArgs receiveSocketAsyncEventArgs = new();
 
-        if (!_socket.ReceiveAsync(_receiveSocketAsyncEventArgs))
+        receiveSocketAsyncEventArgs.Completed += (object? sender, SocketAsyncEventArgs e) =>
         {
-            ReadHandlerInternal(_receiveSocketAsyncEventArgs);
+            ReadHandlerInternal(e.SocketError, e.BytesTransferred);
+        };
+
+        receiveSocketAsyncEventArgs.SetBuffer(
+            _readBuffer.GetBasePointer(),
+            _readBuffer.GetWritePos(),
+            _readBuffer.GetRemainingSpace());
+
+        if (!_socket.ReceiveAsync(receiveSocketAsyncEventArgs))
+        {
+            ReadHandlerInternal(receiveSocketAsyncEventArgs.SocketError, receiveSocketAsyncEventArgs.BytesTransferred);
         }
+    }
+
+    private void ReceiveSocketAsyncEventArgs_Completed(object? sender, SocketAsyncEventArgs e)
+    {
+        throw new NotImplementedException();
     }
 
     public void QueuePacket(MessageBuffer buffer)
@@ -183,11 +225,19 @@ public abstract class SocketBase : ISocket, IDisposable
         }
 
         _isWritingAsync = true;
-        _sendSocketAsyncEventArgs.SetBuffer(Array.Empty<byte>());
 
-        if (_socket.SendAsync(_sendSocketAsyncEventArgs))
+        SocketAsyncEventArgs sendSocketAsyncEventArgs = new SocketAsyncEventArgs();
+
+        sendSocketAsyncEventArgs.Completed += (object? send, SocketAsyncEventArgs e) =>
         {
-            WriteHandlerWrapper(_sendSocketAsyncEventArgs);
+            WriteHandlerWrapper(e);
+        };
+
+        sendSocketAsyncEventArgs.SetBuffer(Array.Empty<byte>());
+
+        if (!_socket.SendAsync(sendSocketAsyncEventArgs))
+        {
+            WriteHandlerWrapper(sendSocketAsyncEventArgs);
         }
 
         return true;
@@ -198,21 +248,21 @@ public abstract class SocketBase : ISocket, IDisposable
         _socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, enable);
     }
 
-    private void ReadHandlerInternal(SocketAsyncEventArgs args)
+    private void ReadHandlerInternal(SocketError socketError, int bytesTransferred)
     {
-        if (args.SocketError != SocketError.Success)
+        if (socketError != SocketError.Success)
         {
             CloseSocket();
             return;
         }
 
-        if (args.BytesTransferred == 0)
+        if (bytesTransferred == 0)
         {
             CloseSocket();
             return;
         }
 
-        _readBuffer.WriteCompleted(args.BytesTransferred);
+        _readBuffer.WriteCompleted(bytesTransferred);
 
         ReadHandler();
     }
@@ -268,6 +318,9 @@ public abstract class SocketBase : ISocket, IDisposable
             return AsyncProcessQueue();
         }
 
+        logger.Debug(LogFilter.Network, $"packet successfully sent (size={bytesSent})");
+
+        queuedMessage.ReadCompleted(bytesSent);
         _writeQueue.TryDequeue(out _);
 
         if (_closing && _writeQueue.IsEmpty)

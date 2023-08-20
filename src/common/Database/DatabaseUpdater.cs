@@ -102,8 +102,8 @@ public class DatabaseUpdater<T> where T : notnull
         var availableFiles = GetFileList();
         var appliedFiles = ReceiveAppliedFiles();
 
-        bool redundancyChecks = ConfigMgr.GetValueOrDefault("Updates.Redundancy", true);
-        bool archivedRedundancy = ConfigMgr.GetValueOrDefault("Updates.Redundancy", true);
+        bool redundancyChecks = ConfigMgr.GetOption("Updates.Redundancy", true);
+        bool archivedRedundancy = ConfigMgr.GetOption("Updates.Redundancy", true);
 
         UpdateResult result = new();
 
@@ -177,7 +177,7 @@ public class DatabaseUpdater<T> where T : notnull
                 }
             }
             // Rehash the update entry if it is contained in our database but with an empty hash.
-            else if (ConfigMgr.GetValueOrDefault("Updates.AllowRehash", true) && string.IsNullOrEmpty(applied.Hash))
+            else if (ConfigMgr.GetOption("Updates.AllowRehash", true) && string.IsNullOrEmpty(applied.Hash))
             {
                 mode = UpdateMode.Rehash;
 
@@ -230,7 +230,7 @@ public class DatabaseUpdater<T> where T : notnull
         // Cleanup up orphaned entries if enabled
         if (!appliedFiles.Empty())
         {
-            int cleanDeadReferencesMaxCount = ConfigMgr.GetValueOrDefault("Updates.CleanDeadRefMaxCount", 3);
+            int cleanDeadReferencesMaxCount = ConfigMgr.GetOption("Updates.CleanDeadRefMaxCount", 3);
             bool doCleanup = (cleanDeadReferencesMaxCount < 0) || (appliedFiles.Count <= cleanDeadReferencesMaxCount);
 
             foreach (var entry in appliedFiles)
@@ -261,7 +261,7 @@ public class DatabaseUpdater<T> where T : notnull
 
     string GetSourceDirectory()
     {
-        return ConfigMgr.GetValueOrDefault("Updates.SourcePath", "../../../");
+        return ConfigMgr.GetOption("Updates.SourcePath", "../../../");
     }
 
     uint ApplyTimedFile(string path)

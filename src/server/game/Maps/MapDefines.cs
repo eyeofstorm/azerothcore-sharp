@@ -15,12 +15,14 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace AzerothCore.DataStores;
+namespace AzerothCore.Game;
 
-public static class DBCFmt
+public static class MapDefines
 {
-    public static readonly string ChrClassesEntryfmt = "nxixssssssssssssssssxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxixii";
-    public static readonly string ChrRacesEntryfmt = "niixiixixxxxixssssssssssssssssxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxi";
-    public static readonly string MapEntryfmt = "nxiixssssssssssssssssxixxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxixiffxiii";
-    public static readonly string SpellItemEnchantmentfmt = "niiiiiiixxxiiissssssssssssssssxiiiiiii";
+    public static readonly int      MAX_NUMBER_OF_GRIDS = 64;
+    public static readonly float    SIZE_OF_GRIDS = 533.3333f;
+
+    public static readonly int      MMAP_MAGIC = 0x4d4d4150;   // 'MMAP'
+
+    public static readonly int      MMAP_VERSION = 16;
 }

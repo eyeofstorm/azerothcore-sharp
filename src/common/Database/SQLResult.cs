@@ -15,10 +15,8 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using MySqlConnector;
-using System;
-using System.Reflection.PortableExecutable;
 using System.Runtime.CompilerServices;
+using MySqlConnector;
 
 namespace AzerothCore.Database;
 

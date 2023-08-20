@@ -15,7 +15,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System.IO;
 using System.Numerics;
 using System.Text;
 
@@ -333,21 +332,21 @@ public class ByteBuffer : IDisposable
     #endregion
 
     #region Write Methods
-    public void WriteInt8(sbyte data)
+    public void WriteSByte(sbyte data)
     {
         FlushBits();
 
         _writeStream?.Write(data);
     }
 
-    public void WriteInt16(short data)
+    public void WriteShort(short data)
     {
         FlushBits();
 
         _writeStream?.Write(data);
     }
 
-    public void WriteInt32(int data)
+    public void WriteInt(int data)
     {
         FlushBits();
 
@@ -361,21 +360,21 @@ public class ByteBuffer : IDisposable
         _writeStream?.Write(data);
     }
 
-    public void WriteUInt8(byte data)
+    public void WriteByte(byte data)
     {
         FlushBits();
 
         _writeStream?.Write(data);
     }
 
-    public void WriteUInt16(ushort data)
+    public void WriteUShort(ushort data)
     {
         FlushBits();
 
         _writeStream?.Write(data);
     }
 
-    public void WriteUInt32(uint data)
+    public void WriteUInt(uint data)
     {
         FlushBits();
 
@@ -411,12 +410,12 @@ public class ByteBuffer : IDisposable
     {
         if (string.IsNullOrEmpty(str))
         {
-            WriteUInt8(0);
+            WriteByte(0);
             return;
         }
 
         WriteString(str);
-        WriteUInt8(0);
+        WriteByte(0);
     }
 
     public void WriteString(string str)
@@ -511,7 +510,7 @@ public class ByteBuffer : IDisposable
         packed |= ((uint)(pos.X / 0.25f) & 0x7FF);
         packed |= ((uint)(pos.Y / 0.25f) & 0x7FF) << 11;
         packed |= ((uint)(pos.Z / 0.25f) & 0x3FF) << 22;
-        WriteUInt32(packed);
+        WriteUInt(packed);
     }
 
     public bool WriteBit(bool bit)
@@ -544,12 +543,12 @@ public class ByteBuffer : IDisposable
 
     public void WritePackedTime(long time)
     {
-        WriteUInt32(TimeHelper.GetPackedTimeFromUnixTime(time));
+        WriteUInt(TimeHelper.GetPackedTimeFromUnixTime(time));
     }
 
     public void WritePackedTime()
     {
-        WriteUInt32(TimeHelper.GetPackedTimeFromDateTime(DateTime.Now));
+        WriteUInt(TimeHelper.GetPackedTimeFromDateTime(DateTime.Now));
     }
     #endregion
 

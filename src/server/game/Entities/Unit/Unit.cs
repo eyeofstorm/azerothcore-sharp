@@ -15,12 +15,18 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace AzerothCore.DataStores;
+namespace AzerothCore.Game;
 
-public static class DBCFmt
+public static class UnitConst
 {
-    public static readonly string ChrClassesEntryfmt = "nxixssssssssssssssssxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxixii";
-    public static readonly string ChrRacesEntryfmt = "niixiixixxxxixssssssssssssssssxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxi";
-    public static readonly string MapEntryfmt = "nxiixssssssssssssssssxixxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxixiffxiii";
-    public static readonly string SpellItemEnchantmentfmt = "niiiiiiixxxiiissssssssssssssssxiiiiiii";
+    public static readonly uint MAX_CREATURE_SPELLS = 8;
+    public static readonly uint InfinityCooldownDelay = 0x9A7EC800;         // used for set "infinity cooldowns" for spells and check, MONTH*IN_MILLISECONDS
+    public static readonly uint InfinityCooldownDelayCheck = 0x4D3F6400;    // MONTH*IN_MILLISECONDS/2;
+}
+
+public class Unit
+{
+    public Unit()
+    {
+    }
 }

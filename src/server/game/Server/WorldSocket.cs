@@ -92,7 +92,7 @@ public struct AccountInfo
         IsBanned = result.Read<long>(12) != 0;
         IsRectuiter = result.Read<uint>(13) != 0;
 
-        uint expansion = ConfigMgr.GetValueOrDefault<uint>("Expansion", 2);
+        uint expansion = ConfigMgr.GetOption<uint>("Expansion", 2);
 
         if (Expansion > expansion)
         {
@@ -119,32 +119,32 @@ public struct ClientPktHeader
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct ServerPktHeader
 {
-    public uint size;
+    public uint Size;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 5)]
-    public byte[] header;
+    public byte[] Header;
 
     /**
      * size is the length of the payload _plus_ the length of the opcode
      */
     public ServerPktHeader(uint size, ushort cmd)
     {
-        this.header = new byte[5];
-        this.size = size;
+        Size = size;
+        Header = new byte[5];
 
         byte headerIndex = 0;
 
         if (IsLargePacket())
         {
             LoggerFactory.GetLogger().Debug(LogFilter.Network, $"initializing large server to client packet. Size: {size}, cmd: {cmd}");
-            header[headerIndex++] = (byte)(0x80 | (0xFF & (size >> 16)));
+            Header[headerIndex++] = (byte)(0x80 | (0xFF & (size >> 16)));
         }
 
-        header[headerIndex++] = (byte)(0xFF & (size >> 8));
-        header[headerIndex++] = (byte)(0xFF & size);
+        Header[headerIndex++] = (byte)(0xFF & (size >> 8));
+        Header[headerIndex++] = (byte)(0xFF & size);
 
-        header[headerIndex++] = (byte)(0xFF & cmd);
-        header[headerIndex++] = (byte)(0xFF & (cmd >> 8));
+        Header[headerIndex++] = (byte)(0xFF & cmd);
+        Header[headerIndex++] = (byte)(0xFF & (cmd >> 8));
     }
 
     public int GetHeaderLength()
@@ -155,13 +155,12 @@ public struct ServerPktHeader
 
     public bool IsLargePacket()
     {
-        return size > 0x7FFF;
+        return Size > 0x7FFF;
     }
 }
 
 public class EncryptablePacket : WorldPacketData
 {
-    public EncryptablePacket? SocketQueueLink { get; set; } = null;
     private readonly bool _encrypt;
 
     public EncryptablePacket(WorldPacketData packet, bool encrypt) : base(packet)
@@ -182,11 +181,13 @@ public partial class WorldSocket : SocketBase
     private MessageBuffer                               _headerBuffer;
     private MessageBuffer                               _packetBuffer;
     private MPSCQueue<EncryptablePacket>                _bufferQueue;
-    private int                                         _sendBufferSize;
     private AsyncCallbackProcessor<QueryCallback>       _queryProcessor;
     private bool                                        _authed;
     private readonly object                             _worldSessionLock = new();
     private WorldSession?                               _worldSession;
+
+    private int                                         _sendBufferSize;
+    private MessageBuffer                               _sendBuffer;
 
     private DateTime                                    _lastPingTime;
     private uint                                        _overSpeedPings;
@@ -196,6 +197,7 @@ public partial class WorldSocket : SocketBase
     public void SetSendBufferSize(int sendBufferSize)
     {
         _sendBufferSize = sendBufferSize;
+        _sendBuffer.Resize(sendBufferSize);
     }
 
     public WorldSocket(Socket socket) : base(socket)
@@ -208,7 +210,9 @@ public partial class WorldSocket : SocketBase
         _headerBuffer.Resize(Marshal.SizeOf(typeof(ClientPktHeader)));
         _packetBuffer = new MessageBuffer();
         _bufferQueue = new MPSCQueue<EncryptablePacket>(4096);
+
         _sendBufferSize = 4096;
+        _sendBuffer = new MessageBuffer(_sendBufferSize);
 
         _queryProcessor = new();
 
@@ -281,30 +285,30 @@ public partial class WorldSocket : SocketBase
 
     public override bool Update()
     {
-        MessageBuffer buffer = new (_sendBufferSize);
-
         while (_bufferQueue.TryDequeue(out EncryptablePacket? queued))
         {
             ServerPktHeader header = new (queued.GetSize() + 2, queued.Opcode);
 
             if (queued.NeedsEncryption())
             {
-                _authCrypt.EncryptSend(header.header, 0, header.GetHeaderLength());
+                _authCrypt.EncryptSend(header.Header, 0, header.GetHeaderLength());
             }
 
-            if (buffer.GetRemainingSpace() < queued.GetSize() + header.GetHeaderLength())
+            if (_sendBuffer.GetRemainingSpace() < queued.GetSize() + header.GetHeaderLength())
             {
-                buffer.Resize(_sendBufferSize);
-                QueuePacket(buffer);
+                _sendBuffer.Normalize();
+                _sendBuffer.EnsureFreeSpace();
+
+                QueuePacket(_sendBuffer);
             }
 
-            if (buffer.GetRemainingSpace() >= queued.GetSize() + header.GetHeaderLength())
+            if (_sendBuffer.GetRemainingSpace() >= queued.GetSize() + header.GetHeaderLength())
             {
-                buffer.Write(header.header, header.GetHeaderLength());
+                _sendBuffer.Write(header.Header, header.GetHeaderLength());
 
                 if (queued.GetSize() > 0)
                 {
-                    buffer.Write(queued.GetData(), (int)queued.GetSize());
+                    _sendBuffer.Write(queued.GetData(), (int)queued.GetSize());
                 }
             }
             else
@@ -312,7 +316,7 @@ public partial class WorldSocket : SocketBase
                 // single packet larger than 4096 bytes
 
                 MessageBuffer packetBuffer = new ((int)queued.GetSize() + header.GetHeaderLength());
-                packetBuffer.Write(header.header, header.GetHeaderLength());
+                packetBuffer.Write(header.Header, header.GetHeaderLength());
 
                 if (queued.GetSize() > 0)
                 {
@@ -323,9 +327,9 @@ public partial class WorldSocket : SocketBase
             }
         }
 
-        if (buffer.GetActiveSize() > 0)
+        if (_sendBuffer.GetActiveSize() > 0)
         {
-            QueuePacket(buffer);
+            QueuePacket(_sendBuffer);
         }
 
         if (!base.Update())
@@ -340,9 +344,9 @@ public partial class WorldSocket : SocketBase
 
     private void HandleSendAuthSession()
     {
-        WorldPacketData packet = new (Opcodes.SMSG_AUTH_CHALLENGE, 40);
+        WorldPacketData packet = new (Opcodes.SMSG_AUTH_CHALLENGE);
 
-        packet.WriteUInt32(1);                                    // 1...31
+        packet.WriteUInt(1U);                                    // 1...31
         packet.WriteBytes(_authSeed);
 
         packet.WriteBytes(RandomHelper.NextBytes(32));            // new encryption seeds
@@ -352,7 +356,7 @@ public partial class WorldSocket : SocketBase
 
     private void SendPacketAndLogOpcode(WorldPacketData packet)
     {
-        logger.Trace(LogFilter.Network, $"S->C: { GetRemoteIpAddress()?.ToString() ?? "Unknow IP Address" } { Enum.GetName((Opcodes)packet.Opcode) ?? "Unkown Opcode" }");
+        logger.Debug(LogFilter.Network, $"S->C: { GetRemoteIpAddress()?.ToString() ?? "Unknow IP Address" } { Enum.GetName((Opcodes)packet.Opcode) ?? "Unkown Opcode" }");
 
         SendPacket(packet);
     }
@@ -369,7 +373,9 @@ public partial class WorldSocket : SocketBase
             PacketFileLogger.LogPacket(packet, PacketDirection.SERVER_TO_CLIENT, GetRemoteIpAddress());
         }
 
-        if (!_bufferQueue.TryEnqueue(new EncryptablePacket(packet, _authCrypt.IsInitialized)))
+        EncryptablePacket encrytPacket = new(packet, _authCrypt.IsInitialized);
+
+        if (!_bufferQueue.TryEnqueue(encrytPacket))
         {
             logger.Fatal(LogFilter.Network, $"can't enqueue packet to MPSC queue. queue is full.");
         }
@@ -377,9 +383,9 @@ public partial class WorldSocket : SocketBase
 
     private void SendAuthResponseError(ResponseCodes reseaon)
     {
-        WorldPacketData packet = new WorldPacketData(Opcodes.SMSG_AUTH_RESPONSE, 1);
+        WorldPacketData packet = new WorldPacketData(Opcodes.SMSG_AUTH_RESPONSE);
 
-        packet.WriteUInt8((byte)reseaon);
+        packet.WriteByte((byte)reseaon);
 
         SendPacketAndLogOpcode(packet);
     }
@@ -486,8 +492,7 @@ public partial class WorldSocket : SocketBase
         ClientPktHeader header = _headerBuffer.CastTo<ClientPktHeader>();
         Opcodes opcode = (Opcodes)header.cmd;
 
-        WorldPacketData packet = new WorldPacketData(opcode, new Memory<byte>(_packetBuffer.GetBasePointer(), _packetBuffer.GetReadPos(), _packetBuffer.GetActiveSize()).ToArray());
-        WorldPacketData? packetToQueue = null;
+        WorldPacketData packet = new(opcode, new Memory<byte>(_packetBuffer.GetBasePointer(), _packetBuffer.GetReadPos(), _packetBuffer.GetActiveSize()).ToArray());
 
         if (PacketFileLogger.CanLogPacket())
         {
@@ -496,75 +501,77 @@ public partial class WorldSocket : SocketBase
 
         UniqueLock sessionGuard = new (true);
 
+        WorldPacketData? packetToQueue;
+
         switch (opcode)
         {
             case Opcodes.CMSG_PING:
-            {
-                LogOpcodeText(Opcodes.CMSG_PING);
+                {
+                    LogOpcodeText(Opcodes.CMSG_PING);
 
-                try
-                {
-                    return HandlePing(packet);
-                }
-                catch
-                {
-                    return ReadDataHandlerResult.Error;
-                }
-            }
-            case Opcodes.CMSG_AUTH_SESSION:
-            {
-                LogOpcodeText(Opcodes.CMSG_PING);
-
-                if (_authed)
-                {
-                    if (sessionGuard.Lock())
+                    try
                     {
-                        logger.Error(LogFilter.Network, $"WorldSocket::ProcessIncoming: received duplicate CMSG_AUTH_SESSION from { _worldSession?.GetPlayerInfo() }");
+                        return HandlePing(packet);
+                    }
+                    catch
+                    {
+                        return ReadDataHandlerResult.Error;
+                    }
+                }
+            case Opcodes.CMSG_AUTH_SESSION:
+                {
+                    LogOpcodeText(Opcodes.CMSG_PING);
+
+                    if (_authed)
+                    {
+                        if (sessionGuard.Lock())
+                        {
+                            logger.Error(LogFilter.Network, $"WorldSocket::ProcessIncoming: received duplicate CMSG_AUTH_SESSION from {_worldSession?.GetPlayerInfo()}");
+                        }
+
+                        return ReadDataHandlerResult.Error;
                     }
 
-                    return ReadDataHandlerResult.Error;
-                }
+                    try
+                    {
+                        HandleAuthSession(packet);
 
-                try
-                {
-                    HandleAuthSession(packet);
+                        return ReadDataHandlerResult.WaitingForQuery;
+                    }
+                    catch
+                    {
+                        logger.Error(LogFilter.Network, $"WorldSocket::ReadDataHandler(): client {GetRemoteIpAddress()?.ToString()} sent malformed CMSG_AUTH_SESSION");
 
-                    return ReadDataHandlerResult.WaitingForQuery;
+                        return ReadDataHandlerResult.Error;
+                    }
                 }
-                catch
-                {
-                    logger.Error(LogFilter.Network, $"WorldSocket::ReadDataHandler(): client {GetRemoteIpAddress()?.ToString()} sent malformed CMSG_AUTH_SESSION");
-
-                    return ReadDataHandlerResult.Error;
-                }
-            }
             case Opcodes.CMSG_KEEP_ALIVE:
-            {
-                sessionGuard.Lock();
-
-                LogOpcodeText(Opcodes.CMSG_PING);
-
-                if (_worldSession != null)
                 {
-                    _worldSession.ResetTimeOutTime(true);
+                    sessionGuard.Lock();
 
-                    return ReadDataHandlerResult.Ok;
+                    LogOpcodeText(Opcodes.CMSG_PING);
+
+                    if (_worldSession != null)
+                    {
+                        _worldSession.ResetTimeOutTime(true);
+
+                        return ReadDataHandlerResult.Ok;
+                    }
+
+                    logger.Error(LogFilter.Network, $"WorldSocket::ReadDataHandler: client {GetRemoteIpAddress()} sent CMSG_KEEP_ALIVE without being authenticated");
+
+                    return ReadDataHandlerResult.Error;
                 }
-
-                logger.Error(LogFilter.Network, $"WorldSocket::ReadDataHandler: client {GetRemoteIpAddress()} sent CMSG_KEEP_ALIVE without being authenticated");
-
-                return ReadDataHandlerResult.Error;
-            }
             case Opcodes.CMSG_TIME_SYNC_RESP:
-            {
-                packetToQueue = new WorldPacketData(packet, DateTime.Now);
-                break;
-            }
+                {
+                    packetToQueue = new WorldPacketData(packet, DateTime.Now);
+                    break;
+                }
             default:
-            {
-                packetToQueue = new WorldPacketData(packet);
-                break;
-            }
+                {
+                    packetToQueue = new WorldPacketData(packet);
+                    break;
+                }
         }
 
         sessionGuard.Lock();
@@ -642,7 +649,7 @@ public partial class WorldSocket : SocketBase
 
         AccountInfo account = new(result);
 
-        string? address = ConfigMgr.GetValueOrDefault("AllowLoggingIPAddressesInDatabase", true) ? GetRemoteIpAddress()?.ToString() : "0.0.0.0";
+        string? address = ConfigMgr.GetOption("AllowLoggingIPAddressesInDatabase", true) ? GetRemoteIpAddress()?.ToString() : "0.0.0.0";
 
         // As we don't know if attempted login process by ip works, we update last_attempt_ip right away
         var stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_UPD_LAST_ATTEMPT_IP);
@@ -686,7 +693,7 @@ public partial class WorldSocket : SocketBase
         }
 
         // Must be done before WorldSession is created
-        bool wardenActive = ConfigMgr.GetValueOrDefault("Warden.Enabled", true);
+        bool wardenActive = ConfigMgr.GetOption("Warden.Enabled", true);
 
         if (wardenActive && account.OS != "Win" && account.OS != "OSX")
         {
@@ -732,10 +739,6 @@ public partial class WorldSocket : SocketBase
                 SendAuthResponseError(ResponseCodes.AUTH_REJECT);
                 logger.Error(LogFilter.Network, $"WorldSocket::HandleAuthSession: Sent Auth Response (Account IP differs. Original IP: {account.LastIP}, new IP: {address}).");
 
-                // We could log on hook only instead of an additional db log, however action logger is config based. Better keep DB logging as well
-                // TODO: game: WorldSocket::HandleAuthSessionCallback (SQLResult result) => sScriptMgr->OnFailedAccountLogin(account.Id);
-                //sScriptMgr->OnFailedAccountLogin(account.Id);
-
                 DelayedCloseSocket();
 
                 return;
@@ -747,10 +750,6 @@ public partial class WorldSocket : SocketBase
             {
                 SendAuthResponseError(ResponseCodes.AUTH_REJECT);
                 logger.Error(LogFilter.Network, $"WorldSocket::HandleAuthSession: Sent Auth Response (Account country differs. Original country: {account.LockCountry}, new country: {_ipCountry}).");
-
-                // We could log on hook only instead of an additional db log, however action logger is config based. Better keep DB logging as well
-                // TODO: game: WorldSocket::HandleAuthSessionCallback (SQLResult result) => sScriptMgr->OnFailedAccountLogin(account.Id);
-                //sScriptMgr->OnFailedAccountLogin(account.Id);
 
                 DelayedCloseSocket();
                 return;
@@ -774,9 +773,6 @@ public partial class WorldSocket : SocketBase
             SendAuthResponseError(ResponseCodes.AUTH_BANNED);
             logger.Error(LogFilter.Network, $"WorldSocket::HandleAuthSession: Sent Auth Response (Account banned).");
 
-            // TODO: game: WorldSocket::HandleAuthSessionCallback (SQLResult result) => sScriptMgr->OnFailedAccountLogin(account.Id);
-            //sScriptMgr->OnFailedAccountLogin(account.Id);
-
             DelayedCloseSocket();
 
             return;
@@ -791,10 +787,8 @@ public partial class WorldSocket : SocketBase
             SendAuthResponseError(ResponseCodes.AUTH_UNAVAILABLE);
             logger.Error(LogFilter.Network, $"WorldSocket::HandleAuthSession: User tries to login but his security level is not enough");
 
-            // TODO: game: WorldSocket::HandleAuthSessionCallback (SQLResult result) => sScriptMgr->OnFailedAccountLogin(account.Id);
-            //sScriptMgr->OnFailedAccountLogin(account.Id);
-
             DelayedCloseSocket();
+
             return;
         }
 
@@ -807,14 +801,7 @@ public partial class WorldSocket : SocketBase
 
         DB.Login.Execute(stmt);
 
-        // At this point, we can safely hook a successful login
-        // TODO: game: WorldSocket::HandleAuthSessionCallback (SQLResult result) => sScriptMgr->OnAccountLogin(account.Id);
-        //sScriptMgr->OnAccountLogin(account.Id);
-
         _authed = true;
-
-        // TODO: game: WorldSocket::HandleAuthSessionCallback (SQLResult result) => sScriptMgr->OnLastIpUpdate(account.Id, address);
-        //sScriptMgr->OnLastIpUpdate(account.Id, address);
 
         _worldSession = new WorldSession(
                                 account.Id,
@@ -862,7 +849,7 @@ public partial class WorldSocket : SocketBase
             {
                 ++_overSpeedPings;
 
-                uint maxAllowed = ConfigMgr.GetValueOrDefault<uint>("MaxOverspeedPings", 2);
+                uint maxAllowed = ConfigMgr.GetOption<uint>("MaxOverspeedPings", 2);
 
                 if (maxAllowed != 0 && _overSpeedPings > maxAllowed)
                 {
@@ -898,8 +885,8 @@ public partial class WorldSocket : SocketBase
             }
         }
 
-        WorldPacketData packet = new(Opcodes.SMSG_PONG, 4);
-        packet.WriteUInt32(ping);
+        WorldPacketData packet = new(Opcodes.SMSG_PONG);
+        packet.WriteUInt(ping);
         SendPacketAndLogOpcode(packet);
 
         return ReadDataHandlerResult.Ok;
@@ -907,7 +894,7 @@ public partial class WorldSocket : SocketBase
 
     private void LogOpcodeText(Opcodes opcode)
     {
-        logger.Trace(LogFilter.Network, $"C->S: {GetRemoteIpAddress()?.ToString()} {Enum.GetName(typeof(Opcodes), opcode)}");
+        logger.Debug(LogFilter.Network, $"C->S: {GetRemoteIpAddress()?.ToString()} {Enum.GetName(typeof(Opcodes), opcode)}");
     }
 
     protected enum ReadDataHandlerResult

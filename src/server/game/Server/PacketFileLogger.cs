@@ -17,7 +17,7 @@
 
 using System.Net;
 using System.Runtime.InteropServices;
-
+using System.Text;
 using AzerothCore.Configuration;
 using AzerothCore.Logging;
 using AzerothCore.Singleton;
@@ -58,8 +58,8 @@ public struct LogHeader
 public struct OptionalData
 {
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-    public byte[] SocketIPBytes;
-    public UInt32 SocketPort;
+    public byte[]   SocketIPBytes;
+    public uint     SocketPort;
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -90,11 +90,11 @@ public class PacketFileLogger : Singleton<PacketFileLogger>
 
     private static void Initialize()
     {
-        string logsDir = ConfigMgr.GetValueOrDefault("LogsDir", "");
+        string logsDir = ConfigMgr.GetOption("LogsDir", "");
 
         if (!string.IsNullOrEmpty(logsDir))
         {
-            string logname = ConfigMgr.GetValueOrDefault("PacketLogFile", "");
+            string logname = ConfigMgr.GetOption("PacketLogFile", "");
 
             if (!string.IsNullOrEmpty(logname))
             {
@@ -102,7 +102,7 @@ public class PacketFileLogger : Singleton<PacketFileLogger>
 
                 try
                 {
-                    _file = File.Open(fullPath, FileMode.Create);
+                    _file = File.Open(fullPath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                 }
                 catch (Exception e)
                 {
@@ -133,7 +133,7 @@ public class PacketFileLogger : Singleton<PacketFileLogger>
                     header.SniffStartTicks = TimeHelper.GetMSTime();
                     header.OptionalDataSize = 0;
 
-                    using var writer = new BinaryWriter(_file);
+                    using var writer = new BinaryWriter(_file, Encoding.UTF8, true);
                     writer.Write(header.ToByteArray());
                     writer.Flush();
                 }
@@ -174,17 +174,16 @@ public class PacketFileLogger : Singleton<PacketFileLogger>
             header.Length = packet.GetSize() + sizeof(uint);
             header.Opcode = packet.Opcode;
 
-            using (var writer = new BinaryWriter(_file))
+            using var writer = new BinaryWriter(_file, Encoding.UTF8, true);
+
+            writer.Write(header.ToByteArray());
+
+            if (packet.GetSize() > 0)
             {
-                writer.Write(header.ToByteArray());
-
-                if (packet.GetSize() > 0)
-                {
-                    writer.Write(packet.GetData());
-                }
-
-                writer.Flush();
+                writer.Write(packet.GetData());
             }
+
+            writer.Flush();
         }
     }
 }

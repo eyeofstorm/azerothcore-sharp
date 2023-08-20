@@ -22,11 +22,14 @@ namespace AzerothCore.Game;
 public static class Global
 {
     // Main
-    public static World             sWorld      { get { return World.Instance;              } }
-    public static RealmList         sRealmList  { get { return RealmList.Instance;          } }
-    public static PacketFileLogger  sPacketLog  { get { return PacketFileLogger.Instance;   } }
-    public static ObjectMgr         sObjectMgr  { get { return ObjectMgr.Instance;          } }
+    public static readonly World                        sWorld              = World.Instance;
+    public static readonly RealmList                    sRealmList          = RealmList.Instance;
+    public static readonly PacketFileLogger             sPacketLog          = PacketFileLogger.Instance;
+    public static readonly ObjectMgr                    sObjectMgr          = ObjectMgr.Instance;
 
     // Data stores
-    public static DBCStorage<ChrRacesEntry>? sChrRacesStore;
+    public static readonly DBCStorage<ChrClassesEntry>              sChrClassesStore            = new(DBCFmt.ChrClassesEntryfmt);
+    public static readonly DBCStorage<ChrRacesEntry>                sChrRacesStore              = new(DBCFmt.ChrRacesEntryfmt);
+    public static readonly DBCStorage<MapEntry>                     sMapStore                   = new(DBCFmt.MapEntryfmt);
+    public static readonly DBCStorage<SpellItemEnchantmentEntry>    sSpellItemEnchantmentStore  = new(DBCFmt.SpellItemEnchantmentfmt);
 }

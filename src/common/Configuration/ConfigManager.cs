@@ -73,7 +73,7 @@ public partial class ConfigMgr
         return true;
     }
 
-    public static T GetValueOrDefault<T>(string name, T defaultValue) 
+    public static T GetOption<T>(string name, T defaultValue) 
     {
         string? temp = _configList.LookupByKey(name);
 

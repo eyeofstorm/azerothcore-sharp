@@ -47,8 +47,8 @@ public partial class WorldSession : ICharacterHandler
     {
         logger.Debug(Logging.LogFilter.Network, "WORLD: CMSG_CHAR_ENUM");
 
-        RealmZone zone = ConfigMgr.GetValueOrDefault("RealmZone", RealmZone.REALM_ZONE_DEVELOPMENT);
-        bool isDeclinedNamesUsed = zone == RealmZone.REALM_ZONE_RUSSIAN || ConfigMgr.GetValueOrDefault("DeclinedNames", false);
+        RealmZone zone = ConfigMgr.GetOption("RealmZone", RealmZone.REALM_ZONE_DEVELOPMENT);
+        bool isDeclinedNamesUsed = zone == RealmZone.REALM_ZONE_RUSSIAN || ConfigMgr.GetOption("DeclinedNames", false);
 
         PreparedStatement stmt = isDeclinedNamesUsed ?
             CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_ENUM_DECLINED_NAME) :
@@ -63,10 +63,10 @@ public partial class WorldSession : ICharacterHandler
 
     private void HandleCharEnum(SQLResult result)
     {
-        WorldPacketData data = new (Opcodes.SMSG_CHAR_ENUM, 100);                  // we guess size
+        WorldPacketData data = new (Opcodes.SMSG_CHAR_ENUM);                  // we guess size
 
         byte numberOfCharacters = 0;
-        data.WriteUInt8(numberOfCharacters);
+        data.WriteByte(numberOfCharacters);
 
         _legitCharacters.Clear();
 
@@ -78,7 +78,7 @@ public partial class WorldSession : ICharacterHandler
 
                 logger.Debug(Logging.LogFilter.Network, $"Loading char {guid} from account {GetAccountId()}.");
 
-                if (Player.BuildEnumData(result, data))
+                if (Player.BuildEnumData(result, ref data))
                 {
                     _legitCharacters.Add(guid);
                     ++numberOfCharacters;

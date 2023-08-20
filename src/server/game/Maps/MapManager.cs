@@ -16,23 +16,30 @@
  */
 
 using AzerothCore.DataStores;
+using AzerothCore.Singleton;
 
 namespace AzerothCore.Game;
 
-public class DataStores
+public class MapMgr : Singleton<MapMgr>
 {
-    public static void LoadDBCStores(string dataPath)
+    private MapMgr() {  }
+
+    public static bool IsValidMAP(uint mapid, bool startUp)
     {
-        string dbcPath = Path.Combine(dataPath, "dbc");
+        MapEntry? mEntry = Global.sMapStore.LookupEntry(mapid);
 
-        // speed up
-        uint availableDbcLocales = 0xFFFFFFFF;
+        if (startUp)
+        {
+            return mEntry != null;
+        }
+        else
+        {
+            return mEntry != null && (!mEntry.IsDungeon() || Global.sObjectMgr.GetInstanceTemplate(mapid) != null);
+        }
+    }
 
-        // ...
-        DBCStorage<ChrClassesEntry>.LoadDBC(ref availableDbcLocales, Global.sChrClassesStore, dbcPath, "ChrClasses.dbc", "chrclasses_dbc");
-        DBCStorage<ChrRacesEntry>.LoadDBC(ref availableDbcLocales, Global.sChrRacesStore, dbcPath, "ChrRaces.dbc", "chrraces_dbc");
-        DBCStorage<MapEntry>.LoadDBC(ref availableDbcLocales, Global.sMapStore, dbcPath, "Map.dbc", "map_dbc");
-        DBCStorage<SpellItemEnchantmentEntry>.LoadDBC(ref availableDbcLocales, Global.sSpellItemEnchantmentStore, dbcPath, "SpellItemEnchantment.dbc", "spellitemenchantment_dbc");
-        // ...
+    public static bool IsValidMapCoord(uint mapId, float x, float y, float z, float o)
+    {
+        return IsValidMAP(mapId, false) && GridDefines.IsValidMapCoord(x, y, z, o);
     }
 }

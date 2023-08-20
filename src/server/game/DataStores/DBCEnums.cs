@@ -17,10 +17,24 @@
 
 namespace AzerothCore.DataStores;
 
-public static class DBCFmt
+public enum MapTypes : uint
 {
-    public static readonly string ChrClassesEntryfmt = "nxixssssssssssssssssxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxixii";
-    public static readonly string ChrRacesEntryfmt = "niixiixixxxxixssssssssssssssssxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxi";
-    public static readonly string MapEntryfmt = "nxiixssssssssssssssssxixxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxixiffxiii";
-    public static readonly string SpellItemEnchantmentfmt = "niiiiiiixxxiiissssssssssssssssxiiiiiii";
+    MAP_COMMON = 0,                                 // none
+    MAP_INSTANCE = 1,                               // party
+    MAP_RAID = 2,                                   // raid
+    MAP_BATTLEGROUND = 3,                           // pvp
+    MAP_ARENA = 4                                   // arena
+}
+
+[Flags]
+public enum MapFlags : uint
+{
+    MAP_FLAG_DYNAMIC_DIFFICULTY = 0x100
+}
+
+public static class DBCConst
+{
+    public static readonly int MAX_DUNGEON_DIFFICULTY = 3;
+    public static readonly int MAX_RAID_DIFFICULTY = 4;
+    public static readonly int MAX_DIFFICULTY = 4;
 }

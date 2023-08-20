@@ -540,7 +540,7 @@ public static class DBExecutableUtil
 
     public static bool CheckExecutable()
     {
-        string mysqlExePath = ConfigMgr.GetValueOrDefault("MySQLExecutable", "");
+        string mysqlExePath = ConfigMgr.GetOption("MySQLExecutable", "");
 
         if (mysqlExePath.IsEmpty() || !File.Exists(mysqlExePath))
         {

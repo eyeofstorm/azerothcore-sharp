@@ -35,8 +35,8 @@ public class DatabaseLoader
 
     public DatabaseLoader(DatabaseTypeFlags defaultUpdateMask)
     {
-        _autoSetup = ConfigMgr.GetValueOrDefault("Updates.AutoSetup", true);
-        _updateFlags = ConfigMgr.GetValueOrDefault("Updates.EnableDatabases", defaultUpdateMask);
+        _autoSetup = ConfigMgr.GetOption("Updates.AutoSetup", true);
+        _updateFlags = ConfigMgr.GetOption("Updates.EnableDatabases", defaultUpdateMask);
     }
 
     public void AddDatabase<T>(MySqlBase<T> database, string baseDBName) where T : notnull
@@ -47,12 +47,12 @@ public class DatabaseLoader
         {
             MySqlConnectionInfo connectionObject = new()
             {
-                Host = ConfigMgr.GetValueOrDefault(baseDBName + "DatabaseInfo.Host", ""),
-                PortOrSocket = ConfigMgr.GetValueOrDefault(baseDBName + "DatabaseInfo.Port", ""),
-                Username = ConfigMgr.GetValueOrDefault(baseDBName + "DatabaseInfo.Username", ""),
-                Password = ConfigMgr.GetValueOrDefault(baseDBName + "DatabaseInfo.Password", ""),
-                Database = ConfigMgr.GetValueOrDefault(baseDBName + "DatabaseInfo.Database", ""),
-                UseSSL = ConfigMgr.GetValueOrDefault(baseDBName + "DatabaseInfo.SSL", false)
+                Host = ConfigMgr.GetOption(baseDBName + "DatabaseInfo.Host", ""),
+                PortOrSocket = ConfigMgr.GetOption(baseDBName + "DatabaseInfo.Port", ""),
+                Username = ConfigMgr.GetOption(baseDBName + "DatabaseInfo.Username", ""),
+                Password = ConfigMgr.GetOption(baseDBName + "DatabaseInfo.Password", ""),
+                Database = ConfigMgr.GetOption(baseDBName + "DatabaseInfo.Database", ""),
+                UseSSL = ConfigMgr.GetOption(baseDBName + "DatabaseInfo.SSL", false)
             };
 
             var error = database.Initialize(connectionObject);

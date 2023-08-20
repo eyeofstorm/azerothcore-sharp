@@ -55,7 +55,7 @@ internal class AuthServer
         }
 
         // Get the list of realms for the server
-        RealmList.Instance.Initialize(ConfigMgr.GetValueOrDefault("RealmsStateUpdateDelay", 20));
+        RealmList.Instance.Initialize(ConfigMgr.GetOption("RealmsStateUpdateDelay", 20));
 
         if (RealmList.Instance == null || RealmList.Instance.GetRealms().Empty())
         {
@@ -64,8 +64,8 @@ internal class AuthServer
         }
 
         // Start the listening port(acceptor) for auth connections
-        string bindIp = ConfigMgr.GetValueOrDefault("BindIP", "0.0.0.0");
-        int port = ConfigMgr.GetValueOrDefault("RealmServerPort", 3724);
+        string bindIp = ConfigMgr.GetOption("BindIP", "0.0.0.0");
+        int port = ConfigMgr.GetOption("RealmServerPort", 3724);
 
         if (port < 0 || port > 0xFFFF)
         {
@@ -79,7 +79,7 @@ internal class AuthServer
             ExitNow(1);
         }
 
-        _banExpiryCheckTimer = new System.Timers.Timer(ConfigMgr.GetValueOrDefault("BanExpiryCheckInterval", 60u));
+        _banExpiryCheckTimer = new System.Timers.Timer(ConfigMgr.GetOption("BanExpiryCheckInterval", 60u));
         _banExpiryCheckTimer.Elapsed += BanExpiryCheckTimer_Elapsed;
         _banExpiryCheckTimer.Start();
 

@@ -18,8 +18,17 @@
 using System.Text;
 
 using AzerothCore.Constants;
+using AzerothCore.Utilities;
 
 namespace AzerothCore.Game;
+
+public static class ByteBufferExtension
+{
+    public static void WriteObjectGuid(this ByteBuffer buffer, ObjectGuid guid)
+    {
+        buffer.WriteUInt64(guid.GetRawValue());
+    }
+}
 
 public class ObjectGuid
 {

@@ -26,7 +26,7 @@ public class WorldPacketData : ByteBuffer, IDisposable
 
     public WorldPacketData() : base() { }
 
-    public WorldPacketData(Opcodes opcode, int capacity = 200) : base(capacity)
+    public WorldPacketData(Opcodes opcode) : base()
     {
         Opcode = (ushort)opcode;
     }
@@ -38,14 +38,10 @@ public class WorldPacketData : ByteBuffer, IDisposable
 
     public WorldPacketData(byte[] data) : base(data) { }
 
-    public WorldPacketData(WorldPacketData packet)
+    public WorldPacketData(WorldPacketData packet) : base(packet.GetData())
     {
-        byte[] copyFrom = packet.GetData();
-        byte[] copyTo = new byte[copyFrom.Length];
-
-        Array.Copy(copyFrom, copyTo, copyFrom.Length);
-
-        _readStream = new BinaryReader(new MemoryStream(copyTo));
+        Opcode = packet.Opcode;
+        ReceivedTime = packet.ReceivedTime;
     }
 
     public WorldPacketData(WorldPacketData packet, DateTime receivedTime) : this(packet)

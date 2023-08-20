@@ -240,18 +240,18 @@ public partial class WorldSession : IOpcodeHandler
 
     internal void SendAuthResponse(ResponseCodes code, bool shortForm, uint queuePos = 0)
     {
-        WorldPacketData packet = new(Opcodes.SMSG_AUTH_RESPONSE, 1 + 4 + 1 + 4 + 1 + (shortForm ? 0 : (4 + 1)));
+        WorldPacketData packet = new(Opcodes.SMSG_AUTH_RESPONSE);
 
-        packet.WriteUInt8((byte)code);
-        packet.WriteUInt32(0);                                   // BillingTimeRemaining
-        packet.WriteUInt8(0);                                    // BillingPlanFlags
-        packet.WriteUInt32(0);                                   // BillingTimeRested
-        packet.WriteUInt8(GetExpansion());                       // 0 - normal, 1 - TBC, 2 - WOTLK, must be set in database manually for each account
+        packet.WriteByte((byte)code);
+        packet.WriteUInt((uint)0);                                   // BillingTimeRemaining
+        packet.WriteByte(0);                                    // BillingPlanFlags
+        packet.WriteUInt((uint)0);                                   // BillingTimeRested
+        packet.WriteByte(GetExpansion());                       // 0 - normal, 1 - TBC, 2 - WOTLK, must be set in database manually for each account
 
         if (!shortForm)
         {
-            packet.WriteUInt32(queuePos);                        // Queue position
-            packet.WriteUInt8(0);                                // Realm has a free character migration - bool
+            packet.WriteUInt(queuePos);                        // Queue position
+            packet.WriteByte(0);                                // Realm has a free character migration - bool
         }
 
         SendPacket(packet);
@@ -280,19 +280,19 @@ public partial class WorldSession : IOpcodeHandler
     {
         if (position == 0)
         {
-            WorldPacketData packet = new(Opcodes.SMSG_AUTH_RESPONSE, 1);
+            WorldPacketData packet = new(Opcodes.SMSG_AUTH_RESPONSE);
 
-            packet.WriteUInt8((byte)ResponseCodes.AUTH_OK);
+            packet.WriteByte((byte)ResponseCodes.AUTH_OK);
 
             SendPacket(packet);
         }
         else
         {
-            WorldPacketData packet = new(Opcodes.SMSG_AUTH_RESPONSE, 6);
+            WorldPacketData packet = new(Opcodes.SMSG_AUTH_RESPONSE);
 
-            packet.WriteUInt8((byte)ResponseCodes.AUTH_WAIT_QUEUE);
-            packet.WriteUInt32(position);
-            packet.WriteUInt8(0);                                 // unk
+            packet.WriteByte((byte)ResponseCodes.AUTH_WAIT_QUEUE);
+            packet.WriteUInt(position);
+            packet.WriteByte(0);                                 // unk
 
             SendPacket(packet);
         }
@@ -418,19 +418,19 @@ public partial class WorldSession : IOpcodeHandler
             0x0D, 0x36, 0xEA, 0x01, 0xE0, 0xAA, 0x91, 0x20, 0x54, 0xF0, 0x72, 0xD8, 0x1E, 0xC7, 0x89, 0xD2
         };
 
-        WorldPacketData data = new (Opcodes.SMSG_ADDON_INFO, 4);
+        WorldPacketData data = new (Opcodes.SMSG_ADDON_INFO);
 
         foreach (AddonInfo addonInfo in _addonsList)
         {
-            data.WriteUInt8(addonInfo.State);
+            data.WriteByte(addonInfo.State);
 
             byte crcpub = addonInfo.UsePublicKeyOrCRC ? (byte)0x01: (byte)0x00;
-            data.WriteUInt8(crcpub);
+            data.WriteByte(crcpub);
 
             if (crcpub != 0)
             {
                 byte usepk = (addonInfo.CRC != AddonMgr.STANDARD_ADDON_CRC) ? (byte)0x01 : (byte)0x00; // If addon is Standard addon CRC
-                data.WriteUInt8(usepk);
+                data.WriteByte(usepk);
 
                 if (usepk != 0)                                      // if CRC is wrong, add public key (client need it)
                 {
@@ -439,31 +439,31 @@ public partial class WorldSession : IOpcodeHandler
                     data.WriteBytes(addonPublicKey);
                 }
 
-                data.WriteUInt8(0);                              /// @todo: Find out the meaning of this.
+                data.WriteByte(0);                              /// @todo: Find out the meaning of this.
             }
 
             byte unk3 = 0;                                     // 0 is sent here
-            data.WriteUInt8(unk3);
+            data.WriteByte(unk3);
 
             if (unk3 != 0)
             {
                 // String, length 256 (null terminated)
-                data.WriteUInt8(0);
+                data.WriteByte(0);
             }
         }
 
         _addonsList.Clear();
 
         LockedQueue<BannedAddon> bannedAddons = AddonMgr.GetBannedAddons();
-        data.WriteUInt32((uint)bannedAddons.Size());
+        data.WriteUInt((uint)bannedAddons.Size());
 
         while (bannedAddons.Next(out var bannedAddon))
         {
-            data.WriteUInt32(bannedAddon.Id);
+            data.WriteUInt(bannedAddon.Id);
             data.WriteBytes(bannedAddon.NameMD5);
             data.WriteBytes(bannedAddon.VersionMD5);
-            data.WriteUInt32(bannedAddon.Timestamp);
-            data.WriteUInt32(1);  // IsBanned
+            data.WriteUInt(bannedAddon.Timestamp);
+            data.WriteUInt((uint)1);  // IsBanned
         }
 
         SendPacket(data);
@@ -471,9 +471,9 @@ public partial class WorldSession : IOpcodeHandler
 
     internal void SendClientCacheVersion(uint clientCacheVersion)
     {
-        WorldPacketData data = new (Opcodes.SMSG_CLIENTCACHE_VERSION, 4);
+        WorldPacketData data = new (Opcodes.SMSG_CLIENTCACHE_VERSION);
 
-        data.WriteUInt32(clientCacheVersion);
+        data.WriteUInt(clientCacheVersion);
 
         SendPacket(data);
     }
@@ -523,17 +523,17 @@ public partial class WorldSession : IOpcodeHandler
 
     internal void SendAccountDataTimes(uint mask)
     {
-        WorldPacketData data = new (Opcodes.SMSG_ACCOUNT_DATA_TIMES, 4 + 1 + 4 + 8 * 4);    // changed in WotLK
+        WorldPacketData data = new (Opcodes.SMSG_ACCOUNT_DATA_TIMES);    // changed in WotLK
 
-        data.WriteUInt32((uint)TimeHelper.UnixTime);                                        // unix time of something
-        data.WriteUInt8(1);
-        data.WriteUInt32(mask);                                                             // type mask
+        data.WriteUInt((uint)TimeHelper.UnixTime);                                        // unix time of something
+        data.WriteByte(1);
+        data.WriteUInt(mask);                                                             // type mask
 
         for (uint i = 0; i < NUM_ACCOUNT_DATA_TYPES; ++i)
         {
             if ((mask & (1 << (byte)i)) != 0)
             {
-                data.WriteUInt32((uint)GetAccountData((AccountDataType)i).Time);            // also unix time
+                data.WriteUInt((uint)GetAccountData((AccountDataType)i).Time);            // also unix time
             }
         }
 
@@ -560,11 +560,11 @@ public partial class WorldSession : IOpcodeHandler
 
     internal void SendTutorialsData()
     {
-        WorldPacketData data = new (Opcodes.SMSG_TUTORIAL_FLAGS, 4 * SharedConst.MAX_ACCOUNT_TUTORIAL_VALUES);
+        WorldPacketData data = new (Opcodes.SMSG_TUTORIAL_FLAGS);
 
         for (byte i = 0; i < SharedConst.MAX_ACCOUNT_TUTORIAL_VALUES; ++i)
         {
-            data.WriteUInt32(_tutorials[i]);
+            data.WriteUInt(_tutorials[i]);
         }
 
         SendPacket(data);

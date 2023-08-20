@@ -112,11 +112,11 @@ public partial class WorldSession : IMiscOpcodeHandler
         string splitDate = "01/01/01";
         uint unk = recvData.ReadUInt32();
 
-        WorldPacketData data = new (Opcodes.SMSG_REALM_SPLIT, 4 + 4 + splitDate.Length + 1);
+        WorldPacketData data = new (Opcodes.SMSG_REALM_SPLIT);
 
-        data.WriteUInt32(unk);
+        data.WriteUInt(unk);
 
-        data.WriteUInt32(0x00000000);                           // realm split state
+        data.WriteUInt((uint)0x00000000);                           // realm split state
                                                                 // split states:
                                                                 // 0x0 realm normal
                                                                 // 0x1 realm split

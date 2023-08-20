@@ -15,8 +15,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 
@@ -71,8 +69,8 @@ internal class WorldServer
         // TODO: worldserver: Start the Remote Access port (acceptor) if enabled
 
         // worldserver: Launch the worldserver listener socket
-        string bindIp = ConfigMgr.GetValueOrDefault("BindIP", "0.0.0.0");
-        int port = ConfigMgr.GetValueOrDefault("WorldServerPort", 3724);
+        string bindIp = ConfigMgr.GetOption("BindIP", "0.0.0.0");
+        int port = ConfigMgr.GetOption("WorldServerPort", 3724);
         
         if (port < 0 || port > 0xFFFF)
         {
@@ -80,7 +78,7 @@ internal class WorldServer
             ExitNow(1);
         }
 
-        int networkThreads = ConfigMgr.GetValueOrDefault("Network.Threads", 1);
+        int networkThreads = ConfigMgr.GetOption("Network.Threads", 1);
 
         if (networkThreads <= 0)
         {
@@ -113,10 +111,10 @@ internal class WorldServer
     private static void WorldUpdateLoop()
     {
         // TODO: worldserver: WorldUpdateLoop()
-        uint minUpdateDiff = ConfigMgr.GetValueOrDefault<uint>("MinWorldUpdateTime", 1);
+        uint minUpdateDiff = ConfigMgr.GetOption<uint>("MinWorldUpdateTime", 1);
         uint realPrevTime = TimeHelper.GetMSTime();
 
-        uint maxCoreStuckTime = ConfigMgr.GetValueOrDefault<uint>("MaxCoreStuckTime", 60) * 1000;
+        uint maxCoreStuckTime = ConfigMgr.GetOption<uint>("MaxCoreStuckTime", 60) * 1000;
         uint halfMaxCoreStuckTime = maxCoreStuckTime / 2;
 
         if (halfMaxCoreStuckTime == 0)
@@ -166,7 +164,7 @@ internal class WorldServer
         }
 
         // Get the realm Id from the configuration file
-        Global.sWorld.GetRealm().Id.Index = ConfigMgr.GetValueOrDefault("RealmID", 0u);
+        Global.sWorld.GetRealm().Id.Index = ConfigMgr.GetOption("RealmID", 0u);
 
         if (Global.sWorld.GetRealm().Id.Index == 0)
         {

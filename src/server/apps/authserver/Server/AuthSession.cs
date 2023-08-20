@@ -309,9 +309,9 @@ internal class AuthSession : SocketBase
             {
                 ByteBuffer pkt = new ByteBuffer();
 
-                pkt.WriteUInt8((byte)AuthCmd.AUTH_LOGON_CHALLENGE);
-                pkt.WriteUInt8(0x00);
-                pkt.WriteUInt8((byte)AuthResult.WOW_FAIL_BANNED);
+                pkt.WriteByte((byte)AuthCmd.AUTH_LOGON_CHALLENGE);
+                pkt.WriteByte(0x00);
+                pkt.WriteByte((byte)AuthResult.WOW_FAIL_BANNED);
 
                 SendPacket(pkt);
 
@@ -455,12 +455,12 @@ internal class AuthSession : SocketBase
     {
         ByteBuffer pkt = new ByteBuffer();
 
-        pkt.WriteUInt8((byte)AuthCmd.AUTH_LOGON_CHALLENGE);
-        pkt.WriteUInt8(0x00);
+        pkt.WriteByte((byte)AuthCmd.AUTH_LOGON_CHALLENGE);
+        pkt.WriteByte(0x00);
 
         if (result.IsEmpty())
         {
-            pkt.WriteUInt8((byte)AuthResult.WOW_FAIL_UNKNOWN_ACCOUNT);
+            pkt.WriteByte((byte)AuthResult.WOW_FAIL_UNKNOWN_ACCOUNT);
             SendPacket(pkt);
             return;
         }
@@ -477,7 +477,7 @@ internal class AuthSession : SocketBase
 
             if (_accountInfo.LastIP != ipAddress)
             {
-                pkt.WriteUInt8((byte)AuthResult.WOW_FAIL_LOCKED_ENFORCED);
+                pkt.WriteByte((byte)AuthResult.WOW_FAIL_LOCKED_ENFORCED);
                 SendPacket(pkt);
                 return;
             }
@@ -505,7 +505,7 @@ internal class AuthSession : SocketBase
 
                 if (_ipCountry != _accountInfo.LockCountry)
                 {
-                    pkt.WriteUInt8((byte)AuthResult.WOW_FAIL_UNLOCKABLE_LOCK);
+                    pkt.WriteByte((byte)AuthResult.WOW_FAIL_UNLOCKABLE_LOCK);
                     SendPacket(pkt);
                     return;
                 }
@@ -517,14 +517,14 @@ internal class AuthSession : SocketBase
         {
             if (_accountInfo.IsPermanentlyBanned)
             {
-                pkt.WriteUInt8((byte)AuthResult.WOW_FAIL_BANNED);
+                pkt.WriteByte((byte)AuthResult.WOW_FAIL_BANNED);
                 SendPacket(pkt);
                 logger.Debug(LogFilter.Server, $"'{ipAddress}:{port}' [AuthChallenge] Banned account {_accountInfo.Login} tried to login!");
                 return;
             }
             else
             {
-                pkt.WriteUInt8((byte)AuthResult.WOW_FAIL_SUSPENDED);
+                pkt.WriteByte((byte)AuthResult.WOW_FAIL_SUSPENDED);
                 SendPacket(pkt);
                 logger.Debug(LogFilter.Server, $"'{ipAddress}:{port}' [AuthChallenge] Temporarily banned account {_accountInfo.Login} tried to login!");
                 return;
@@ -561,36 +561,36 @@ internal class AuthSession : SocketBase
 
         if (AuthHelper.IsAcceptedClientBuild(_build))
         {
-            pkt.WriteUInt8((byte)AuthResult.WOW_SUCCESS);
+            pkt.WriteByte((byte)AuthResult.WOW_SUCCESS);
             
             pkt.WriteSrpInteger(_srp6.ServerPublicKey);
-            pkt.WriteUInt8(1);
+            pkt.WriteByte(1);
             pkt.WriteSrpInteger(SRPServerAuth.Generator);
-            pkt.WriteUInt8(32);
+            pkt.WriteByte(32);
             pkt.WriteSrpInteger(SRPServerAuth.SafePrime);
             pkt.WriteSrpInteger(_srp6.Salt);
             pkt.WriteBytes(VERSION_CHALLENGE);
-            pkt.WriteUInt8(securityFlags);          // security flags (0x0...0x04)
+            pkt.WriteByte(securityFlags);          // security flags (0x0...0x04)
 
             if ((securityFlags & 0x01) != 0x00)     // PIN input
             {
-                pkt.WriteUInt32(0);
+                pkt.WriteUInt((uint)0);
                 pkt.WriteUInt64(0);
                 pkt.WriteUInt64(0);                 // 16 bytes hash?
             }
 
             if ((securityFlags & 0x02) != 0x00)     // Matrix input
             {
-                pkt.WriteUInt8(0);
-                pkt.WriteUInt8(0);
-                pkt.WriteUInt8(0);
-                pkt.WriteUInt8(0);
+                pkt.WriteByte(0);
+                pkt.WriteByte(0);
+                pkt.WriteByte(0);
+                pkt.WriteByte(0);
                 pkt.WriteUInt64(0);
             }
 
             if ((securityFlags & 0x04) != 0x00)     // Security token input
             {
-                pkt.WriteUInt8(1);
+                pkt.WriteByte(1);
             }
 
             logger.Debug(LogFilter.Server, $"'{ipAddress}:{port}' [AuthChallenge] account {_accountInfo.Login} is using '{_localizationName}' locale ({LocaleHelper.GetLocaleByName(_localizationName ?? "enUS")})");
@@ -599,7 +599,7 @@ internal class AuthSession : SocketBase
         }
         else
         {
-            pkt.WriteUInt8((byte)AuthResult.WOW_FAIL_VERSION_INVALID);
+            pkt.WriteByte((byte)AuthResult.WOW_FAIL_VERSION_INVALID);
         }
 
         SendPacket(pkt);
@@ -660,9 +660,9 @@ internal class AuthSession : SocketBase
             {
                 packet = new ByteBuffer();
 
-                packet.WriteUInt8((byte)AuthCmd.AUTH_LOGON_PROOF);
-                packet.WriteUInt8((byte)AuthResult.WOW_FAIL_UNKNOWN_ACCOUNT);
-                packet.WriteUInt16(0);    // LoginFlags, 1 has account message
+                packet.WriteByte((byte)AuthCmd.AUTH_LOGON_PROOF);
+                packet.WriteByte((byte)AuthResult.WOW_FAIL_UNKNOWN_ACCOUNT);
+                packet.WriteUShort(0);    // LoginFlags, 1 has account message
 
                 SendPacket(packet);
 
@@ -673,8 +673,8 @@ internal class AuthSession : SocketBase
             {
                 packet = new ByteBuffer();
 
-                packet.WriteUInt8((byte)AuthCmd.AUTH_LOGON_PROOF);
-                packet.WriteUInt8((byte)AuthResult.WOW_FAIL_VERSION_INVALID);
+                packet.WriteByte((byte)AuthCmd.AUTH_LOGON_PROOF);
+                packet.WriteByte((byte)AuthResult.WOW_FAIL_VERSION_INVALID);
 
                 SendPacket(packet);
 
@@ -685,7 +685,7 @@ internal class AuthSession : SocketBase
 
             // Update the sessionkey, last_ip, last login time and reset number of failed logins in the account table for this account
             // No SQL injection (escaped user name) and IP address as received by socket
-            string address = ConfigMgr.GetValueOrDefault<bool>("AllowLoggingIPAddressesInDatabase", true) ? ipAddress.Address.ToString() : "0.0.0.0";
+            string address = ConfigMgr.GetOption<bool>("AllowLoggingIPAddressesInDatabase", true) ? ipAddress.Address.ToString() : "0.0.0.0";
 
             PreparedStatement stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_UPD_LOGONPROOF);
             stmt.AddValue(0, _sessionKey);
@@ -734,18 +734,18 @@ internal class AuthSession : SocketBase
         {
             ByteBuffer packet = new();
 
-            packet.WriteUInt8((byte)AuthCmd.AUTH_LOGON_PROOF);
-            packet.WriteUInt8((byte)AuthResult.WOW_FAIL_UNKNOWN_ACCOUNT);
-            packet.WriteUInt16(0);    // LoginFlags, 1 has account message
+            packet.WriteByte((byte)AuthCmd.AUTH_LOGON_PROOF);
+            packet.WriteByte((byte)AuthResult.WOW_FAIL_UNKNOWN_ACCOUNT);
+            packet.WriteUShort(0);    // LoginFlags, 1 has account message
 
             SendPacket(packet);
 
             logger.Info(LogFilter.Server, $"'{ipAddress.Address.ToString()}:{ipAddress.Port}' [AuthChallenge] account {_accountInfo.Login} tried to login with invalid password!");
 
-            uint maxWrongPassCount = ConfigMgr.GetValueOrDefault<UInt32>("WrongPass.MaxCount", 0);
+            uint maxWrongPassCount = ConfigMgr.GetOption<UInt32>("WrongPass.MaxCount", 0);
 
             // We can not include the failed account login hook. However, this is a workaround to still log this.
-            if (ConfigMgr.GetValueOrDefault<bool>("WrongPass.Logging", false))
+            if (ConfigMgr.GetOption<bool>("WrongPass.Logging", false))
             {
                 PreparedStatement logstmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_INS_FALP_IP_LOGGING);
                 logstmt.AddValue(0, _accountInfo.Id);
@@ -764,8 +764,8 @@ internal class AuthSession : SocketBase
 
                 if (++_accountInfo.FailedLogins >= maxWrongPassCount)
                 {
-                    uint wrongPassBanTime = ConfigMgr.GetValueOrDefault<UInt32>("WrongPass.BanTime", 600);
-                    bool wrongPassBanType = ConfigMgr.GetValueOrDefault<bool>("WrongPass.BanType", false);
+                    uint wrongPassBanTime = ConfigMgr.GetOption<UInt32>("WrongPass.BanTime", 600);
+                    bool wrongPassBanType = ConfigMgr.GetOption<bool>("WrongPass.BanType", false);
 
                     if (wrongPassBanType)
                     {
@@ -841,11 +841,11 @@ internal class AuthSession : SocketBase
     {
         ByteBuffer pkt = new ByteBuffer();
 
-        pkt.WriteUInt8((byte)AuthCmd.AUTH_RECONNECT_CHALLENGE);
+        pkt.WriteByte((byte)AuthCmd.AUTH_RECONNECT_CHALLENGE);
 
         if (result.IsEmpty())
         {
-            pkt.WriteUInt8((byte)AuthResult.WOW_FAIL_UNKNOWN_ACCOUNT);
+            pkt.WriteByte((byte)AuthResult.WOW_FAIL_UNKNOWN_ACCOUNT);
 
             SendPacket(pkt);
 
@@ -859,7 +859,7 @@ internal class AuthSession : SocketBase
         RandomHelper.NextBytes(_reconnectProof);
         _status = AuthStatus.STATUS_RECONNECT_PROOF;
 
-        pkt.WriteUInt8((byte)AuthResult.WOW_SUCCESS);
+        pkt.WriteByte((byte)AuthResult.WOW_SUCCESS);
         pkt.WriteBytes(_reconnectProof);
         pkt.WriteBytes(VERSION_CHALLENGE);
 
@@ -894,8 +894,8 @@ internal class AuthSession : SocketBase
             {
                 ByteBuffer pkt = new ByteBuffer();
 
-                pkt.WriteUInt8((byte)AuthCmd.AUTH_RECONNECT_PROOF);
-                pkt.WriteUInt8((byte)AuthResult.WOW_FAIL_VERSION_INVALID);
+                pkt.WriteByte((byte)AuthCmd.AUTH_RECONNECT_PROOF);
+                pkt.WriteByte((byte)AuthResult.WOW_FAIL_VERSION_INVALID);
 
                 SendPacket(pkt);
 
@@ -906,9 +906,9 @@ internal class AuthSession : SocketBase
                 // Sending response
                 ByteBuffer pkt = new ByteBuffer();
 
-                pkt.WriteUInt8((byte)AuthCmd.AUTH_RECONNECT_PROOF);
-                pkt.WriteUInt8((byte)AuthResult.WOW_SUCCESS);
-                pkt.WriteUInt16(0);             // LoginFlags, 1 has account message
+                pkt.WriteByte((byte)AuthCmd.AUTH_RECONNECT_PROOF);
+                pkt.WriteByte((byte)AuthResult.WOW_SUCCESS);
+                pkt.WriteUShort(0);             // LoginFlags, 1 has account message
 
                 SendPacket(pkt);
             }
@@ -998,37 +998,37 @@ internal class AuthSession : SocketBase
 
             byte lockFlg = (realm.AllowedSecurityLevel > _accountInfo.SecurityLevel) ? (byte)0x01 : (byte)0x00;
 
-            pkt.WriteUInt8(realm.Type);                         // realm type
+            pkt.WriteByte(realm.Type);                         // realm type
 
             if ((_expversion & (byte)ExpansionFlags.POST_BC_EXP_FLAG) == (byte)ExpansionFlags.POST_BC_EXP_FLAG)                 // only 2.x and 3.x clients
             {
-                pkt.WriteUInt8(lockFlg);                        // if 1, then realm locked
+                pkt.WriteByte(lockFlg);                        // if 1, then realm locked
             }
 
-            pkt.WriteUInt8((byte)flag);                         // RealmFlags
+            pkt.WriteByte((byte)flag);                         // RealmFlags
             pkt.WriteCString(name);
             pkt.WriteCString(realm.GetAddressForClient(GetRemoteIpAddress()?.Address).ToString());
             pkt.WriteFloat(realm.PopulationLevel);
-            pkt.WriteUInt8(characterCounts[realm.Id.Index]);
-            pkt.WriteUInt8(realm.Timezone);                     // realm category
+            pkt.WriteByte(characterCounts[realm.Id.Index]);
+            pkt.WriteByte(realm.Timezone);                     // realm category
 
             if ((_expversion & (byte)ExpansionFlags.POST_BC_EXP_FLAG) == (byte)ExpansionFlags.POST_BC_EXP_FLAG)                 // 2.x and 3.x clients
             {
-                pkt.WriteUInt8((byte)realm.Id.Index);
+                pkt.WriteByte((byte)realm.Id.Index);
             }
             else
             {
-                pkt.WriteUInt8(0x0);                            // 1.12.1 and 1.12.2 clients
+                pkt.WriteByte(0x0);                            // 1.12.1 and 1.12.2 clients
             }
 
             if ((_expversion & (byte)ExpansionFlags.POST_BC_EXP_FLAG) == (byte)ExpansionFlags.POST_BC_EXP_FLAG &&
                 (flag & RealmFlags.REALM_FLAG_SPECIFYBUILD) == RealmFlags.REALM_FLAG_SPECIFYBUILD &&
                 buildInfo != null)
             {
-                pkt.WriteUInt8((byte)buildInfo.MajorVersion);
-                pkt.WriteUInt8((byte)buildInfo.MinorVersion);
-                pkt.WriteUInt8((byte)buildInfo.BugfixVersion);
-                pkt.WriteUInt16((ushort)buildInfo.Build);
+                pkt.WriteByte((byte)buildInfo.MajorVersion);
+                pkt.WriteByte((byte)buildInfo.MinorVersion);
+                pkt.WriteByte((byte)buildInfo.BugfixVersion);
+                pkt.WriteUShort((ushort)buildInfo.Build);
             }
 
             ++realmListSize;
@@ -1036,32 +1036,32 @@ internal class AuthSession : SocketBase
 
         if ((_expversion & (byte)ExpansionFlags.POST_BC_EXP_FLAG) == (byte)ExpansionFlags.POST_BC_EXP_FLAG)                     // 2.x and 3.x clients
         {
-            pkt.WriteUInt8(0x10);
-            pkt.WriteUInt8(0x00);
+            pkt.WriteByte(0x10);
+            pkt.WriteByte(0x00);
         }
         else                                                    // 1.12.1 and 1.12.2 clients
         {
-            pkt.WriteUInt8(0x00);
-            pkt.WriteUInt8(0x02);
+            pkt.WriteByte(0x00);
+            pkt.WriteByte(0x02);
         }
 
         // make a ByteBuffer which stores the RealmList's size
         ByteBuffer realmListSizeBuffer = new ByteBuffer();
-        realmListSizeBuffer.WriteUInt32(0);
+        realmListSizeBuffer.WriteUInt((uint)0);
 
         if ((_expversion & (byte)ExpansionFlags.POST_BC_EXP_FLAG) == (byte)ExpansionFlags.POST_BC_EXP_FLAG)                     // only 2.x and 3.x clients
         {
-            realmListSizeBuffer.WriteUInt16((ushort)realmListSize);
+            realmListSizeBuffer.WriteUShort((ushort)realmListSize);
         }
         else
         {
-            realmListSizeBuffer.WriteUInt32((uint)realmListSize);
+            realmListSizeBuffer.WriteUInt((uint)realmListSize);
         }
 
         ByteBuffer hdr = new ByteBuffer();
 
-        hdr.WriteUInt8((byte)AuthCmd.REALM_LIST);
-        hdr.WriteUInt16((ushort)(pkt.GetSize() + realmListSizeBuffer.GetSize()));
+        hdr.WriteByte((byte)AuthCmd.REALM_LIST);
+        hdr.WriteUShort((ushort)(pkt.GetSize() + realmListSizeBuffer.GetSize()));
         hdr.WriteBytes(realmListSizeBuffer.GetData());          // append RealmList's size buffer
         hdr.WriteBytes(pkt.GetData());                          // append realms in the realmlist
 
@@ -1073,7 +1073,7 @@ internal class AuthSession : SocketBase
 
     private bool VerifyVersion(byte[] clientPublicKey, byte[] versionProof, bool isReconnect)
     {
-        if (!ConfigMgr.GetValueOrDefault<bool>("StrictVersionCheck", false))
+        if (!ConfigMgr.GetOption<bool>("StrictVersionCheck", false))
         {
             return true;
         }

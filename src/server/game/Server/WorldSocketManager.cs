@@ -28,13 +28,10 @@ public class WorldSocketThread : NetworkThread<WorldSocket>
     override protected void SocketAdded(WorldSocket sock) 
     {
         sock.SetSendBufferSize(WorldSocketManager.Instance.GetApplicationSendBufferSize());
-
-        // TODO: game: WorldSocketThread::SocketAdded() Script Hook
     }
 
     override protected void SocketRemoved(WorldSocket sock) 
     {
-        // TODO: game: WorldSocketThread::SocketRemoved() Script Hook
     }
 }
 
@@ -77,14 +74,14 @@ public class WorldSocketManager : SocketManager<WorldSocket>
 
     public override bool StartNetwork(string bindIp, int port, int threadCount = 1)
     {
-        _tcpNoDelay = ConfigMgr.GetValueOrDefault("Network.TcpNodelay", true);
+        _tcpNoDelay = ConfigMgr.GetOption("Network.TcpNodelay", true);
 
         int max_connections = 128;
         logger.Debug(LogFilter.Network, $"Max allowed socket connections {max_connections}");
 
         // -1 means use default
-        _socketSystemSendBufferSize = ConfigMgr.GetValueOrDefault("Network.OutKBuff", -1);
-        _socketApplicationSendBufferSize = ConfigMgr.GetValueOrDefault("Network.OutUBuff", 65536);
+        _socketSystemSendBufferSize = ConfigMgr.GetOption("Network.OutKBuff", -1);
+        _socketApplicationSendBufferSize = ConfigMgr.GetOption("Network.OutUBuff", 65536);
 
         if (_socketApplicationSendBufferSize <= 0)
         {
@@ -99,16 +96,12 @@ public class WorldSocketManager : SocketManager<WorldSocket>
 
         _acceptor?.AsyncAcceptWithCallback(OnSocketAccept);
 
-        // TODO: game: WorldSocketManager::StartNetwork(string bindIp, int port, int threadCount) Script Hook
-
         return true;
     }
 
     public override void StopNetwork()
     {
         base.StopNetwork();
-
-        // TODO: game: WorldSocketManager::StopNetwork() Script Hook
     }
 
     public override void OnSocketOpen(Socket sock)

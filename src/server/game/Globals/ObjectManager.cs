@@ -38,10 +38,18 @@ public class ObjectMgr : Singleton<ObjectMgr>
     private static readonly ILogger logger = LoggerFactory.GetLogger();
 
     private readonly PlayerInfo[,] _playerInfo;
+    private readonly Dictionary<short, InstanceTemplate> _instanceTemplateStore;
+    private readonly List<string> _scriptNamesStore;
+    private readonly Dictionary<uint, CreatureTemplate> _creatureTemplateStore;
+    private readonly Dictionary<uint, ItemTemplate> _itemTemplateStore;
 
     private ObjectMgr()
 	{
         _playerInfo = new PlayerInfo[SharedConst.MAX_RACES, SharedConst.MAX_CLASSES];
+        _instanceTemplateStore = new Dictionary<short, InstanceTemplate>();
+        _scriptNamesStore = new List<string>();
+        _creatureTemplateStore = new Dictionary<uint, CreatureTemplate>();
+        _itemTemplateStore = new Dictionary<uint, ItemTemplate>();
     }
 
     public void LoadPlayerInfo()
@@ -85,9 +93,9 @@ public class ObjectMgr : Singleton<ObjectMgr>
                         continue;
                     }
 
-                    ChrRacesEntry? rEntry = Global.sChrRacesStore?.LookupEntry(currentRace);
+                    ChrRacesEntry? rEntry = Global.sChrRacesStore.LookupEntry(currentRace);
 
-                    if (rEntry != null)
+                    if (rEntry == null)
                     {
                         logger.Error(LogFilter.Sql, $"Wrong race {currentRace} in `playercreateinfo` table, ignoring.");
                         continue;
@@ -99,24 +107,26 @@ public class ObjectMgr : Singleton<ObjectMgr>
                         continue;
                     }
 
-                    //if (Global.sChrClassesStore.LookupEntry(currentClass) == null)
-                    //{
-                    //    logger.Error(LogFilter.Sql, $"Wrong class {currentClass} in `playercreateinfo` table, ignoring.");
-                    //    continue;
-                    //}
+                    if (Global.sChrClassesStore.LookupEntry(currentClass) == null)
+                    {
+                        logger.Error(LogFilter.Sql, $"Wrong class {currentClass} in `playercreateinfo` table, ignoring.");
+                        continue;
+                    }
 
-                    //// accept DB data only for valid position (and non instanceable)
-                    //if (!MapMgr.IsValidMapCoord(mapId, positionX, positionY, positionZ, orientation))
-                    //{
-                    //    logger.Error(LogFilter.Sql, $"Wrong home position for class {currentClass} race {currentRace} pair in `playercreateinfo` table, ignoring.");
-                    //    continue;
-                    //}
+                    // accept DB data only for valid position (and non instanceable)
+                    if (!MapMgr.IsValidMapCoord(mapId, positionX, positionY, positionZ, orientation))
+                    {
+                        logger.Error(LogFilter.Sql, $"Wrong home position for class {currentClass} race {currentRace} pair in `playercreateinfo` table, ignoring.");
+                        continue;
+                    }
 
-                    //if (Global.sMapStore.LookupEntry(mapId)->Instanceable())
-                    //{
-                    //    logger.Error(LogFilter.Sql, $"Home position in instanceable map for class {currentClass} race {currentRace} pair in `playercreateinfo` table, ignoring.");
-                    //    continue;
-                    //}
+                    MapEntry? mapEntry = Global.sMapStore.LookupEntry(mapId);
+
+                    if (mapEntry != null && mapEntry.Instanceable())
+                    {
+                        logger.Error(LogFilter.Sql, $"Home position in instanceable map for class {currentClass} race {currentRace} pair in `playercreateinfo` table, ignoring.");
+                        continue;
+                    }
 
                     PlayerInfo info = new()
                     {
@@ -126,8 +136,10 @@ public class ObjectMgr : Singleton<ObjectMgr>
                         PositionY = positionY,
                         PositionZ = positionZ,
                         Orientation = orientation,
-                        //DisplayId_m = rEntry->model_m,
-                        //DisplayId_f = rEntry->model_f
+                        #pragma warning disable
+                        DisplayId_m = (ushort)rEntry.ModelMale,
+                        DisplayId_f = (ushort)rEntry.ModelFemale
+                        #pragma warning enable
                     };
 
                     _playerInfo[currentRace, currentClass] = info;
@@ -141,6 +153,7 @@ public class ObjectMgr : Singleton<ObjectMgr>
             }
         }
 
+// TODO: game: ObjectMgr::LoadPlayerInfo()
 //    // Load playercreate items
 //    logger.Info(LogFilter.ServerLoading, "Loading Player Create Items Data...");
 
@@ -755,5 +768,148 @@ public class ObjectMgr : Singleton<ObjectMgr>
         }
 
         return info;
+    }
+
+    public void LoadInstanceTemplate()
+    {
+        uint oldMSTime = TimeHelper.GetMSTime();
+
+        //                                                0     1       2        4
+        SQLResult result = DB.World.Query("SELECT map, parent, script, allowMount FROM instance_template");
+
+        if (result.IsEmpty())
+        {
+            logger.Warn(LogFilter.ServerLoading, ">> Loaded 0 instance templates. DB table `page_text` is empty!");
+            logger.Warn(LogFilter.ServerLoading, " ");
+
+            return;
+        }
+
+        uint count = 0;
+
+        do
+        {
+            SQLFields fields = result.GetFields();
+
+            short mapID = fields.Read<short>(0);
+
+            if (!MapMgr.IsValidMAP((uint)mapID, true))
+            {
+                logger.Error(LogFilter.ServerLoading, $"ObjectMgr::LoadInstanceTemplate: bad mapid {mapID} for template!");
+                continue;
+            }
+
+            InstanceTemplate instanceTemplate = new InstanceTemplate();
+
+            instanceTemplate.AllowMount = fields.Read<bool>(3);
+            instanceTemplate.Parent = (uint)fields.Read<short>(1);
+            instanceTemplate.ScriptId = Global.sObjectMgr.GetScriptId(fields.Read<string>(2));
+
+            _instanceTemplateStore[mapID] = instanceTemplate;
+
+            ++count;
+        }
+        while (result.NextRow());
+
+        logger.Info(LogFilter.ServerLoading, $">> Loaded {count} Instance Templates in {TimeHelper.GetMSTimeDiffToNow(oldMSTime)} ms");
+        logger.Info(LogFilter.ServerLoading, $" ");
+    }
+
+    public void LoadScriptNames()
+    {
+        uint oldMSTime = TimeHelper.GetMSTime();
+
+        // We insert an empty placeholder here so we can use the
+        // script id 0 as dummy for "no script found".
+        _scriptNamesStore.Add("");
+
+        SQLResult result = DB.World.Query(
+            @"SELECT DISTINCT(ScriptName) FROM achievement_criteria_data WHERE ScriptName <> '' AND type = 11 
+              UNION 
+              SELECT DISTINCT(ScriptName) FROM battleground_template WHERE ScriptName <> '' 
+              UNION 
+              SELECT DISTINCT(ScriptName) FROM creature WHERE ScriptName <> '' 
+              UNION 
+              SELECT DISTINCT(ScriptName) FROM creature_template WHERE ScriptName <> '' 
+              UNION 
+              SELECT DISTINCT(ScriptName) FROM gameobject WHERE ScriptName <> '' 
+              UNION 
+              SELECT DISTINCT(ScriptName) FROM gameobject_template WHERE ScriptName <> '' 
+              UNION 
+              SELECT DISTINCT(ScriptName) FROM item_template WHERE ScriptName <> '' 
+              UNION 
+              SELECT DISTINCT(ScriptName) FROM areatrigger_scripts WHERE ScriptName <> '' 
+              UNION 
+              SELECT DISTINCT(ScriptName) FROM spell_script_names WHERE ScriptName <> '' 
+              UNION 
+              SELECT DISTINCT(ScriptName) FROM transports WHERE ScriptName <> '' 
+              UNION 
+              SELECT DISTINCT(ScriptName) FROM game_weather WHERE ScriptName <> '' 
+              UNION 
+              SELECT DISTINCT(ScriptName) FROM conditions WHERE ScriptName <> '' 
+              UNION 
+              SELECT DISTINCT(ScriptName) FROM outdoorpvp_template WHERE ScriptName <> '' 
+              UNION 
+              SELECT DISTINCT(script) FROM instance_template WHERE script <> ''");
+
+        if (result.IsEmpty())
+        {
+            logger.Info(LogFilter.ServerLoading, " ");
+            logger.Error(LogFilter.Sql, ">> Loaded empty set of Script Names!");
+
+            return;
+        }
+
+        do
+        {
+            _scriptNamesStore.Add(result.Read<string>(0));
+        }
+        while (result.NextRow());
+
+        _scriptNamesStore.Sort();
+
+        logger.Info(LogFilter.ServerLoading, $">> Loaded {_scriptNamesStore.Count} ScriptNames in {TimeHelper.GetMSTimeDiffToNow(oldMSTime)} ms");
+        logger.Info(LogFilter.ServerLoading, $" ");
+    }
+
+    private uint GetScriptId(string? name)
+    {
+        // use binary search to find the script name in the sorted vector
+        // assume "" is the first element
+        if (string.IsNullOrEmpty(name))
+        {
+            return 0;
+        }
+
+        int firstIndex = _scriptNamesStore.IndexOf(name);
+
+        if (firstIndex < 0)
+        {
+            return 0;
+        }
+
+        return (uint)firstIndex;
+    }
+
+    public InstanceTemplate? GetInstanceTemplate(uint mapid)
+    {
+        if (_instanceTemplateStore.TryGetValue((short)mapid, out InstanceTemplate instanceTemplate))
+        {
+            return instanceTemplate;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public CreatureTemplate? GetCreatureTemplate(uint entry)
+    {
+        return _creatureTemplateStore.ContainsKey(entry) ? _creatureTemplateStore[entry] : null;
+    }
+
+    internal ItemTemplate? GetItemTemplate(uint itemId)
+    { 
+        return _itemTemplateStore.ContainsKey(itemId) ? _itemTemplateStore[itemId] : null;
     }
 }

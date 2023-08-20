@@ -27,6 +27,11 @@
     <None Remove="Addons\" />
     <None Remove="Entities\Object\" />
     <None Remove="DataStores\" />
+    <None Remove="Maps\" />
+    <None Remove="Grids\" />
+    <None Remove="Entities\Creature\" />
+    <None Remove="Entities\Unit\" />
+    <None Remove="Entities\Item\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Globals\" />
@@ -41,6 +46,11 @@
     <Folder Include="Addons\" />
     <Folder Include="Entities\Object\" />
     <Folder Include="DataStores\" />
+    <Folder Include="Maps\" />
+    <Folder Include="Grids\" />
+    <Folder Include="Entities\Creature\" />
+    <Folder Include="Entities\Unit\" />
+    <Folder Include="Entities\Item\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\common\common.csproj" />

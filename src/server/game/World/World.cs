@@ -135,18 +135,24 @@ public class World : Singleton<World>, IWorld
     {
         // TODO: worldserver: World::SetInitialWorldSettings()
 
+        // Load the DBC files
+        logger.Info(LogFilter.ServerLoading, $"Initialize Data Stores...");
+        DataStores.LoadDBCStores(ConfigMgr.GetOption("DataDir", "./"));
+
         logger.Info(LogFilter.ServerLoading, $"Loading Player Create Data...");
         Global.sObjectMgr.LoadPlayerInfo();
-
-        logger.Info(LogFilter.ServerLoading, $"Loading Client Addons...");
-        AddonMgr.LoadFromDB();
 
         logger.Info(LogFilter.ServerLoading, $"Initializing Opcodes...");
         OpcodeTable.Instance.Initialize();
 
-        // Load the DBC files
-        logger.Info(LogFilter.ServerLoading, $"Initialize Data Stores...");
-        DataStores.LoadDBCStores(ConfigMgr.GetValueOrDefault("DataDir", "./"));
+        logger.Info(LogFilter.ServerLoading, $"Loading Script Names...");
+        Global.sObjectMgr.LoadScriptNames();
+
+        logger.Info(LogFilter.ServerLoading, $"Loading Instance Template...");
+        Global.sObjectMgr.LoadInstanceTemplate();
+
+        logger.Info(LogFilter.ServerLoading, $"Loading Client Addons...");
+        AddonMgr.LoadFromDB();
     }
 
     public bool IsClosed()

@@ -15,12 +15,30 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using AzerothCore.Constants;
+
 namespace AzerothCore.DataStores;
 
 public sealed class DBCStorage<T> where T : DBCFileEntry, new()
 {
-    private readonly string _name;
+    private readonly string _fieldFormat;
     private readonly Dictionary<uint, DBCFileEntry> _entries;
+
+    public string FieldFormat
+    {
+        get
+        {
+            return _fieldFormat;
+        }
+    }
+
+    public Dictionary<uint, DBCFileEntry> Entries
+    {
+        get
+        {
+            return _entries;
+        }
+    }
 
     public int Count
     {
@@ -30,21 +48,38 @@ public sealed class DBCStorage<T> where T : DBCFileEntry, new()
         }
     }
 
-    public DBCStorage(string name, Dictionary<uint, DBCFileEntry> entries)
+    public DBCStorage(string fieldFormat)
     {
-        _name = name;
-        _entries = entries;
+        _fieldFormat = fieldFormat;
+        _entries = new Dictionary<uint, DBCFileEntry>();
     }
 
-    public string GetName() { return _name; }
-
-    public static DBCStorage<T>? LoadDBC(string dataPath, string filename, string fieldFormat) 
+    public static void LoadDBC(ref uint availableDbcLocales, DBCStorage<T> storage, string dbcPath, string filename, string? dbTable = null) 
     {
-        string fullPath = Path.Combine(dataPath, "dbc", filename);
+        string dbcFileName = Path.Combine(dbcPath, filename);
 
-        DBCFileLoader.Load(fullPath, filename, fieldFormat, out DBCStorage<T>? storage);
+        if (DBCFileLoader.LoadFromFile(storage, dbcFileName))
+        {
+            for (byte i = 0; i < (byte)Locale.TOTAL_LOCALES; ++i)
+            {
+                if ((availableDbcLocales & (1 << i)) == 0)
+                {
+                    continue;
+                }
 
-        return storage;
+                string localizedDBCFileName = Path.Combine(dbcPath, SharedConst.LocaleNames[i], filename);
+
+                if (!DBCFileLoader.LoadStringsFromFile(storage, localizedDBCFileName))
+                {
+                    availableDbcLocales &= ~(1U << i);             // mark as not available for speedup next checks
+                }
+            }
+        }
+
+        if (dbTable != null)
+        {
+            DBCFileLoader.LoadFromDB(storage, dbTable);
+        }
     }
 
     public T? LookupEntry(uint id)

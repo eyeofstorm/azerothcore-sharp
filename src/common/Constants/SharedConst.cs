@@ -187,7 +187,7 @@ public enum Races
     RACE_DRAENEI = 11               // TITLE Draenei
 }
 
-public enum Classes
+public enum Classes : ushort
 {
     CLASS_NONE = 0,         // SKIP
     CLASS_WARRIOR = 1,      // TITLE Warrior
@@ -202,8 +202,24 @@ public enum Classes
     CLASS_DRUID = 11        // TITLE Druid
 }
 
+public enum Gender : ushort
+{
+    GENDER_MALE = 0,
+    GENDER_FEMALE = 1,
+    GENDER_NONE = 2
+}
+
 public static class SharedConst
 {
+    // TimeConstants
+    public static readonly int MINUTE = 60;
+    public static readonly int HOUR = MINUTE* 60;
+    public static readonly int DAY = HOUR* 24;
+    public static readonly int WEEK = DAY* 7;
+    public static readonly int MONTH = DAY* 30;
+    public static readonly int YEAR = MONTH* 12;
+    public static readonly int IN_MILLISECONDS = 1000;
+
     public static readonly Locale DEFAULT_LOCALE = Locale.LOCALE_enUS;
 
     public static readonly int MAX_LOCALES = 8;
@@ -213,4 +229,19 @@ public static class SharedConst
 
     public static readonly int MAX_RACES = 12;
     public static readonly int MAX_CLASSES = 12;
+
+    public static readonly int MAX_SPELL_SCHOOL = 7;
+
+    public static readonly string[] LocaleNames = new string[(int)Locale.TOTAL_LOCALES]
+    {
+        "enUS",
+        "koKR",
+        "frFR",
+        "deDE",
+        "zhCN",
+        "zhTW",
+        "esES",
+        "esMX",
+        "ruRU"
+    };
 }
