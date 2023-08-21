@@ -123,13 +123,8 @@ public class MessageBuffer
     {
         if (size > 0)
         {
-            Memory<byte> arrWrapper = arr;
-            Memory<byte> copyFrom = arrWrapper.Slice(offset, size);
-
-            if (copyFrom.TryCopyTo(_storage))
-            {
-                WriteCompleted(size);
-            }
+            Array.Copy(arr, offset, _storage, _wpos, size);
+            WriteCompleted(size);
         }
     }
 }

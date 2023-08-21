@@ -17,7 +17,7 @@
 
 using System.Collections.Concurrent;
 using System.IO.Compression;
-
+using System.Text;
 using AzerothCore.Constants;
 using AzerothCore.Database;
 using AzerothCore.Game.Server;
@@ -243,7 +243,7 @@ public partial class WorldSession : IOpcodeHandler
         WorldPacketData packet = new(Opcodes.SMSG_AUTH_RESPONSE);
 
         packet.WriteByte((byte)code);
-        packet.WriteUInt((uint)0);                                   // BillingTimeRemaining
+        packet.WriteUInt(0);                                   // BillingTimeRemaining
         packet.WriteByte(0);                                    // BillingPlanFlags
         packet.WriteUInt((uint)0);                                   // BillingTimeRested
         packet.WriteByte(GetExpansion());                       // 0 - normal, 1 - TBC, 2 - WOTLK, must be set in database manually for each account
@@ -321,78 +321,80 @@ public partial class WorldSession : IOpcodeHandler
 
         int uSize = (int)size;
         int pos = (int)data.GetReadPosition();
-        ByteBuffer addonInfo = new(uSize);
-        ReadOnlySpan<byte> souce = new(data.GetData(), pos, (int)(data.GetSize() - pos));
+        ReadOnlySpan<byte> source = new(data.GetData(), pos, (int)(data.GetSize() - pos));
+        byte[] unpackAddonInfo = new byte[uSize];
 
-        if (Zlib.Unpack(addonInfo.GetData(), ref uSize, souce, souce.Length) == ZlibError.Okay)
+        ZlibError zlibError = Zlib.Unpack(unpackAddonInfo, ref uSize, source, source.Length);
+
+        if (zlibError == ZlibError.Okay)
         {
+            ByteBuffer addonInfo = new(unpackAddonInfo);
+            uint addonsCount = addonInfo.ReadUInt32();  // addons count                       
 
-        }
-        else
-        {
-            logger.Error(LogFilter.Network, $"Addon packet uncompress error!");
-        }
-
-        uint addonsCount = addonInfo.ReadUInt32();  // addons count                       
-
-        for (uint i = 0; i < addonsCount; ++i)
-        {
-            string addonName;
-            byte enabled;
-            uint crc, unk1;
-
-            // check next addon data format correctness
-            if (addonInfo.GetReadPosition() + 1 > addonInfo.GetSize())
+            for (uint i = 0; i < addonsCount; ++i)
             {
-                return;
-            }
+                string addonName;
+                byte enabled;
+                uint crc, unk1;
 
-            addonName = addonInfo.ReadCString();
-            enabled = addonInfo.ReadUInt8();
-            crc = addonInfo.ReadUInt32();
-            unk1 = addonInfo.ReadUInt32();
-
-            logger.Debug(LogFilter.Network, $"ADDON: Name: {addonName}, Enabled: 0x{enabled:x}, CRC: 0x{crc:x}, Unknown2: 0x{unk1:x}");
-
-            AddonInfo addon = new(addonName, enabled, crc, 2, true);
-            SavedAddon? savedAddon = AddonMgr.GetAddonInfo(addonName);
-
-            if (savedAddon != null)
-            {
-                bool match = true;
-
-                if (addon.CRC != savedAddon?.CRC)
+                // check next addon data format correctness
+                if (addonInfo.GetReadPosition() + 1 > addonInfo.GetSize())
                 {
-                    match = false;
+                    return;
                 }
 
-                if (!match)
+                addonName = addonInfo.ReadCString();
+                enabled = addonInfo.ReadUInt8();
+                crc = addonInfo.ReadUInt32();
+                unk1 = addonInfo.ReadUInt32();
+
+                logger.Debug(LogFilter.Network, $"ADDON: Name: {addonName}, Enabled: 0x{enabled:x}, CRC: 0x{crc:x}, Unknown2: 0x{unk1:x}");
+
+                AddonInfo addon = new(addonName, enabled, crc, 2, true);
+                SavedAddon? savedAddon = AddonMgr.GetAddonInfo(addonName);
+
+                if (savedAddon != null)
                 {
-                    logger.Debug(LogFilter.Network, $"ADDON: {addon.Name} was known, but didn't match known CRC (0x{savedAddon?.CRC:x})!");
+                    bool match = true;
+
+                    if (addon.CRC != savedAddon?.CRC)
+                    {
+                        match = false;
+                    }
+
+                    if (!match)
+                    {
+                        logger.Debug(LogFilter.Network, $"ADDON: {addon.Name} was known, but didn't match known CRC (0x{savedAddon?.CRC:x})!");
+                    }
+                    else
+                    {
+                        logger.Debug(LogFilter.Network, $"ADDON: {addon.Name} was known, CRC is correct (0x{savedAddon?.CRC:x})");
+                    }
                 }
                 else
                 {
-                    logger.Debug(LogFilter.Network, $"ADDON: {addon.Name} was known, CRC is correct (0x{savedAddon?.CRC:x})");
+                    // TODO: AddonMgr.SaveAddon(addon);
+                    //AddonMgr.SaveAddon(addon);
+
+                    logger.Debug(LogFilter.Network, $"ADDON: {addon.Name} (0x{addon.CRC:x}) was not known, saving...");
                 }
+
+                // TODO: Find out when to not use CRC/pubkey, and other possible states.
+                _addonsList.Add(addon);
             }
-            else
+
+            uint currentTime = addonInfo.ReadUInt32();
+
+            logger.Debug(LogFilter.Network, $"ADDON: CurrentTime: {currentTime}");
+
+            if (addonInfo.GetReadPosition() != addonInfo.GetSize())
             {
-                AddonMgr.SaveAddon(addon);
-
-                logger.Debug(LogFilter.Network, $"ADDON: {addon.Name} (0x{addon.CRC:x}) was not known, saving...");
+                logger.Debug(LogFilter.Network, $"packet under-read!");
             }
-
-            // @todo: Find out when to not use CRC/pubkey, and other possible states.
-            _addonsList.Add(addon);
         }
-
-        uint currentTime = addonInfo.ReadUInt32();
-
-        logger.Debug(LogFilter.Network, $"ADDON: CurrentTime: {currentTime}");
-
-        if (addonInfo.GetReadPosition() != addonInfo.GetSize())
+        else
         {
-            logger.Debug(LogFilter.Network, $"packet under-read!");
+            logger.Error(LogFilter.Network, $"Addon packet uncompress error! ({Enum.GetName(typeof(ZlibError), zlibError)})");
         }
     }
 
@@ -463,7 +465,7 @@ public partial class WorldSession : IOpcodeHandler
             data.WriteBytes(bannedAddon.NameMD5);
             data.WriteBytes(bannedAddon.VersionMD5);
             data.WriteUInt(bannedAddon.Timestamp);
-            data.WriteUInt((uint)1);  // IsBanned
+            data.WriteUInt(1);  // IsBanned
         }
 
         SendPacket(data);
@@ -515,8 +517,10 @@ public partial class WorldSession : IOpcodeHandler
                 continue;
             }
 
+            byte[] accountData = fields.Read<byte[]>(2) ?? Array.Empty<byte>();
+
             _accountData[type].Time = fields.Read<uint>(1);
-            _accountData[type].Data = fields.Read<string> (2);
+            _accountData[type].Data = Encoding.UTF8.GetString(accountData);
         }
         while (result.NextRow());
     }

@@ -280,7 +280,7 @@ public partial class WorldSocket : SocketBase
 
         AsyncRead();
 
-        HandleSendAuthSession();
+        SendAuthChallenge();
     }
 
     public override bool Update()
@@ -342,7 +342,7 @@ public partial class WorldSocket : SocketBase
         return true;
     }
 
-    private void HandleSendAuthSession()
+    private void SendAuthChallenge()
     {
         WorldPacketData packet = new (Opcodes.SMSG_AUTH_CHALLENGE);
 
@@ -472,7 +472,8 @@ public partial class WorldSocket : SocketBase
             _authCrypt.DecryptRecv(_headerBuffer.GetBasePointer(), _headerBuffer.GetReadPos(), _headerBuffer.GetActiveSize());
         }
 
-        ClientPktHeader header = _packetBuffer.CastTo<ClientPktHeader>();
+        ClientPktHeader header = _headerBuffer.CastTo<ClientPktHeader>();
+        header.size = BitConverter.ToUInt16(BitConverter.GetBytes(header.size).Reverse().ToArray(), 0);
 
         if (!header.IsValidSize() || !header.IsValidOpcode())
         {
@@ -520,7 +521,7 @@ public partial class WorldSocket : SocketBase
                 }
             case Opcodes.CMSG_AUTH_SESSION:
                 {
-                    LogOpcodeText(Opcodes.CMSG_PING);
+                    LogOpcodeText(Opcodes.CMSG_AUTH_SESSION);
 
                     if (_authed)
                     {
@@ -549,7 +550,7 @@ public partial class WorldSocket : SocketBase
                 {
                     sessionGuard.Lock();
 
-                    LogOpcodeText(Opcodes.CMSG_PING);
+                    LogOpcodeText(Opcodes.CMSG_KEEP_ALIVE);
 
                     if (_worldSession != null)
                     {
@@ -649,7 +650,7 @@ public partial class WorldSocket : SocketBase
 
         AccountInfo account = new(result);
 
-        string? address = ConfigMgr.GetOption("AllowLoggingIPAddressesInDatabase", true) ? GetRemoteIpAddress()?.ToString() : "0.0.0.0";
+        string? address = ConfigMgr.GetOption("AllowLoggingIPAddressesInDatabase", true) ? GetRemoteIpAddress()?.Address.ToString() : "0.0.0.0";
 
         // As we don't know if attempted login process by ip works, we update last_attempt_ip right away
         var stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_UPD_LAST_ATTEMPT_IP);

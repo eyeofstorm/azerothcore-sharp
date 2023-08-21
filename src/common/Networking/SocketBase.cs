@@ -146,11 +146,6 @@ public abstract class SocketBase : ISocket, IDisposable
         }
     }
 
-    private void ReceiveSocketAsyncEventArgs_Completed(object? sender, SocketAsyncEventArgs e)
-    {
-        throw new NotImplementedException();
-    }
-
     public void QueuePacket(MessageBuffer buffer)
     {
         _writeQueue.Enqueue(buffer);

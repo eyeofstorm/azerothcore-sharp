@@ -159,11 +159,6 @@ public class ByteBuffer : IDisposable
             throw new NullReferenceException(nameof(_readStream));
         }
 
-        if (_readStream == null)
-        {
-            throw new NullReferenceException(nameof(_readStream));
-        }
-
         ResetBitPos();
 
         return _readStream.ReadUInt32();
