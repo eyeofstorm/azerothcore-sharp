@@ -243,14 +243,14 @@ public partial class WorldSession : IOpcodeHandler
         WorldPacketData packet = new(Opcodes.SMSG_AUTH_RESPONSE);
 
         packet.WriteByte((byte)code);
-        packet.WriteUInt(0);                                   // BillingTimeRemaining
-        packet.WriteByte(0);                                    // BillingPlanFlags
-        packet.WriteUInt((uint)0);                                   // BillingTimeRested
+        packet.WriteUInt(0);                                    // BillingTimeRemaining
+        packet.WriteByte(6);                                    // BillingPlanFlags
+        packet.WriteUInt((uint)0);                              // BillingTimeRested
         packet.WriteByte(GetExpansion());                       // 0 - normal, 1 - TBC, 2 - WOTLK, must be set in database manually for each account
 
         if (!shortForm)
         {
-            packet.WriteUInt(queuePos);                        // Queue position
+            packet.WriteUInt(queuePos);                         // Queue position
             packet.WriteByte(0);                                // Realm has a free character migration - bool
         }
 

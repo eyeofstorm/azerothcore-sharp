@@ -473,7 +473,9 @@ public partial class WorldSocket : SocketBase
         }
 
         ClientPktHeader header = _headerBuffer.CastTo<ClientPktHeader>();
-        header.size = BitConverter.ToUInt16(BitConverter.GetBytes(header.size).Reverse().ToArray(), 0);
+
+        // The size is in big endian order, so we should convert it into little endian.
+        header.size = BitConverter.ToUInt16(BitConverter.GetBytes(header.size).Reverse().ToArray());
 
         if (!header.IsValidSize() || !header.IsValidOpcode())
         {

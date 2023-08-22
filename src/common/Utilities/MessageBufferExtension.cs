@@ -67,7 +67,7 @@ namespace AzerothCore.Utilities
                 }
             }
 
-            return default(T);
+            return default;
         }
     }
 }

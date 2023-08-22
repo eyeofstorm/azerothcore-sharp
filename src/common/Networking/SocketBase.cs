@@ -97,27 +97,6 @@ public abstract class SocketBase : ISocket, IDisposable
         return _remoteIPEndPoint;
     }
 
-    public void Read()
-    {
-        if (!IsOpen())
-        {
-            return;
-        }
-
-        _readBuffer.Normalize();
-        _readBuffer.EnsureFreeSpace();
-
-        int bytesTransferred =
-                _socket.Receive(
-                    _readBuffer.GetBasePointer(),
-                    _readBuffer.GetWritePos(),
-                    _readBuffer.GetRemainingSpace(),
-                    SocketFlags.None,
-                    out SocketError socketError);
-
-        ReadHandlerInternal(socketError, bytesTransferred);
-    }
-
     public void AsyncRead()
     {
         if (!IsOpen())

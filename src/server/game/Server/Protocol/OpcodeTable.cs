@@ -1369,6 +1369,6 @@ public sealed class OpcodeTable : Singleton<OpcodeTable>
         /*0x51B*/ DEFINE_HANDLER(Opcodes.CMSG_COMMENTATOR_SKIRMISH_QUEUE_COMMAND,                               SessionStatus.STATUS_NEVER,      PacketProcessing.PROCESS_INPLACE,        WorldSession.OpcodeHandler.Handle_NULL                              );
         /*0x51C*/ DEFINE_SERVER_OPCODE_HANDLER(Opcodes.SMSG_COMMENTATOR_SKIRMISH_QUEUE_RESULT1,                 SessionStatus.STATUS_NEVER);
         /*0x51D*/ DEFINE_SERVER_OPCODE_HANDLER(Opcodes.SMSG_COMMENTATOR_SKIRMISH_QUEUE_RESULT2,                 SessionStatus.STATUS_NEVER);
-        /*0x51E*/ DEFINE_SERVER_OPCODE_HANDLER(Opcodes.SMSG_MULTIPLE_MOVES, SessionStatus.STATUS_NEVER);
+        /*0x51E*/ DEFINE_SERVER_OPCODE_HANDLER(Opcodes.SMSG_MULTIPLE_MOVES,                                     SessionStatus.STATUS_NEVER);
     }
 }
