@@ -17,6 +17,7 @@
 
 using System.Security.Cryptography;
 using System.Text;
+
 using AzerothCore.Database;
 using AzerothCore.Logging;
 using AzerothCore.Threading;

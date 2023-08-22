@@ -271,7 +271,7 @@ public partial class WorldSession : IOpcodeHandler
             return;
         }
 
-        logger.Trace(LogFilter.Network, $"S->C: {GetPlayerInfo()} {Enum.GetName((Opcodes)packet.Opcode) ?? "Unkown Opcode"}");
+        logger.Debug(LogFilter.Network, $"S->C: {GetPlayerInfo()} {Enum.GetName((Opcodes)packet.Opcode) ?? "Unkown Opcode"}");
 
         _socket.SendPacket(packet);
     }
@@ -322,13 +322,13 @@ public partial class WorldSession : IOpcodeHandler
         int uSize = (int)size;
         int pos = (int)data.GetReadPosition();
         ReadOnlySpan<byte> source = new(data.GetData(), pos, (int)(data.GetSize() - pos));
-        byte[] unpackAddonInfo = new byte[uSize];
+        byte[] unpackedAddonInfo = new byte[uSize];
 
-        ZlibError zlibError = Zlib.Unpack(unpackAddonInfo, ref uSize, source, source.Length);
+        ZlibError zlibError = Zlib.Unpack(unpackedAddonInfo, ref uSize, source, source.Length);
 
         if (zlibError == ZlibError.Okay)
         {
-            ByteBuffer addonInfo = new(unpackAddonInfo);
+            ByteBuffer addonInfo = new(unpackedAddonInfo);
             uint addonsCount = addonInfo.ReadUInt32();  // addons count                       
 
             for (uint i = 0; i < addonsCount; ++i)
@@ -431,17 +431,17 @@ public partial class WorldSession : IOpcodeHandler
 
             if (crcpub != 0)
             {
-                byte usepk = (addonInfo.CRC != AddonMgr.STANDARD_ADDON_CRC) ? (byte)0x01 : (byte)0x00; // If addon is Standard addon CRC
-                data.WriteByte(usepk);
+                bool usepk = addonInfo.CRC != AddonMgr.STANDARD_ADDON_CRC; // If addon is Standard addon CRC
+                data.WriteByte(usepk ? (byte)0x01 : (byte)0x00);
 
-                if (usepk != 0)                                      // if CRC is wrong, add public key (client need it)
+                if (usepk)                                      // if CRC is wrong, add public key (client need it)
                 {
                     logger.Debug(LogFilter.Network, $"ADDON: CRC (0x{addonInfo.CRC:x}) for addon {addonInfo.Name} is wrong (does not match expected 0x{AddonMgr.STANDARD_ADDON_CRC:x}), sending pubkey");
 
                     data.WriteBytes(addonPublicKey);
                 }
 
-                data.WriteByte(0);                              /// @todo: Find out the meaning of this.
+                data.WriteUInt(0);                              /// @todo: Find out the meaning of this.
             }
 
             byte unk3 = 0;                                     // 0 is sent here

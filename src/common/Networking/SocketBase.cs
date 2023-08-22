@@ -313,8 +313,6 @@ public abstract class SocketBase : ISocket, IDisposable
             return AsyncProcessQueue();
         }
 
-        logger.Debug(LogFilter.Network, $"packet successfully sent (size={bytesSent})");
-
         queuedMessage.ReadCompleted(bytesSent);
         _writeQueue.TryDequeue(out _);
 
