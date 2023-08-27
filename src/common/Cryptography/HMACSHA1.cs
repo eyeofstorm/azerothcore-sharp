@@ -44,7 +44,6 @@ public class HMACSHA1 : System.Security.Cryptography.HMACSHA1
 
     public byte[]? GetDigestOf(byte[] data)
     {
-        UpdateData(data, data.Length);
         Finalize(data, data.Length);
 
         return Digest;

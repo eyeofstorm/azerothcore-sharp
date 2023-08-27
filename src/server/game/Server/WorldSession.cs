@@ -271,7 +271,7 @@ public partial class WorldSession : IOpcodeHandler
             return;
         }
 
-        logger.Debug(LogFilter.Network, $"S->C: {GetPlayerInfo()} {Enum.GetName((Opcodes)packet.Opcode) ?? "Unkown Opcode"}");
+        logger.Debug(LogFilter.Network, $"Server->Client: {GetPlayerInfo()} {Enum.GetName((Opcodes)packet.Opcode) ?? "Unkown Opcode"}");
 
         _socket.SendPacket(packet);
     }

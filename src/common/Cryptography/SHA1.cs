@@ -36,12 +36,12 @@ public abstract class SHA1
 
     private sealed class Implement : SHA1
     {
-        private System.Security.Cryptography.SHA1 serviceProvidor;
+        private readonly System.Security.Cryptography.SHA1 _serviceProvidor;
 
         internal Implement()
         {
-            serviceProvidor = System.Security.Cryptography.SHA1.Create();
-            serviceProvidor.Initialize();
+            _serviceProvidor = System.Security.Cryptography.SHA1.Create();
+            _serviceProvidor.Initialize();
         }
 
         public override void Update(byte[]? data)
@@ -51,7 +51,7 @@ public abstract class SHA1
                 throw new ArgumentNullException(nameof(data));
             }
 
-            serviceProvidor?.TransformBlock(data, 0, data.Length, data, 0);
+            _serviceProvidor.TransformBlock(data, 0, data.Length, data, 0);
         }
 
         public override void Final(byte[]? data)
@@ -61,8 +61,8 @@ public abstract class SHA1
                 throw new ArgumentNullException(nameof(data));
             }
 
-            serviceProvidor?.TransformFinalBlock(data, 0, data.Length);
-            Hash = serviceProvidor?.Hash ?? Array.Empty<byte>();
+            _serviceProvidor.TransformFinalBlock(data, 0, data.Length);
+            Hash = _serviceProvidor?.Hash ?? Array.Empty<byte>();
         }
     }
 }

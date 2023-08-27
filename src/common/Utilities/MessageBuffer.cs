@@ -34,6 +34,24 @@ public class MessageBuffer
     public void Resize(int size)
     {
         Array.Resize(ref _storage, size);
+
+        if (size > 0)
+        {
+            if (_wpos >= size)
+            {
+                _wpos = size - 1;
+            }
+
+            if (_rpos >= size)
+            {
+                _rpos = size - 1;
+            }
+        }
+        else
+        {
+            _wpos = 0;
+            _rpos = 0;
+        }
     }
 
     public void Reset()

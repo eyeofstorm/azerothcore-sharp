@@ -200,7 +200,7 @@ public abstract class SocketBase : ISocket, IDisposable
 
         _isWritingAsync = true;
 
-        SocketAsyncEventArgs sendSocketAsyncEventArgs = new SocketAsyncEventArgs();
+        SocketAsyncEventArgs sendSocketAsyncEventArgs = new();
 
         sendSocketAsyncEventArgs.Completed += (object? send, SocketAsyncEventArgs e) =>
         {
@@ -256,7 +256,13 @@ public abstract class SocketBase : ISocket, IDisposable
         }
 
         int bytesToSent = queuedMessage.GetActiveSize();
-        int bytesSent = _socket.Send(queuedMessage.GetBasePointer(), queuedMessage.GetReadPos(), bytesToSent, SocketFlags.None, out SocketError error);
+
+        int bytesSent = _socket.Send(
+                            queuedMessage.GetBasePointer(),
+                            queuedMessage.GetReadPos(),
+                            bytesToSent,
+                            SocketFlags.None,
+                            out SocketError error);
 
         if (error != SocketError.Success)
         {

@@ -26,7 +26,7 @@ using AzerothCore.Utilities;
 
 namespace System;
 
-public static class Extensions
+public static partial class Extensions
 {
     public static bool HasAnyFlag<T>(this T value, T flag) where T : struct
     {
@@ -46,14 +46,16 @@ public static class Extensions
     
     public static byte[] ToByteArray(this string str)
     {
-        str = str.Replace(" ", String.Empty);
+        str = str.Replace(" ", string.Empty);
 
         var res = new byte[str.Length / 2];
+
         for (int i = 0; i < res.Length; ++i)
         {
-            string temp = String.Concat(str[i * 2], str[i * 2 + 1]);
+            string temp = string.Concat(str[i * 2], str[i * 2 + 1]);
             res[i] = Convert.ToByte(temp, 16);
         }
+
         return res;
     }
 
@@ -67,7 +69,7 @@ public static class Extensions
         int structureSize = Marshal.SizeOf(structure);
         byte[] arr = new byte[structureSize];
 
-        IntPtr pointer = IntPtr.Zero;
+        nint pointer = nint.Zero;
 
         try
         {
@@ -86,10 +88,10 @@ public static class Extensions
 
     public static uint LeftRotate(this uint value, int shiftCount)
     {
-        return (value << shiftCount) | (value >> (0x20 - shiftCount));
+        return value << shiftCount | value >> 0x20 - shiftCount;
     }
 
-    public static byte[] GenerateRandomKey(this byte[] s, int length)
+    public static byte[] GenerateRandomKey(this byte[] _, int length)
     {
         var random = new Random((int)((uint)(Guid.NewGuid().GetHashCode() ^ 1 >> 89 << 2 ^ 42)).LeftRotate(13));
         var key = new byte[length];
@@ -243,7 +245,7 @@ public static class Extensions
         }
     }
 
-    public static int primaryAxis(this Vector3 vector)
+    public static int PrimaryAxis(this Vector3 vector)
     {
         double nx = Math.Abs(vector.X);
         double ny = Math.Abs(vector.Y);
@@ -277,7 +279,7 @@ public static class Extensions
         return a;
     }
 
-    public static Vector3 direction(this Vector3 vector)
+    public static Vector3 Direction(this Vector3 vector)
     {
         float lenSquared = vector.LengthSquared();
         float invSqrt = 1.0f / MathF.Sqrt(lenSquared);
@@ -285,7 +287,7 @@ public static class Extensions
         return new Vector3(vector.X * invSqrt, vector.Y * invSqrt, vector.Z * invSqrt);
     }
     
-    public static Vector3 directionOrZero(this Vector3 vector)
+    public static Vector3 DirectionOrZero(this Vector3 vector)
     {
         float mag = vector.LengthSquared();
 
@@ -303,7 +305,7 @@ public static class Extensions
         }
     }
 
-    public static void toEulerAnglesZYX(this Quaternion quaternion, out float z, out float y, out float x)
+    public static void ToEulerAnglesZYX(this Quaternion quaternion, out float z, out float y, out float x)
     {
         var matrix = quaternion.ToMatrix();
 
@@ -332,7 +334,7 @@ public static class Extensions
         }
     }
     
-    public static Matrix4x4 fromEulerAnglesZYX(float fYAngle, float fPAngle, float fRAngle)
+    public static Matrix4x4 FromEulerAnglesZYX(float fYAngle, float fPAngle, float fRAngle)
     {
         float fCos = MathF.Cos(fYAngle);
         float fSin = MathF.Sin(fYAngle);
@@ -357,9 +359,7 @@ public static class Extensions
 
     public static T ToEnum<T>(this string? str) where T : struct
     {
-        T value;
-
-        if (!Enum.TryParse(str, out value))
+        if (!Enum.TryParse(str, out T value))
         {
             return default;
         }
@@ -387,8 +387,7 @@ public static class Extensions
 
     public static bool IsNumber(this string? str)
     {
-        double value;
-        return double.TryParse(str, out value);
+        return double.TryParse(str, out double _);
     }
 
     public static int GetByteCount(this string str)
@@ -441,9 +440,13 @@ public static class Extensions
         return false;
     }
 
+    [GeneratedRegex("\\((?<x>.*),(?<y>.*),(?<z>.*)\\)", RegexOptions.Singleline)]
+    private static partial Regex RegexVector3();
+
     public static Vector3 ParseVector3(this string value)
     {
-        Regex r = new Regex(@"\((?<x>.*),(?<y>.*),(?<z>.*)\)", RegexOptions.Singleline);
+        Regex r = RegexVector3();
+
         Match m = r.Match(value);
 
         if (m.Success)
@@ -468,12 +471,12 @@ public static class Extensions
 
         if (delimPos != -1)
         {
-            token = args.Substring(0, delimPos);
+            token = args[..delimPos];
             int tailPos = args.FindFirstNotOf(" ", delimPos);
 
             if (tailPos != -1)
             {
-                tail = args.Substring(tailPos);
+                tail = args[tailPos..];
             }
         }
         else
@@ -488,7 +491,7 @@ public static class Extensions
     {
         for (int i = pos; i < source.Length; i++)
         {
-            if (chars.IndexOf(source[i]) == -1)
+            if (!chars.Contains(source[i]))
             {
                 return i;
             }
@@ -547,6 +550,64 @@ public static class Extensions
         byte[] result = reader.ReadBytes(Unsafe.SizeOf<T>());
 
         return Unsafe.ReadUnaligned<T>(ref result[0]);
+    }
+
+    public static string DumpHex(this byte[] data, int offset = 0, bool noOffsetFirstLine = true)
+    {
+        var n = Environment.NewLine;
+
+        var prefix = new string(' ', offset);
+
+        var hexDump = new StringBuilder(noOffsetFirstLine ? "" : prefix);
+
+        var header = "|-------------------------------------------------|---------------------------------|" + n;
+        hexDump.Append(header);
+
+        for (var i = 0; i < data.Length; i += 16)
+        {
+            var text = new StringBuilder();
+            var hex = new StringBuilder(i == 0 ? "" : prefix);
+
+            hex.Append("| ");
+
+            for (var j = 0; j < 16; j++)
+            {
+                if (j + i < data.Length)
+                {
+                    var val = data[j + i];
+                    hex.Append(data[j + i].ToString("X2"));
+
+                    hex.Append(' ');
+
+                    if (val >= 32 && val <= 127)
+                    {
+                        text.Append((char)val);
+                    }
+                    else
+                    {
+                        text.Append('.');
+                    }
+
+                    text.Append(' ');
+                }
+                else
+                {
+                    hex.Append("   ");
+                    text.Append("  ");
+                }
+            }
+
+            hex.Append("| ");
+            hex.Append(text);
+            hex.Append('|');
+            hex.Append(n);
+
+            hexDump.Append(hex);
+        }
+
+        hexDump.Append("|-------------------------------------------------|---------------------------------|");
+
+        return hexDump.ToString();
     }
     #endregion
 }

@@ -112,8 +112,8 @@ public struct ClientPktHeader
     public ushort size;
     public uint cmd;
 
-    public bool IsValidSize() { return size >= 4 && size< 10240; }
-    public bool IsValidOpcode() { return cmd < (uint)OpcodeMisc.NUM_OPCODE_HANDLERS; }
+    public readonly bool IsValidSize() { return size >= 4 && size< 10240; }
+    public readonly bool IsValidOpcode() { return cmd < (uint)OpcodeMisc.NUM_OPCODE_HANDLERS; }
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -147,13 +147,13 @@ public struct ServerPktHeader
         Header[headerIndex++] = (byte)(0xFF & (cmd >> 8));
     }
 
-    public int GetHeaderLength()
+    public readonly int GetHeaderLength()
     {
-        // cmd = 2 bytes, size= 2||3bytes
+        // cmd = 2 bytes, size= 2 || 3bytes
         return 2 + (IsLargePacket() ? 3 : 2);
     }
 
-    public bool IsLargePacket()
+    public readonly bool IsLargePacket()
     {
         return Size > 0x7FFF;
     }
@@ -291,7 +291,15 @@ public partial class WorldSocket : SocketBase
 
             if (queued.NeedsEncryption())
             {
+                //byte[] dumpBytes = new byte[header.GetHeaderLength()];
+                //Array.Copy(header.Header, 0, dumpBytes, 0, header.GetHeaderLength());
+                //logger.Debug(LogFilter.Network, $"{Enum.GetName(typeof(Opcodes), queued.Opcode)} Header Before Encryption: {Environment.NewLine}{dumpBytes.DumpHex()}{Environment.NewLine}");
+
                 _authCrypt.EncryptSend(header.Header, 0, header.GetHeaderLength());
+
+                //dumpBytes.Clear();
+                //Array.Copy(header.Header, 0, dumpBytes, 0, header.GetHeaderLength());
+                //logger.Debug(LogFilter.Network, $"{Enum.GetName(typeof(Opcodes), queued.Opcode)} Header After Encryption: {Environment.NewLine}{dumpBytes.DumpHex()}{Environment.NewLine}");
             }
 
             if (_sendBuffer.GetRemainingSpace() < queued.GetSize() + header.GetHeaderLength())
@@ -356,7 +364,7 @@ public partial class WorldSocket : SocketBase
 
     private void SendPacketAndLogOpcode(WorldPacketData packet)
     {
-        logger.Debug(LogFilter.Network, $"S->C: { GetRemoteIpAddress()?.ToString() ?? "Unknow IP Address" } { Enum.GetName((Opcodes)packet.Opcode) ?? "Unkown Opcode" }");
+        logger.Debug(LogFilter.Network, $"Server->Client: { GetRemoteIpAddress()?.ToString() ?? "Unknow IP Address" } { Enum.GetName((Opcodes)packet.Opcode) ?? "Unkown Opcode" }");
 
         SendPacket(packet);
     }
@@ -383,7 +391,7 @@ public partial class WorldSocket : SocketBase
 
     private void SendAuthResponseError(ResponseCodes reseaon)
     {
-        WorldPacketData packet = new WorldPacketData(Opcodes.SMSG_AUTH_RESPONSE);
+        WorldPacketData packet = new(Opcodes.SMSG_AUTH_RESPONSE);
 
         packet.WriteByte((byte)reseaon);
 
@@ -529,7 +537,7 @@ public partial class WorldSocket : SocketBase
                     {
                         if (sessionGuard.Lock())
                         {
-                            logger.Error(LogFilter.Network, $"WorldSocket::ProcessIncoming: received duplicate CMSG_AUTH_SESSION from {_worldSession?.GetPlayerInfo()}");
+                            logger.Error(LogFilter.Network, $"WorldSocket::ReadDataHandler: received duplicate CMSG_AUTH_SESSION from {_worldSession?.GetPlayerInfo()}");
                         }
 
                         return ReadDataHandlerResult.Error;
@@ -717,8 +725,9 @@ public partial class WorldSocket : SocketBase
         sha.Update(authSession.LocalChallenge);
         sha.Update(_authSeed);
         sha.Final(account.SessionKey);
+        byte[] digest = sha.Hash;
 
-        if (!sha.Hash.Compare(authSession.Digest))
+        if (!digest.Compare(authSession.Digest))
         {
             SendAuthResponseError(ResponseCodes.AUTH_REJECT);
             logger.Error(LogFilter.Network, $"WorldSocket::HandleAuthSession: Authentication failed for account: {account.Id} ('{authSession.Account}') address: {address}");
@@ -897,7 +906,7 @@ public partial class WorldSocket : SocketBase
 
     private void LogOpcodeText(Opcodes opcode)
     {
-        logger.Debug(LogFilter.Network, $"C->S: {GetRemoteIpAddress()?.ToString()} {Enum.GetName(typeof(Opcodes), opcode)}");
+        logger.Debug(LogFilter.Network, $"Client->Server: {GetRemoteIpAddress()?.ToString()} {Enum.GetName(typeof(Opcodes), opcode)}");
     }
 
     protected enum ReadDataHandlerResult
