@@ -22,11 +22,28 @@ using AzerothCore.Utilities;
 
 namespace AzerothCore.Game;
 
-public static class ByteBufferExtension
+public static class ByteBufferExtensions
 {
     public static void WriteObjectGuid(this ByteBuffer buffer, ObjectGuid guid)
     {
         buffer.WriteUInt64(guid.GetRawValue());
+    }
+}
+
+public class PackedGuid
+{
+    private ByteBuffer _packedGuid;
+
+    public PackedGuid()
+    {
+        _packedGuid = new ByteBuffer();
+        _packedGuid.WritePackGuid(0UL);
+    }
+
+    internal void Set(ObjectGuid guid)
+    {
+        _packedGuid.GetCurrentStream().Seek(0, SeekOrigin.Begin);
+        _packedGuid.WritePackGuid(0UL);
     }
 }
 
@@ -46,7 +63,7 @@ public class ObjectGuid
         _guid = counter != 0 ? counter | ((ulong)hi << 48) : 0;
     }
 
-    private ObjectGuid(HighGuid hi, uint entry, uint counter)
+    public ObjectGuid(HighGuid hi, uint entry, uint counter)
     {
         _guid = counter != 0 ? counter | (ulong)(entry << 24) | ((ulong)hi << 48) : 0;
     }
@@ -55,6 +72,26 @@ public class ObjectGuid
     public static ObjectGuid Create(HighGuid type, uint counter)
     {
         return new ObjectGuid(type, counter);
+    }
+
+    public static ObjectGuid Create(ByteBuffer buffer)
+    {
+        ObjectGuid guid = new()
+        {
+            _guid = buffer.ReadUInt64()
+        };
+
+        return guid;
+    }
+
+    public static ObjectGuid Create(ulong guid)
+    {
+        ObjectGuid ret = new()
+        {
+            _guid = guid
+        };
+
+        return ret;
     }
 
     // Map specific guid
@@ -143,6 +180,16 @@ public class ObjectGuid
         return HasEntry(high) ? 0x00FFFFFFU : 0xFFFFFFFFU;
     }
 
+    public static bool operator ==(ObjectGuid left, ObjectGuid right)
+    {
+        return left.GetRawValue() == right.GetRawValue();
+    }
+
+    public static bool operator !=(ObjectGuid left, ObjectGuid right)
+    {
+        return left.GetRawValue() != right.GetRawValue();
+    }
+
     public bool IsEmpty()              { return _guid == 0; }
     public bool IsCreature()           { return GetHigh() == HighGuid.Unit; }
     public bool IsPet()                { return GetHigh() == HighGuid.Pet; }
@@ -190,5 +237,25 @@ public class ObjectGuid
         str.Append($" Low: {GetCounter()}");
 
         return str.ToString();
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (ReferenceEquals(this, obj))
+        {
+            return true;
+        }
+
+        if (obj is null)
+        {
+            return false;
+        }
+
+        return GetRawValue() == (obj as ObjectGuid)?.GetRawValue();
+    }
+
+    public override int GetHashCode()
+    {
+        return GetRawValue().GetHashCode();
     }
 }

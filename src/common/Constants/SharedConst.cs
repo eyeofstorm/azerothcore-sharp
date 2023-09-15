@@ -209,6 +209,18 @@ public enum Gender : ushort
     GENDER_NONE = 2
 }
 
+public enum LoginFailureReason : byte
+{
+    Failed             = 0,
+    NoWorld            = 1,
+    DuplicateCharacter = 2,
+    NoInstances        = 3,
+    Disabled           = 4,
+    NoCharacter        = 5,
+    LockedForTransfer  = 6,
+    LockedByBilling    = 7
+}
+
 public static class SharedConst
 {
     // TimeConstants
@@ -244,4 +256,11 @@ public static class SharedConst
         "esMX",
         "ruRU"
     };
+
+    public static readonly int MAX_PET_DIET = 9;
+
+    public static readonly int CHAIN_SPELL_JUMP_RADIUS = 8;
+
+    public static readonly int GUILD_BANKLOG_MAX_RECORDS = 25;
+    public static readonly int GUILD_EVENTLOG_MAX_RECORDS = 100;
 }

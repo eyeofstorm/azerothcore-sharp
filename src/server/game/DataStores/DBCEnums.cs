@@ -37,4 +37,13 @@ public static class DBCConst
     public static readonly int MAX_DUNGEON_DIFFICULTY = 3;
     public static readonly int MAX_RAID_DIFFICULTY = 4;
     public static readonly int MAX_DIFFICULTY = 4;
+
+    // Client expected level limitation, like as used in DBC item max levels for "until max player level"
+    // use as default max player level, must be fit max level for used client
+    // also see MAX_LEVEL and STRONG_MAX_LEVEL define
+    public static readonly int DEFAULT_MAX_LEVEL = 80;
+
+    // client supported max level for player/pets/etc. Avoid overflow or client stability affected.
+    // also see GT_MAX_LEVEL define
+    public static readonly int MAX_LEVEL = 100;
 }

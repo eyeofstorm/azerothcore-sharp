@@ -124,7 +124,7 @@ public struct ItemTemplate
     public uint Map;                                             // id from Map.dbc
     public uint BagFamily;                                       // bit mask (1 << id from ItemBagFamily.dbc)
     public uint TotemCategory;                                   // id from TotemCategory.dbc
-    ItemSocket[] Socket;
+    public ItemSocket[] Socket;
     public uint socketBonus;                                     // id from SpellItemEnchantment.dbc
     public uint GemProperties;                                   // id from GemProperties.dbc
     public uint RequiredDisenchantSkill;

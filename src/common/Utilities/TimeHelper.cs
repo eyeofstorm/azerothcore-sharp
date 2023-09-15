@@ -414,6 +414,8 @@ public class IntervalTimer
     private long _interval;
     private long _current;
 
+    public IntervalTimer() {  }
+
     public void Update(long diff)
     {
         _current += diff;

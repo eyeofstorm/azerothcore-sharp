@@ -700,7 +700,7 @@ public struct PlayerLevelInfo
     public PlayerLevelInfo() { }
 }
 
-public struct PlayerInfo
+public struct PlayerCreateInfo
 {
     public uint MapId;
     public uint AreaId;
@@ -717,18 +717,37 @@ public struct PlayerInfo
     public PlayerCreateInfoSkills Skills;
     public PlayerLevelInfo LevelInfo;                             // [level-1] 0..MaxPlayerLevel - 1
 
-    public PlayerInfo() { }
+    public PlayerCreateInfo() { }
 }
 
 public static class PlayerConst
 {
+    public static readonly int MAX_MONEY_AMOUNT             = 0x7FFFFFFF - 1;
+
+    public static readonly int PLAYER_MAX_SKILLS            = 127;
+    public static readonly int PLAYER_MAX_DAILY_QUESTS      = 25;
+    public static readonly int PLAYER_EXPLORED_ZONES_SIZE   = 128;
+
+    public static readonly int KNOWN_TITLES_SIZE            = 3;
+    public static readonly int MAX_TITLE_INDEX              = KNOWN_TITLES_SIZE * 64;
 }
 
-public partial class Player
+public partial class Player : Unit
 {
-    protected static readonly ILogger logger = LoggerFactory.GetLogger();
+    private long _semaphoreTeleportNear;
+    private long _semaphoreTeleportFar;
+    private Unit _mover;
+    private WorldSession _worldSession;
 
-    public Player() { }
+    public Unit? Mover { get { return _mover; } }
+
+    public Player(WorldSession worldSession)
+    {
+        _semaphoreTeleportNear = 0;
+        _semaphoreTeleportFar = 0;
+        _worldSession = worldSession;
+        _mover = this;
+    }
 
     internal static bool BuildEnumData(SQLResult result, ref WorldPacketData data)
     {
@@ -751,7 +770,7 @@ public partial class Player
 
         ObjectGuid guid = ObjectGuid.Create(HighGuid.Player, guidLow);
 
-        PlayerInfo? info = Global.sObjectMgr.GetPlayerInfo(plrRace, plrClass);
+        PlayerCreateInfo? info = Global.sObjectMgr.GetPlayerInfo(plrRace, plrClass);
 
         if (info == null)
         {
@@ -976,9 +995,23 @@ public partial class Player
         return gender <= (ushort)Gender.GENDER_FEMALE;
     }
 
-    public bool IsInWorld()
+    internal bool IsInWorld()
     {
         // TODO: game: Player::IsInWorld()
         return false;
+    }
+
+    internal bool IsBeingTeleported()       { return _semaphoreTeleportNear != 0 || _semaphoreTeleportFar != 0; }
+    internal bool IsBeingTeleportedNear()   { return _semaphoreTeleportNear != 0; }
+    internal bool IsBeingTeleportedFar()    { return _semaphoreTeleportFar != 0; }
+
+    internal WorldSession GetSession()      { return _worldSession; }
+
+    override public void SetObjectScale(float scale)
+    {
+        base.SetObjectScale(scale);
+
+        SetFloatValue((ushort)EUnitFields.UNIT_FIELD_BOUNDINGRADIUS, scale * ObjectDefines.DEFAULT_WORLD_OBJECT_SIZE);
+        SetFloatValue((ushort)EUnitFields.UNIT_FIELD_COMBATREACH, scale * ObjectDefines.DEFAULT_COMBAT_REACH);
     }
 }

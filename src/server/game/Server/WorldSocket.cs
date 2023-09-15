@@ -868,7 +868,7 @@ public partial class WorldSocket : SocketBase
                     lock (_worldSessionLock)
                     {
 
-                        if (_worldSession != null && AccountMgr.Instance.IsPlayerAccount(_worldSession.GetSecurity()))
+                        if (_worldSession != null && AccountMgr.IsPlayerAccount(_worldSession.GetSecurity()))
                         {
                             logger.Error(LogFilter.Network, $"WorldSocket::HandlePing: {_worldSession?.GetPlayerInfo()} kicked for over-speed pings (address: {GetRemoteIpAddress()})");
 

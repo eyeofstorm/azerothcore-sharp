@@ -32,6 +32,10 @@
     <None Remove="Entities\Creature\" />
     <None Remove="Entities\Unit\" />
     <None Remove="Entities\Item\" />
+    <None Remove="Entities\Object\Updates\" />
+    <None Remove="Chat\" />
+    <None Remove="Collision\" />
+    <None Remove="Collision\Management\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Globals\" />
@@ -51,6 +55,10 @@
     <Folder Include="Entities\Creature\" />
     <Folder Include="Entities\Unit\" />
     <Folder Include="Entities\Item\" />
+    <Folder Include="Entities\Object\Updates\" />
+    <Folder Include="Chat\" />
+    <Folder Include="Collision\" />
+    <Folder Include="Collision\Management\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\common\common.csproj" />

@@ -15,6 +15,8 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System.Text;
+using AzerothCore.Configuration;
 using AzerothCore.Constants;
 using AzerothCore.Database;
 using AzerothCore.DataStores;
@@ -35,9 +37,15 @@ internal struct RaceStats
 
 public class ObjectMgr : Singleton<ObjectMgr>
 {
+    public const int MAX_PLAYER_NAME          = 12;                         // max allowed by client name length
+    public const int MAX_INTERNAL_PLAYER_NAME = 15;                         // max server internal player name length (> MAX_PLAYER_NAME for support declined names)
+    public const int MAX_PET_NAME             = 12 ;                        // max allowed by client name length
+    public const int MAX_CHARTER_NAME         = 24;                         // max allowed by client name length
+    public const int MAX_CHANNEL_NAME         = 50;
+
     private static readonly ILogger logger = LoggerFactory.GetLogger();
 
-    private readonly PlayerInfo[,] _playerInfo;
+    private readonly PlayerCreateInfo[,] _playerInfo;
     private readonly Dictionary<short, InstanceTemplate> _instanceTemplateStore;
     private readonly List<string> _scriptNamesStore;
     private readonly Dictionary<uint, CreatureTemplate> _creatureTemplateStore;
@@ -45,14 +53,14 @@ public class ObjectMgr : Singleton<ObjectMgr>
 
     private ObjectMgr()
 	{
-        _playerInfo = new PlayerInfo[SharedConst.MAX_RACES, SharedConst.MAX_CLASSES];
+        _playerInfo = new PlayerCreateInfo[SharedConst.MAX_RACES, SharedConst.MAX_CLASSES];
         _instanceTemplateStore = new Dictionary<short, InstanceTemplate>();
         _scriptNamesStore = new List<string>();
         _creatureTemplateStore = new Dictionary<uint, CreatureTemplate>();
         _itemTemplateStore = new Dictionary<uint, ItemTemplate>();
     }
 
-    public void LoadPlayerInfo()
+    public void LoadPlayerCreateInfo()
     {
         // Load playercreate
         logger.Info(LogFilter.ServerLoading, "Loading Player Create Info Data...");
@@ -128,7 +136,7 @@ public class ObjectMgr : Singleton<ObjectMgr>
                         continue;
                     }
 
-                    PlayerInfo info = new()
+                    PlayerCreateInfo info = new()
                     {
                         MapId = mapId,
                         AreaId = areaId,
@@ -139,7 +147,7 @@ public class ObjectMgr : Singleton<ObjectMgr>
                         #pragma warning disable
                         DisplayId_m = (ushort)rEntry.ModelMale,
                         DisplayId_f = (ushort)rEntry.ModelFemale
-                        #pragma warning enable
+                        #pragma warning restore
                     };
 
                     _playerInfo[currentRace, currentClass] = info;
@@ -748,7 +756,7 @@ public class ObjectMgr : Singleton<ObjectMgr>
 //    }
     }
 
-    public PlayerInfo? GetPlayerInfo(byte race, byte class_)
+    public PlayerCreateInfo? GetPlayerInfo(byte race, byte class_)
     {
         if (race >= SharedConst.MAX_RACES)
         {
@@ -760,7 +768,7 @@ public class ObjectMgr : Singleton<ObjectMgr>
             return null;
         }
 
-        PlayerInfo? info = _playerInfo[race, class_];
+        PlayerCreateInfo? info = _playerInfo[race, class_];
 
         if (info == null)
         {
@@ -862,7 +870,12 @@ public class ObjectMgr : Singleton<ObjectMgr>
 
         do
         {
-            _scriptNamesStore.Add(result.Read<string>(0));
+            string? name = result.Read<string>(0);
+
+            if (name != null)
+            {
+                _scriptNamesStore.Add(name);
+            }
         }
         while (result.NextRow());
 
@@ -908,8 +921,56 @@ public class ObjectMgr : Singleton<ObjectMgr>
         return _creatureTemplateStore.ContainsKey(entry) ? _creatureTemplateStore[entry] : null;
     }
 
-    internal ItemTemplate? GetItemTemplate(uint itemId)
+    public ItemTemplate? GetItemTemplate(uint itemId)
     { 
         return _itemTemplateStore.ContainsKey(itemId) ? _itemTemplateStore[itemId] : null;
+    }
+
+    public static ResponseCodes CheckPlayerName(string name, bool create = false)
+    {
+        // Check for invalid characters
+        string wname;
+
+        try
+        {
+            wname = Encoding.Unicode.GetString(Encoding.UTF8.GetBytes(name));
+        }
+        catch
+        {
+            return ResponseCodes.CHAR_NAME_INVALID_CHARACTER;
+        }
+
+        // Check for too long name
+        if (wname.Length > MAX_PLAYER_NAME)
+        {
+            return ResponseCodes.CHAR_NAME_TOO_LONG;
+        }
+
+        // Check for too short name
+        uint minName = ConfigMgr.GetOption("MinPlayerName", 2U);
+
+        if (minName < 1 || minName > MAX_PLAYER_NAME)
+        {
+            minName = 2;
+        }
+
+        if (wname.Length < minName)
+        {
+            return ResponseCodes.CHAR_NAME_TOO_SHORT;
+        }
+
+        return ResponseCodes.CHAR_NAME_SUCCESS;
+    }
+
+    internal bool IsReservedName(string name)
+    {
+        // TODO: game: ObjectManager::IsReservedName(string name)
+        return false;
+    }
+
+    internal bool IsProfanityName(string name)
+    {
+        // TODO: game: ObjectManager::IsProfanityName(string name)
+        return false;
     }
 }

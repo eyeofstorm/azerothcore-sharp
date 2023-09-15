@@ -628,4 +628,25 @@ public class ByteBuffer : IDisposable
 
         _writeStream = new BinaryWriter(new MemoryStream());
     }
+
+    public void WritePackGuid(ulong guid)
+    {
+        byte[] packGUID = new byte[8 + 1];
+        packGUID[0] = 0;
+        uint size = 1;
+
+        for (byte i = 0; guid != 0; ++i)
+        {
+            if ((guid & 0xFF) != 0)
+            {
+                packGUID[0] |= (byte)(1 << i);
+                packGUID[size] = (byte)(guid & 0xFF);
+                ++size;
+            }
+
+            guid >>= 8;
+        }
+
+        WriteBytes(packGUID, size);
+    }
 }

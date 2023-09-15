@@ -19,8 +19,8 @@ namespace AzerothCore.Database;
 
 public class SQLQueryHolder<T> where T : notnull
 {
-    public Dictionary<T, PreparedStatement> m_queries = new();
-    Dictionary<T, SQLResult> _results = new();
+    public Dictionary<T, PreparedStatement> Queries { get; private set; }  = new();
+    public Dictionary<T, SQLResult> Results { get; private set; } = new();
 
     public void SetQuery(T index, string sql, params object[] args)
     {
@@ -29,29 +29,29 @@ public class SQLQueryHolder<T> where T : notnull
 
     public void SetQuery(T index, PreparedStatement stmt)
     {
-        m_queries[index] = stmt;
+        Queries[index] = stmt;
     }
 
     public void SetResult(T index, SQLResult result)
     {
-        _results[index] = result;
+        Results[index] = result;
     }
 
     public SQLResult GetResult(T index)
     {
-        if (!_results.ContainsKey(index))
+        if (!Results.ContainsKey(index))
         {
             return new SQLResult();
         }
 
-        return _results[index];
+        return Results[index];
     }
 }
 
 class SQLQueryHolderTask<R> : ISqlOperation where R : notnull
 {
-    SQLQueryHolder<R> m_holder;
-    TaskCompletionSource<SQLQueryHolder<R>> m_result;
+    private readonly SQLQueryHolder<R> m_holder;
+    private readonly TaskCompletionSource<SQLQueryHolder<R>> m_result;
 
     public SQLQueryHolderTask(SQLQueryHolder<R> holder)
     {
@@ -67,7 +67,7 @@ class SQLQueryHolderTask<R> : ISqlOperation where R : notnull
         }
 
         // execute all queries in the holder and pass the results
-        foreach (var pair in m_holder.m_queries)
+        foreach (var pair in m_holder.Queries)
         {
             m_holder.SetResult(pair.Key, mySqlBase.Query(pair.Value));
         }
@@ -80,8 +80,8 @@ class SQLQueryHolderTask<R> : ISqlOperation where R : notnull
 
 public class SQLQueryHolderCallback<R> : ISqlCallback where R : notnull
 {
-    Task<SQLQueryHolder<R>> m_future;
-    Action<SQLQueryHolder<R>>? m_callback;
+    private readonly Task<SQLQueryHolder<R>> m_future;
+    private Action<SQLQueryHolder<R>>? m_callback;
 
     public SQLQueryHolderCallback(Task<SQLQueryHolder<R>> future)
     {
@@ -97,10 +97,7 @@ public class SQLQueryHolderCallback<R> : ISqlCallback where R : notnull
     {
         if (m_future != null && m_future.Wait(0))
         {
-            if (m_callback != null)
-            {
-                m_callback(m_future.Result);
-            }
+            m_callback?.Invoke(m_future.Result);
 
             return true;
         }

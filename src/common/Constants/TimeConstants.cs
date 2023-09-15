@@ -15,33 +15,18 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace AzerothCore.Game;
 
-using System.Collections.Generic;
+namespace AzerothCore.Constants;
 
-public struct InstanceTemplate
+public static class TimeConstants
 {
-    public uint Parent;
-    public uint ScriptId;
-    public bool AllowMount;
+    // TimeConstants
+    public static readonly int MINUTE = 60;
+    public static readonly int HOUR = MINUTE* 60;
+    public static readonly int DAY = HOUR* 24;
+    public static readonly int WEEK = DAY* 7;
+    public static readonly int MONTH = DAY* 30;
+    public static readonly int YEAR = MONTH* 12;
+    public static readonly int IN_MILLISECONDS = 1000;
 }
 
-public class Map
-{
-    private HashSet<BaseObject> _updateObjects;
-
-    public Map(uint id, uint instanceId, byte spawnMode, Map? parent = null)
-    {
-        _updateObjects = new HashSet<BaseObject>();
-    }
-
-    internal void AddUpdateObject(BaseObject obj)
-    {
-        _updateObjects.Add(obj);
-    }
-
-    internal void RemoveUpdateObject(BaseObject obj)
-    {
-        _updateObjects.Remove(obj);
-    }
-}

@@ -17,30 +17,28 @@
 
 namespace AzerothCore.Game;
 
-public static class GridDefines
+public static class MMapFactory
 {
-    public static float MAP_SIZE        = (MapDefines.SIZE_OF_GRIDS * MapDefines.MAX_NUMBER_OF_GRIDS);
-    public static float MAP_HALFSIZE    = (MAP_SIZE / 2);
+    private static bool[] forbiddenMaps;
 
-    public static uint MIN_MAP_UPDATE_DELAY = 1;
-
-    public static bool IsValidMapCoord(float c)
+    static MMapFactory()
     {
-        return float.IsFinite(c) && (Math.Abs(c) <= MAP_HALFSIZE - 0.5f);
+        forbiddenMaps = new bool[100];
     }
 
-    public static bool IsValidMapCoord(float x, float y)
+    public static MMapMgr CreateOrGetVMapMgr()
     {
-        return IsValidMapCoord(x) && IsValidMapCoord(y);
+        return MMapMgr.Instance;
     }
 
-    public static bool IsValidMapCoord(float x, float y, float z)
+    public static void InitializeDisabledMaps()
     {
-        return IsValidMapCoord(x, y) && IsValidMapCoord(z);
-    }
+        int[] f = { 616 /*EoE*/, 649 /*ToC25*/, 650 /*ToC5*/, -1 };
+        uint i = 0;
 
-    public static bool IsValidMapCoord(float x, float y, float z, float o)
-    {
-        return IsValidMapCoord(x, y, z) && float.IsFinite(o);
+        while (f[i] >= 0)
+        {
+            forbiddenMaps[f[i++]] = true;
+        }
     }
 }

@@ -17,30 +17,10 @@
 
 namespace AzerothCore.Game;
 
-public static class GridDefines
+public static class VMapFactory
 {
-    public static float MAP_SIZE        = (MapDefines.SIZE_OF_GRIDS * MapDefines.MAX_NUMBER_OF_GRIDS);
-    public static float MAP_HALFSIZE    = (MAP_SIZE / 2);
-
-    public static uint MIN_MAP_UPDATE_DELAY = 1;
-
-    public static bool IsValidMapCoord(float c)
+    public static VMapMgr CreateOrGetVMapMgr()
     {
-        return float.IsFinite(c) && (Math.Abs(c) <= MAP_HALFSIZE - 0.5f);
-    }
-
-    public static bool IsValidMapCoord(float x, float y)
-    {
-        return IsValidMapCoord(x) && IsValidMapCoord(y);
-    }
-
-    public static bool IsValidMapCoord(float x, float y, float z)
-    {
-        return IsValidMapCoord(x, y) && IsValidMapCoord(z);
-    }
-
-    public static bool IsValidMapCoord(float x, float y, float z, float o)
-    {
-        return IsValidMapCoord(x, y, z) && float.IsFinite(o);
+        return VMapMgr.Instance;
     }
 }

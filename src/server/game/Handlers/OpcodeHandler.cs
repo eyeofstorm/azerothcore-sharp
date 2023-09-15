@@ -285,7 +285,6 @@ public interface IOpcodeHandler :
     void HandlePetSpellAutocastOpcode(WorldPacketData recvData);
     void HandlePetStopAttack(WorldPacketData recvData);
     void HandlePlayedTime(WorldPacketData recvData);
-    void HandlePlayerLoginOpcode(WorldPacketData recvData);
     void HandlePushQuestToParty(WorldPacketData recvData);
     void HandlePVPLogDataOpcode(WorldPacketData recvData);
     void HandleQueryGuildBankTabText(WorldPacketData recvData);
@@ -1590,6 +1589,11 @@ public partial class WorldSession : IOpcodeHandler
         // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
     }
 
+    public void HandleMoveWorldportAck()
+    {
+        // TODO: game: WorldSession::HandleMoveWorldportAck()
+    }
+
     public void HandleNameQueryOpcode(WorldPacketData recvData)
     {
         // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
@@ -1716,11 +1720,6 @@ public partial class WorldSession : IOpcodeHandler
     }
 
     public void HandlePlayedTime(WorldPacketData recvData)
-    {
-        // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
-    }
-
-    public void HandlePlayerLoginOpcode(WorldPacketData recvData)
     {
         // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
     }
@@ -2247,6 +2246,8 @@ public partial class WorldSession : IOpcodeHandler
 
     public void Handle_ServerSide(WorldPacketData recvData)
     {
+        logger.Debug(Logging.LogFilter.Network, "WORLD: CMSG_PLAYER_LOGIN");
+
         // TODO: game: WorldSession::Handle_XXXXXX(WorldPacketData recvData)
     }
 }

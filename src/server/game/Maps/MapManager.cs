@@ -17,12 +17,25 @@
 
 using AzerothCore.DataStores;
 using AzerothCore.Singleton;
+using AzerothCore.Utilities;
 
 namespace AzerothCore.Game;
 
 public class MapMgr : Singleton<MapMgr>
 {
-    private MapMgr() {  }
+    private readonly IntervalTimer[] _timer; // continents, bgs/arenas, instances, total from the beginning
+
+    private MapMgr()
+    {
+        _timer = new IntervalTimer[4];
+
+        for (int i = 0; i < 4; i++)
+        {
+            _timer[i] = new IntervalTimer();
+        }
+
+        _timer[3].SetInterval(Global.sWorld.GetIntConfig(WorldIntConfigs.CONFIG_INTERVAL_MAPUPDATE));
+    }
 
     public static bool IsValidMAP(uint mapid, bool startUp)
     {
@@ -41,5 +54,16 @@ public class MapMgr : Singleton<MapMgr>
     public static bool IsValidMapCoord(uint mapId, float x, float y, float z, float o)
     {
         return IsValidMAP(mapId, false) && GridDefines.IsValidMapCoord(x, y, z, o);
+    }
+
+    public void SetMapUpdateInterval(uint t)
+    {
+        if (t < GridDefines.MIN_MAP_UPDATE_DELAY)
+        {
+            t = GridDefines.MIN_MAP_UPDATE_DELAY;
+        }
+
+        _timer[3].SetInterval(t);
+        _timer[3].Reset();
     }
 }

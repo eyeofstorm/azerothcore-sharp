@@ -24,7 +24,7 @@ public class AccountMgr : Singleton<AccountMgr>
 {
     private AccountMgr() { }
 
-    public bool IsPlayerAccount(AccountTypes gmlevel)
+    public static bool IsPlayerAccount(AccountTypes gmlevel)
     {
         return gmlevel == AccountTypes.SEC_PLAYER;
     }

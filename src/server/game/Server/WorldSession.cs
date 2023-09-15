@@ -15,9 +15,11 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System;
 using System.Collections.Concurrent;
 using System.IO.Compression;
 using System.Text;
+
 using AzerothCore.Constants;
 using AzerothCore.Database;
 using AzerothCore.Game.Server;
@@ -84,24 +86,24 @@ public class WorldSessionFilter : PacketFilter
     }
 }
 
-public enum AccountInfoQueryLoad : uint
+public enum AccountInfoQueryIndex : uint
 {
     GLOBAL_ACCOUNT_DATA = 0,
     TUTORIALS,
     MAX_QUERIES
 }
 
-public class AccountInfoQueryHolderPerRealm : SQLQueryHolder<AccountInfoQueryLoad>
+public class AccountInfoQueryHolderPerRealm : SQLQueryHolder<AccountInfoQueryIndex>
 {
     public void Initialize(uint accountId)
     {
         PreparedStatement stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_ACCOUNT_DATA);
         stmt.AddValue(0, accountId);
-        SetQuery(AccountInfoQueryLoad.GLOBAL_ACCOUNT_DATA, stmt);
+        SetQuery(AccountInfoQueryIndex.GLOBAL_ACCOUNT_DATA, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_TUTORIALS);
         stmt.AddValue(0, accountId);
-        SetQuery(AccountInfoQueryLoad.TUTORIALS, stmt);
+        SetQuery(AccountInfoQueryIndex.TUTORIALS, stmt);
     }
 }
 
@@ -114,7 +116,14 @@ public struct AccountData
     {
         Data = string.Empty;
     }
-};
+}
+
+public enum DosProtectionPolicy : uint
+{
+    POLICY_LOG,
+    POLICY_KICK,
+    POLICY_BAN
+}
 
 public partial class WorldSession : IOpcodeHandler
 {
@@ -132,11 +141,16 @@ public partial class WorldSession : IOpcodeHandler
     private AccountTypes _security;
     private byte _expansion;
     private long _muteTime;
-    private Locale _sessionDbLocaleIndex;
     private uint _recruiterId;
     private bool _isRecruiter;
     private bool _skipQueue;
     private bool _inQueue;
+    private bool _playerLoading;                               // code processed in LoginPlayer
+    //private bool _playerLogout;                                // code processed in LogoutPlayer
+    //private bool _playerRecentlyLogout;
+    //private bool _playerSave;
+    //private Locale _sessionDbcLocale;
+    //private Locale _sessionDbLocaleIndex;
     private uint _totalTime;
     private AccountData[] _accountData;
     private uint[] _tutorials;
@@ -146,6 +160,9 @@ public partial class WorldSession : IOpcodeHandler
     private AsyncCallbackProcessor<QueryCallback> _queryProcessor;
     private AsyncCallbackProcessor<TransactionCallback> _transactionCallbacks;
     private AsyncCallbackProcessor<ISqlCallback> _queryHolderProcessor;
+    private uint _guidLow;
+    private Player? _player;
+    private bool _kicked;
 
     public static IOpcodeHandler OpcodeHandler
     {
@@ -193,11 +210,12 @@ public partial class WorldSession : IOpcodeHandler
         _security = security;
         _expansion = expansion;
         _muteTime = muteTime;
-        _sessionDbLocaleIndex = locale;
+        //_sessionDbLocaleIndex = locale;
         _recruiterId = recruiter;
         _isRecruiter = isARecruiter;
         _skipQueue = skipQueue;
         _totalTime = totalTime;
+        _player = null;
     }
 
     internal void InitializeSession()
@@ -216,10 +234,10 @@ public partial class WorldSession : IOpcodeHandler
         });
     }
 
-    private void InitializeSessionCallback(SQLQueryHolder<AccountInfoQueryLoad> realmHolder, uint clientCacheVersion)
+    private void InitializeSessionCallback(SQLQueryHolder<AccountInfoQueryIndex> realmHolder, uint clientCacheVersion)
     {
-        LoadAccountData(realmHolder.GetResult(AccountInfoQueryLoad.GLOBAL_ACCOUNT_DATA), GLOBAL_CACHE_MASK);
-        LoadTutorialsData(realmHolder.GetResult(AccountInfoQueryLoad.TUTORIALS));
+        LoadAccountData(realmHolder.GetResult(AccountInfoQueryIndex.GLOBAL_ACCOUNT_DATA), GLOBAL_CACHE_MASK);
+        LoadTutorialsData(realmHolder.GetResult(AccountInfoQueryIndex.TUTORIALS));
 
         if (!_inQueue)
         {
@@ -373,8 +391,7 @@ public partial class WorldSession : IOpcodeHandler
                 }
                 else
                 {
-                    // TODO: AddonMgr.SaveAddon(addon);
-                    //AddonMgr.SaveAddon(addon);
+                    AddonMgr.SaveAddon(addon);
 
                     logger.Debug(LogFilter.Network, $"ADDON: {addon.Name} (0x{addon.CRC:x}) was not known, saving...");
                 }
@@ -636,9 +653,18 @@ public partial class WorldSession : IOpcodeHandler
 
     internal Player? GetPlayer()
     {
-        // TODO: game: WorldSession::GetPlayer()
+        return _player;
+    }
 
-        return null;
+    internal void SetPlayer(Player? player)
+    {
+        _player = player;
+
+        // set m_GUID that can be used while player loggined and later until m_playerRecentlyLogout not reset
+        if (_player != null)
+        {
+            _guidLow = _player.GetGUID().GetCounter();
+        }
     }
 
     internal bool Update(uint diff, PacketFilter updater)
@@ -690,6 +716,51 @@ public partial class WorldSession : IOpcodeHandler
         // TODO: game: WorldSession::Update(uint diff, PacketFilter updater)
 
         return true;
+    }
+
+    internal void KickPlayer(bool setKicked = true)
+    {
+        KickPlayer("Unknown reason", setKicked);
+    }
+
+    internal void KickPlayer(string reason, bool setKicked = true)
+    {
+        if (_socket != null)
+        {
+            string playerName = _player != null ? _player.GetName() : "<none>";
+            string guid = _player != null ? _player.GetGUID().ToString() ?? "" : "";
+
+            logger.Info(LogFilter.Network, $"Account: {GetAccountId()} Character: '{playerName}' {guid} kicked with reason: {reason}");
+
+            _socket.CloseSocket();
+        }
+
+        if (setKicked)
+        {
+            SetKicked(true); // the session won't be left ingame for 60 seconds and to also kick offline session
+        }
+    }
+
+    internal bool IsKicked()
+    {
+        return _kicked;
+    }
+
+    internal void SetKicked(bool val)
+    {
+        _kicked = val;
+    }
+
+    internal bool IsPlayerLoading()
+    {
+        return _playerLoading;
+    }
+
+    internal uint GetGuidLow()
+    {
+        Player? player = GetPlayer();
+
+        return player != null ? player.GetGUID().GetCounter() : 0;
     }
 
     private void ProcessQueryCallbacks()
