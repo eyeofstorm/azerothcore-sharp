@@ -16,6 +16,7 @@
  */
 
 using System.Text;
+
 using AzerothCore.Configuration;
 using AzerothCore.Constants;
 using AzerothCore.Database;
@@ -45,7 +46,7 @@ public class ObjectMgr : Singleton<ObjectMgr>
 
     private static readonly ILogger logger = LoggerFactory.GetLogger();
 
-    private readonly PlayerCreateInfo[,] _playerInfo;
+    private readonly PlayerInfo[,] _playerInfo;
     private readonly Dictionary<short, InstanceTemplate> _instanceTemplateStore;
     private readonly List<string> _scriptNamesStore;
     private readonly Dictionary<uint, CreatureTemplate> _creatureTemplateStore;
@@ -53,14 +54,14 @@ public class ObjectMgr : Singleton<ObjectMgr>
 
     private ObjectMgr()
 	{
-        _playerInfo = new PlayerCreateInfo[SharedConst.MAX_RACES, SharedConst.MAX_CLASSES];
+        _playerInfo = new PlayerInfo[SharedConst.MAX_RACES, SharedConst.MAX_CLASSES];
         _instanceTemplateStore = new Dictionary<short, InstanceTemplate>();
         _scriptNamesStore = new List<string>();
         _creatureTemplateStore = new Dictionary<uint, CreatureTemplate>();
         _itemTemplateStore = new Dictionary<uint, ItemTemplate>();
     }
 
-    public void LoadPlayerCreateInfo()
+    public void LoadPlayerInfo()
     {
         // Load playercreate
         logger.Info(LogFilter.ServerLoading, "Loading Player Create Info Data...");
@@ -86,14 +87,14 @@ public class ObjectMgr : Singleton<ObjectMgr>
                 {
                     SQLFields fields = result.GetFields();
 
-                    uint currentRace = fields.Read<byte>(0);
-                    uint currentClass = fields.Read<byte>(1);
-                    uint mapId = fields.Read<ushort>(2);
-                    uint areaId = fields.Read<uint>(3); // zone
-                    float positionX = fields.Read<float>(4);
-                    float positionY = fields.Read<float>(5);
-                    float positionZ = fields.Read<float>(6);
-                    float orientation = fields.Read<float>(7);
+                    uint currentRace = fields.Get<byte>(0);
+                    uint currentClass = fields.Get<byte>(1);
+                    uint mapId = fields.Get<ushort>(2);
+                    uint areaId = fields.Get<uint>(3); // zone
+                    float positionX = fields.Get<float>(4);
+                    float positionY = fields.Get<float>(5);
+                    float positionZ = fields.Get<float>(6);
+                    float orientation = fields.Get<float>(7);
 
                     if (currentRace >= SharedConst.MAX_RACES)
                     {
@@ -136,7 +137,7 @@ public class ObjectMgr : Singleton<ObjectMgr>
                         continue;
                     }
 
-                    PlayerCreateInfo info = new()
+                    PlayerInfo info = new()
                     {
                         MapId = mapId,
                         AreaId = areaId,
@@ -145,8 +146,8 @@ public class ObjectMgr : Singleton<ObjectMgr>
                         PositionZ = positionZ,
                         Orientation = orientation,
                         #pragma warning disable
-                        DisplayId_m = (ushort)rEntry.ModelMale,
-                        DisplayId_f = (ushort)rEntry.ModelFemale
+                        DisplayId_M = (ushort)rEntry.ModelMale,
+                        DisplayId_F = (ushort)rEntry.ModelFemale
                         #pragma warning restore
                     };
 
@@ -756,19 +757,19 @@ public class ObjectMgr : Singleton<ObjectMgr>
 //    }
     }
 
-    public PlayerCreateInfo? GetPlayerInfo(byte race, byte class_)
+    public PlayerInfo? GetPlayerInfo(byte race, byte @class)
     {
         if (race >= SharedConst.MAX_RACES)
         {
             return null;
         }
 
-        if (class_ >= SharedConst.MAX_CLASSES)
+        if (@class >= SharedConst.MAX_CLASSES)
         {
             return null;
         }
 
-        PlayerCreateInfo? info = _playerInfo[race, class_];
+        PlayerInfo? info = _playerInfo[race, @class];
 
         if (info == null)
         {
@@ -799,7 +800,7 @@ public class ObjectMgr : Singleton<ObjectMgr>
         {
             SQLFields fields = result.GetFields();
 
-            short mapID = fields.Read<short>(0);
+            short mapID = fields.Get<short>(0);
 
             if (!MapMgr.IsValidMAP((uint)mapID, true))
             {
@@ -809,9 +810,9 @@ public class ObjectMgr : Singleton<ObjectMgr>
 
             InstanceTemplate instanceTemplate = new InstanceTemplate();
 
-            instanceTemplate.AllowMount = fields.Read<bool>(3);
-            instanceTemplate.Parent = (uint)fields.Read<short>(1);
-            instanceTemplate.ScriptId = Global.sObjectMgr.GetScriptId(fields.Read<string>(2));
+            instanceTemplate.AllowMount = fields.Get<bool>(3);
+            instanceTemplate.Parent = (uint)fields.Get<short>(1);
+            instanceTemplate.ScriptId = Global.sObjectMgr.GetScriptId(fields.Get<string>(2));
 
             _instanceTemplateStore[mapID] = instanceTemplate;
 

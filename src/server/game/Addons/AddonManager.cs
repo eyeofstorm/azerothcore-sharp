@@ -96,8 +96,8 @@ public static class AddonMgr
         {
             SQLFields fields = result.GetFields();
 
-            string? name = fields.Read<string>(0);
-            uint crc = fields.Read<uint>(1);
+            string? name = fields.Get<string>(0);
+            uint crc = fields.Get<uint>(1);
 
             _knownAddons.Add(new SavedAddon(name ?? string.Empty, crc));
 
@@ -122,10 +122,10 @@ public static class AddonMgr
 
                 BannedAddon addon = new();
 
-                addon.Id = fields.Read<uint>(0) + offset;
-                addon.Timestamp = (uint)fields.Read<ulong>(3);
-                addon.NameMD5 = MD5.HashData(Encoding.ASCII.GetBytes(fields.Read<string>(1) ?? string.Empty));
-                addon.VersionMD5 = MD5.HashData(Encoding.ASCII.GetBytes(fields.Read<string>(2) ?? string.Empty));
+                addon.Id = fields.Get<uint>(0) + offset;
+                addon.Timestamp = (uint)fields.Get<ulong>(3);
+                addon.NameMD5 = MD5.HashData(Encoding.ASCII.GetBytes(fields.Get<string>(1) ?? string.Empty));
+                addon.VersionMD5 = MD5.HashData(Encoding.ASCII.GetBytes(fields.Get<string>(2) ?? string.Empty));
 
                 _bannedAddons.Add(addon);
 

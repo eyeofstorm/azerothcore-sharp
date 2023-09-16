@@ -36,6 +36,7 @@
     <None Remove="Chat\" />
     <None Remove="Collision\" />
     <None Remove="Collision\Management\" />
+    <None Remove="Time\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Globals\" />
@@ -59,6 +60,7 @@
     <Folder Include="Chat\" />
     <Folder Include="Collision\" />
     <Folder Include="Collision\Management\" />
+    <Folder Include="Time\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\common\common.csproj" />

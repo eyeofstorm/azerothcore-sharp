@@ -15,30 +15,18 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using AzerothCore.DataStores;
+
 namespace AzerothCore.Game;
 
-public static class MMapFactory
+public partial class Player
 {
-    private static bool[] forbiddenMaps;
-
-    static MMapFactory()
+    public void UpdateAchievementCriteria(
+                    AchievementCriteriaTypes type,
+                    uint miscValue1 = 0,
+                    uint miscValue2 = 0,
+                    Unit? unit = null)
     {
-        forbiddenMaps = new bool[1000];
-    }
-
-    public static MMapMgr CreateOrGetVMapMgr()
-    {
-        return MMapMgr.Instance;
-    }
-
-    public static void InitializeDisabledMaps()
-    {
-        int[] f = { 616 /*EoE*/, 649 /*ToC25*/, 650 /*ToC5*/, -1 };
-        uint i = 0;
-
-        while (f[i] >= 0)
-        {
-            forbiddenMaps[f[i++]] = true;
-        }
+        // TODO: game: Player::UpdateAchievementCriteria(AchievementCriteriaTypes type, uint miscValue1, uint miscValue2, Unit? unit)
     }
 }

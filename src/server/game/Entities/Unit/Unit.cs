@@ -15,6 +15,8 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+using AzerothCore.Constants;
+
 namespace AzerothCore.Game;
 
 public enum UnitMoveType : uint
@@ -71,5 +73,52 @@ public class Unit : WorldObject
 
     public Unit()
     {
+    }
+
+    public byte GetRace(bool original = false)
+    {
+        if (GetTypeId() == TypeID.TYPEID_PLAYER)
+        {
+            if (original)
+            {
+                return _realRace;
+            }
+            else
+            {
+                return _race;
+            }
+        }
+
+        return GetByteValue((ushort)EUnitFields.UNIT_FIELD_BYTES_0, 0);
+    }
+
+    public byte GetClass()
+    {
+        return GetByteValue((ushort)EUnitFields.UNIT_FIELD_BYTES_0, 1);
+    }
+
+    public byte GetGender()
+    {
+        return GetByteValue((ushort)EUnitFields.UNIT_FIELD_BYTES_0, 2);
+    }
+
+    public void SetDisplayId(ushort modelId)
+    {
+        SetUInt32Value((ushort)EUnitFields.UNIT_FIELD_DISPLAYID, modelId);
+
+        // TODO: game: Unit::SetDisplayId(ushort modelId)
+
+        // Set Gender by modelId. 
+        //CreatureModelInfo? minfo = Global.sObjectMgr.GetCreatureModelInfo(modelId);
+
+        //if (minfo != null)
+        //{
+        //    SetByteValue((ushort)EUnitFields.UNIT_FIELD_BYTES_0, 2, minfo.gender);
+        //}
+    }
+
+    public void SetNativeDisplayId(ushort modelId)
+    {
+        // TODO: game: Unit::SetNativeDisplayId(ushort modelId)
     }
 }

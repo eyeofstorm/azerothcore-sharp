@@ -700,7 +700,7 @@ public struct PlayerLevelInfo
     public PlayerLevelInfo() { }
 }
 
-public struct PlayerCreateInfo
+public struct PlayerInfo
 {
     public uint MapId;
     public uint AreaId;
@@ -708,8 +708,8 @@ public struct PlayerCreateInfo
     public float PositionY;
     public float PositionZ;
     public float Orientation;
-    public ushort DisplayId_m;
-    public ushort DisplayId_f;
+    public ushort DisplayId_M;
+    public ushort DisplayId_F;
     public PlayerCreateInfoItems Item;
     public PlayerCreateInfoSpells CustomSpells;
     public PlayerCreateInfoSpells CastSpells;
@@ -717,11 +717,13 @@ public struct PlayerCreateInfo
     public PlayerCreateInfoSkills Skills;
     public PlayerLevelInfo LevelInfo;                             // [level-1] 0..MaxPlayerLevel - 1
 
-    public PlayerCreateInfo() { }
+    public PlayerInfo() { }
 }
 
 public static class PlayerConst
 {
+    // Player summoning auto-decline time (in secs)
+    public static readonly int MAX_PLAYER_SUMMON_DELAY      = 2 * SharedConst.MINUTE;
     public static readonly int MAX_MONEY_AMOUNT             = 0x7FFFFFFF - 1;
 
     public static readonly int PLAYER_MAX_SKILLS            = 127;
@@ -739,7 +741,13 @@ public partial class Player : Unit
     private Unit _mover;
     private WorldSession _worldSession;
 
-    public Unit? Mover { get { return _mover; } }
+    public Unit Mover
+    {
+        get
+        {
+            return _mover;
+        }
+    }
 
     public Player(WorldSession worldSession)
     {
@@ -749,7 +757,7 @@ public partial class Player : Unit
         _mover = this;
     }
 
-    internal static bool BuildEnumData(SQLResult result, ref WorldPacketData data)
+    public static bool BuildEnumData(SQLResult result, ref WorldPacketData data)
     {
         //             0               1                2                3                 4                  5                 6               7
         //    "SELECT characters.guid, characters.name, characters.race, characters.class, characters.gender, characters.skin, characters.face, characters.hairStyle,
@@ -762,15 +770,15 @@ public partial class Player : Unit
 
         SQLFields fields = result.GetFields();
 
-        uint guidLow = fields.Read<uint>(0);
-        string? plrName = fields.Read<string>(1);
-        byte plrRace = fields.Read<byte>(2);
-        byte plrClass = fields.Read<byte>(3);
-        byte gender = fields.Read<byte>(4);
+        uint guidLow = fields.Get<uint>(0);
+        string? plrName = fields.Get<string>(1);
+        byte plrRace = fields.Get<byte>(2);
+        byte plrClass = fields.Get<byte>(3);
+        byte gender = fields.Get<byte>(4);
 
         ObjectGuid guid = ObjectGuid.Create(HighGuid.Player, guidLow);
 
-        PlayerCreateInfo? info = Global.sObjectMgr.GetPlayerInfo(plrRace, plrClass);
+        PlayerInfo? info = Global.sObjectMgr.GetPlayerInfo(plrRace, plrClass);
 
         if (info == null)
         {
@@ -789,16 +797,16 @@ public partial class Player : Unit
         data.WriteByte(plrClass);                                // class
         data.WriteByte(gender);                                  // gender
 
-        byte skin = fields.Read<byte>(5);
-        byte face = fields.Read<byte>(6);
-        byte hairStyle = fields.Read<byte>(7);
-        byte hairColor = fields.Read<byte>(8);
-        byte facialStyle = fields.Read<byte>(9);
+        byte skin = fields.Get<byte>(5);
+        byte face = fields.Get<byte>(6);
+        byte hairStyle = fields.Get<byte>(7);
+        byte hairColor = fields.Get<byte>(8);
+        byte facialStyle = fields.Get<byte>(9);
 
         uint charFlags = 0;
-        uint playerFlags = fields.Read<uint>(17);
-        ushort atLoginFlags = fields.Read<ushort>(18);
-        uint zone = (atLoginFlags & (ushort)AtLoginFlags.AT_LOGIN_FIRST) != 0 ? (ushort)0 : fields.Read<ushort>(11); // if first login do not show the zone
+        uint playerFlags = fields.Get<uint>(17);
+        ushort atLoginFlags = fields.Get<ushort>(18);
+        uint zone = (atLoginFlags & (ushort)AtLoginFlags.AT_LOGIN_FIRST) != 0 ? (ushort)0 : fields.Get<ushort>(11); // if first login do not show the zone
 
         data.WriteByte(skin);
         data.WriteByte(face);
@@ -806,15 +814,15 @@ public partial class Player : Unit
         data.WriteByte(hairColor);
         data.WriteByte(facialStyle);
 
-        data.WriteByte(fields.Read<byte>(10));                      // level
+        data.WriteByte(fields.Get<byte>(10));                      // level
         data.WriteUInt(zone);                                       // zone
-        data.WriteUInt(fields.Read<ushort>(12));                    // map
+        data.WriteUInt(fields.Get<ushort>(12));                    // map
 
-        data.WriteFloat(fields.Read<float>(13));                    // x
-        data.WriteFloat(fields.Read<float>(14));                    // y
-        data.WriteFloat(fields.Read<float>(15));                    // z
+        data.WriteFloat(fields.Get<float>(13));                    // x
+        data.WriteFloat(fields.Get<float>(14));                    // y
+        data.WriteFloat(fields.Get<float>(15));                    // z
 
-        data.WriteUInt(fields.Read<uint>(16));                      // guild id
+        data.WriteUInt(fields.Get<uint>(16));                      // guild id
 
         if ((atLoginFlags & (ushort)AtLoginFlags.AT_LOGIN_RESURRECT) != 0)
         {
@@ -841,7 +849,7 @@ public partial class Player : Unit
             charFlags |= (uint)CharacterFlags.CHARACTER_FLAG_RENAME;
         }
 
-        if (fields.Read<uint>(23) != 0)
+        if (fields.Get<uint>(23) != 0)
         {
             charFlags |= (uint)CharacterFlags.CHARACTER_FLAG_LOCKED_BY_BILLING;
         }
@@ -849,7 +857,7 @@ public partial class Player : Unit
         if (ConfigMgr.GetOption("RealmZone", RealmZone.REALM_ZONE_DEVELOPMENT) == RealmZone.REALM_ZONE_RUSSIAN ||
             ConfigMgr.GetOption("DeclinedNames", false))
         {
-            if (!fields.Read<string>(25).IsEmpty())
+            if (!fields.Get<string>(25).IsEmpty())
             {
                 charFlags |= (uint)CharacterFlags.CHARACTER_FLAG_DECLINED;
             }
@@ -892,15 +900,15 @@ public partial class Player : Unit
             (playerFlags & (uint)PlayerFlags.PLAYER_FLAGS_GHOST) == 0 &&
             (plrClass == (byte)Classes.CLASS_WARLOCK ||
             plrClass == (byte)Classes.CLASS_HUNTER ||
-            (plrClass == (byte)Classes.CLASS_DEATH_KNIGHT && ((fields.Read<uint>(21) & (uint)PlayerExtraFlags.PLAYER_EXTRA_SHOW_DK_PET) != 0))))
+            (plrClass == (byte)Classes.CLASS_DEATH_KNIGHT && ((fields.Get<uint>(21) & (uint)PlayerExtraFlags.PLAYER_EXTRA_SHOW_DK_PET) != 0))))
         {
-            uint entry = fields.Read<uint>(19);
+            uint entry = fields.Get<uint>(19);
             CreatureTemplate? creatureInfo = Global.sObjectMgr.GetCreatureTemplate(entry);
 
             if (creatureInfo.HasValue)
             {
-                petDisplayId = fields.Read<uint>(20);
-                petLevel = fields.Read<ushort>(21);
+                petDisplayId = fields.Get<uint>(20);
+                petLevel = fields.Get<ushort>(21);
                 petFamily = creatureInfo.Value.Family;
             }
         }
@@ -909,7 +917,7 @@ public partial class Player : Unit
         data.WriteUInt(petLevel);
         data.WriteUInt(petFamily);
 
-        string[] equipment = (fields.Read<string>(22) ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        string[] equipment = (fields.Get<string>(22) ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
         for (byte slot = 0; slot < (byte)InventorySlots.INVENTORY_SLOT_BAG_END; ++slot)
         {
@@ -990,22 +998,35 @@ public partial class Player : Unit
         return true;
     }
 
-    private static bool IsValidGender(ushort gender)
+    public static bool IsValidGender(ushort gender)
     {
         return gender <= (ushort)Gender.GENDER_FEMALE;
     }
 
-    internal bool IsInWorld()
+    public bool IsInWorld()
     {
-        // TODO: game: Player::IsInWorld()
-        return false;
+        return _inWorld;
     }
 
-    internal bool IsBeingTeleported()       { return _semaphoreTeleportNear != 0 || _semaphoreTeleportFar != 0; }
-    internal bool IsBeingTeleportedNear()   { return _semaphoreTeleportNear != 0; }
-    internal bool IsBeingTeleportedFar()    { return _semaphoreTeleportFar != 0; }
+    public bool IsBeingTeleported()
+    {
+        return _semaphoreTeleportNear != 0 || _semaphoreTeleportFar != 0;
+    }
 
-    internal WorldSession GetSession()      { return _worldSession; }
+    public bool IsBeingTeleportedNear()
+    {
+        return _semaphoreTeleportNear != 0;
+    }
+
+    public bool IsBeingTeleportedFar()
+    {
+        return _semaphoreTeleportFar != 0;
+    }
+
+    public WorldSession GetSession()
+    {
+        return _worldSession;
+    }
 
     override public void SetObjectScale(float scale)
     {
@@ -1013,5 +1034,147 @@ public partial class Player : Unit
 
         SetFloatValue((ushort)EUnitFields.UNIT_FIELD_BOUNDINGRADIUS, scale * ObjectDefines.DEFAULT_WORLD_OBJECT_SIZE);
         SetFloatValue((ushort)EUnitFields.UNIT_FIELD_COMBATREACH, scale * ObjectDefines.DEFAULT_COMBAT_REACH);
+    }
+
+    public void SetMoney(uint value)
+    {
+        SetUInt32Value((ushort)EUnitFields.PLAYER_FIELD_COINAGE, value);
+        MoneyChanged(value);
+        UpdateAchievementCriteria(AchievementCriteriaTypes.ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_GOLD_VALUE_OWNED);
+    }
+
+    public PlayerFlags  GetPlayerFlags()
+    {
+        return (PlayerFlags)GetUInt32Value((ushort)EUnitFields.PLAYER_FLAGS);
+    }
+
+    public bool HasPlayerFlag(PlayerFlags flags)
+    {
+        return HasFlag((ushort)EUnitFields.PLAYER_FLAGS, (uint)flags);
+    }
+
+    public void SetPlayerFlag(PlayerFlags flags)
+    {
+        SetFlag((ushort)EUnitFields.PLAYER_FLAGS, (uint)flags);
+    }
+
+    public void RemovePlayerFlag(PlayerFlags flags)
+    {
+        RemoveFlag((ushort)EUnitFields.PLAYER_FLAGS, (uint)flags);
+    }
+
+    public void ReplaceAllPlayerFlags(PlayerFlags flags)
+    {
+        SetUInt32Value((ushort)EUnitFields.PLAYER_FLAGS, (uint)flags);
+    }
+
+    public void SetFlag(ushort index, uint newFlag)
+    {
+        if ((index + 1) < _valuesCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        if (_values == null)
+        {
+            throw new NullReferenceException(nameof(_values));
+        }
+
+        uint oldval = _values[index].UInt32Value;
+        uint newval = oldval | newFlag;
+
+        if (oldval != newval)
+        {
+            var objVal = _values[index];
+
+            objVal.UInt32Value = newval;
+
+            _changesMask.SetBit(index);
+
+            AddToObjectUpdateIfNeeded();
+        }
+    }
+
+    public void RemoveFlag(ushort index, uint oldFlag)
+    {
+        if ((index + 1) < _valuesCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        if (_values == null)
+        {
+            throw new NullReferenceException(nameof(_values));
+        }
+
+        uint oldval = _values[index].UInt32Value;
+        uint newval = oldval & ~oldFlag;
+
+        if (oldval != newval)
+        {
+            var objVal = _values[index];
+
+            objVal.UInt32Value = newval;
+
+            _changesMask.SetBit(index);
+
+            AddToObjectUpdateIfNeeded();
+        }
+    }
+
+    public void ToggleFlag(ushort index, uint flag)
+    {
+        if (HasFlag(index, flag))
+        {
+            RemoveFlag(index, flag);
+        }
+        else
+        {
+            SetFlag(index, flag);
+        }
+    }
+
+    public bool HasFlag(ushort index, uint flag)
+    {
+        if (index >= _valuesCount)
+        {
+            return false;
+        }
+
+        if (_values == null)
+        {
+            return false;
+        }
+
+        return (_values[index].UInt32Value & flag) != 0;
+    }
+
+    public void InitDisplayIds()
+    {
+        PlayerInfo? info = Global.sObjectMgr.GetPlayerInfo(GetRace(true), GetClass());
+
+        if (info == null)
+        {
+            logger.Error(LogFilter.Player, $"Player {GetGUID()} has incorrect race/class pair. Can't init display ids.");
+
+            return;
+        }
+
+        byte gender = GetGender();
+
+        switch (gender)
+        {
+        case (byte)Gender.GENDER_FEMALE:
+            SetDisplayId(info.Value.DisplayId_F);
+            SetNativeDisplayId(info.Value.DisplayId_F);
+            break;
+        case (byte)Gender.GENDER_MALE:
+            SetDisplayId(info.Value.DisplayId_M);
+            SetNativeDisplayId(info.Value.DisplayId_M);
+            break;
+        default:
+            logger.Error(LogFilter.Player, $"Invalid gender {gender} for player");
+            return;
+        }
     }
 }

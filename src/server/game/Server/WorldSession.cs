@@ -516,7 +516,7 @@ public partial class WorldSession : IOpcodeHandler
         {
             SQLFields fields = result.GetFields();
 
-            byte type = fields.Read<byte>(0);
+            byte type = fields.Get<byte>(0);
 
             string tableName = mask == GLOBAL_CACHE_MASK ? "account_data" : "character_account_data";
 
@@ -534,9 +534,9 @@ public partial class WorldSession : IOpcodeHandler
                 continue;
             }
 
-            byte[] accountData = fields.Read<byte[]>(2) ?? Array.Empty<byte>();
+            byte[] accountData = fields.Get<byte[]>(2) ?? Array.Empty<byte>();
 
-            _accountData[type].Time = fields.Read<uint>(1);
+            _accountData[type].Time = fields.Get<uint>(1);
             _accountData[type].Data = Encoding.UTF8.GetString(accountData);
         }
         while (result.NextRow());

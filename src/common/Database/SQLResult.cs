@@ -195,11 +195,11 @@ public class SQLResult
 
 public class SQLFields
 {
-    object[] _currentRow;
+    readonly object[] _currentRow;
 
     public SQLFields(object[] row) { _currentRow = row; }
 
-    public T? Read<T>(int column)
+    public T? Get<T>(int column)
     {
         var value = _currentRow[column];
 
@@ -208,7 +208,7 @@ public class SQLFields
             return default;
         }
 
-        if (value.GetType() != typeof(T))
+        if (value.GetType() is not T)
         {
             // TODO: common: Remove me when all fields are the right type  this is super slow
             return (T)Convert.ChangeType(value, typeof(T));
@@ -223,7 +223,7 @@ public class SQLFields
 
         for (var c = 0; c < numColumns; ++c)
         {
-            values[c] = Read<T>(startIndex + c);
+            values[c] = Get<T>(startIndex + c);
         }
 
         return values;

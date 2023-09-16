@@ -180,10 +180,10 @@ public class World : Singleton<World>, IWorld
         {
             SQLFields fields = result.GetFields();
 
-            _dbVersion = fields.Read<string> (0);
+            _dbVersion = fields.Get<string> (0);
 
             // will be overwrite by config values if different and non-0
-            _int_configs[(uint)WorldIntConfigs.CONFIG_CLIENTCACHE_VERSION] = fields.Read<uint>(1);
+            _int_configs[(uint)WorldIntConfigs.CONFIG_CLIENTCACHE_VERSION] = fields.Get<uint>(1);
         }
 
         if (string.IsNullOrEmpty(_dbVersion))
@@ -220,7 +220,7 @@ public class World : Singleton<World>, IWorld
         DataStores.LoadDBCStores(ConfigMgr.GetOption("DataDir", "./"));
 
         logger.Info(LogFilter.ServerLoading, $"Loading Player Create Data...");
-        Global.sObjectMgr.LoadPlayerCreateInfo();
+        Global.sObjectMgr.LoadPlayerInfo();
 
         logger.Info(LogFilter.ServerLoading, $"Initializing Opcodes...");
         OpcodeTable.Instance.Initialize();
@@ -592,7 +592,7 @@ public class World : Singleton<World>, IWorld
         _float_configs[(uint)WorldFloatConfigs.CONFIG_MAX_RECRUIT_A_FRIEND_DISTANCE] = ConfigMgr.GetOption("MaxRecruitAFriendBonusDistance", 100.0f);
         
         // Add MonsterSight in worldserver.conf or put it as define
-        _float_configs[(uint)WorldFloatConfigs.CONFIG_SIGHT_MONSTER] = ConfigMgr.GetOption("MonsterSight", 50);
+        _float_configs[(uint)WorldFloatConfigs.CONFIG_SIGHT_MONSTER] = ConfigMgr.GetOption("MonsterSight", 50.0f);
 
         if (reload)
         {

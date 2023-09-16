@@ -60,15 +60,15 @@ internal struct AccountInfo
         // aa.gmlevel (, more query-specific fields)
         // FROM account a LEFT JOIN account_access aa ON a.id = aa.id LEFT JOIN account_banned ab ON ab.id = a.id AND ab.active = 1 LEFT JOIN ip_banned ipb ON ipb.ip = ? WHERE a.username = ?
 
-        Id = fields.Read<uint>(0);
-        Login = fields.Read<string>(1);
-        IsLockedToIP = fields.Read<bool>(2);
-        LockCountry = fields.Read<string> (3);
-        LastIP = fields.Read<string> (4);
-        FailedLogins = fields.Read<uint>(5);
-        IsBanned = fields.Read<bool>(6) || fields.Read<bool>(8);
-        IsPermanentlyBanned = fields.Read<bool>(7) || fields.Read<bool>(9);
-        SecurityLevel = fields.Read<byte>(10) > (byte)AccountTypes.SEC_CONSOLE ? AccountTypes.SEC_CONSOLE : (AccountTypes)fields.Read<byte>(10);
+        Id = fields.Get<uint>(0);
+        Login = fields.Get<string>(1);
+        IsLockedToIP = fields.Get<bool>(2);
+        LockCountry = fields.Get<string> (3);
+        LastIP = fields.Get<string> (4);
+        FailedLogins = fields.Get<uint>(5);
+        IsBanned = fields.Get<bool>(6) || fields.Get<bool>(8);
+        IsPermanentlyBanned = fields.Get<bool>(7) || fields.Get<bool>(9);
+        SecurityLevel = fields.Get<byte>(10) > (byte)AccountTypes.SEC_CONSOLE ? AccountTypes.SEC_CONSOLE : (AccountTypes)fields.Get<byte>(10);
 
         // Use our own uppercasing of the account name instead of using UPPER() in mysql query
         // This is how the account was created in the first place and changing it now would result in breaking

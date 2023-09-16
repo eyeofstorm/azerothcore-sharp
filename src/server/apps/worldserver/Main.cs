@@ -202,7 +202,7 @@ internal class WorldServer
 
         Realm realm = Global.sWorld.GetRealm();
 
-        realm.Name = fields.Read<string>(1) ?? string.Empty;
+        realm.Name = fields.Get<string>(1) ?? string.Empty;
 
         if (!IPAddress.TryParse(result.Read<string>(2), out realm.ExternalAddress))
         {

@@ -48,7 +48,7 @@ public partial class Player
 
         SQLFields fields = result.GetFields();
 
-        uint dbAccountId = fields.Read<uint>(1);
+        uint dbAccountId = fields.Get<uint>(1);
 
         // check if the character's account in the db and the logged in account match.
         // player should be able to load/delete character only with correct account!
@@ -70,7 +70,7 @@ public partial class Player
 
         Create(guid, 0, HighGuid.Player);
 
-        _name = fields.Read<string>(2) ?? string.Empty;
+        _name = fields.Get<string>(2) ?? string.Empty;
 
         // check name limitations
         if (
@@ -94,7 +94,7 @@ public partial class Player
             return false;
         }
 
-        byte Gender = fields.Read<byte>(5);
+        byte Gender = fields.Get<byte>(5);
 
         if (!IsValidGender(Gender))
         {
@@ -105,32 +105,65 @@ public partial class Player
 
         // overwrite some data fields
         uint bytes0 = 0;
-        bytes0 |= fields.Read<byte>(3);                         // race
-        bytes0 |= (uint)(fields.Read<byte>(4) << 8);            // class
+        bytes0 |= fields.Get<byte>(3);                         // race
+        bytes0 |= (uint)(fields.Get<byte>(4) << 8);            // class
         bytes0 |= (uint)(Gender << 16);                         // gender
 
         SetUInt32Value((ushort)EUnitFields.UNIT_FIELD_BYTES_0, bytes0);
 
-        _realRace = fields.Read<byte>(3);   // set real race
-        _race = fields.Read<byte>(3);       // set real race
+        _realRace = fields.Get<byte>(3);   // set real race
+        _race = fields.Get<byte>(3);       // set real race
 
-        SetUInt32Value((ushort)EUnitFields.UNIT_FIELD_LEVEL, fields.Read<byte>(6));
-        SetUInt32Value((ushort)EUnitFields.PLAYER_XP, fields.Read<uint>(7));
+        SetUInt32Value((ushort)EUnitFields.UNIT_FIELD_LEVEL, fields.Get<byte>(6));
+        SetUInt32Value((ushort)EUnitFields.PLAYER_XP, fields.Get<uint>(7));
 
-        if (!LoadIntoDataField(fields.Read<string>(66), (ushort)EUnitFields.PLAYER_EXPLORED_ZONES_1, (uint)PlayerConst.PLAYER_EXPLORED_ZONES_SIZE))
+        if (!LoadIntoDataField(fields.Get<string>(66), (ushort)EUnitFields.PLAYER_EXPLORED_ZONES_1, (uint)PlayerConst.PLAYER_EXPLORED_ZONES_SIZE))
         {
-            logger.Warn(LogFilter.PlayerLoading, $"Player::LoadFromDB: Player ({guid}) has invalid exploredzones data ({fields.Read<string>(66)}). Forcing partial load.");
+            logger.Warn(LogFilter.PlayerLoading, $"Player::LoadFromDB: Player ({guid}) has invalid exploredzones data ({fields.Get<string>(66)}). Forcing partial load.");
         }
 
-        if (!LoadIntoDataField(fields.Read<string>(69), (ushort)EUnitFields.PLAYER__FIELD_KNOWN_TITLES, (uint)PlayerConst.KNOWN_TITLES_SIZE * 2))
+        if (!LoadIntoDataField(fields.Get<string>(69), (ushort)EUnitFields.PLAYER__FIELD_KNOWN_TITLES, (uint)PlayerConst.KNOWN_TITLES_SIZE * 2))
         {
-            logger.Warn(LogFilter.PlayerLoading, $"Player::LoadFromDB: Player ({guid}) has invalid knowntitles mask ({fields.Read<string>(69)}). Forcing partial load.");
+            logger.Warn(LogFilter.PlayerLoading, $"Player::LoadFromDB: Player ({guid}) has invalid knowntitles mask ({fields.Get<string>(69)}). Forcing partial load.");
         }
 
         SetObjectScale(1.0f);
         SetFloatValue((ushort)EUnitFields.UNIT_FIELD_HOVERHEIGHT, 1.0f);
 
+        // TODO: game: load achievements before anything else to prevent multiple gains for the same achievement/criteria on every loading (as loading does call UpdateAchievementCriteria)
+        //m_achievementMgr->LoadFromDB(holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_ACHIEVEMENTS), holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_CRITERIA_PROGRESS));
 
+        uint money = fields.Get<uint>(8);
+
+        if (money > PlayerConst.MAX_MONEY_AMOUNT)
+        {
+            money = (uint)PlayerConst.MAX_MONEY_AMOUNT;
+        }
+
+        SetMoney(money);
+
+        SetByteValue((ushort)EUnitFields.PLAYER_BYTES, 0, fields.Get<byte>(9));
+        SetByteValue((ushort)EUnitFields.PLAYER_BYTES, 1, fields.Get<byte>(10));
+        SetByteValue((ushort)EUnitFields.PLAYER_BYTES, 2, fields.Get<byte>(11));
+        SetByteValue((ushort)EUnitFields.PLAYER_BYTES, 3, fields.Get<byte>(12));
+        SetByteValue((ushort)EUnitFields.PLAYER_BYTES_2, 0, fields.Get<byte>(13));
+        SetByteValue((ushort)EUnitFields.PLAYER_BYTES_2, 2, fields.Get<byte>(14));
+        SetByteValue((ushort)EUnitFields.PLAYER_BYTES_2, 3, fields.Get<byte>(15));
+        SetByteValue((ushort)EUnitFields.PLAYER_BYTES_3, 0, fields.Get<byte>(5));
+        SetByteValue((ushort)EUnitFields.PLAYER_BYTES_3, 1, fields.Get<byte>(54));
+
+        ReplaceAllPlayerFlags((PlayerFlags)fields.Get<uint>(16));
+
+        SetInt32Value((ushort)EUnitFields.PLAYER_FIELD_WATCHED_FACTION_INDEX, fields.Get<int>(53));
+
+        SetUInt64Value((ushort)EUnitFields.PLAYER_FIELD_KNOWN_CURRENCIES, fields.Get<ulong>(52));
+
+        SetUInt32Value((ushort)EUnitFields.PLAYER_AMMO_ID, fields.Get<uint>(68));
+
+        // set which actionbars the client has active - DO NOT REMOVE EVER AGAIN (can be changed though, if it does change fieldwise)
+        SetByteValue((ushort)EUnitFields.PLAYER_FIELD_BYTES, 2, fields.Get<byte>(70));
+
+        InitDisplayIds();
 
         // TODO: game: Player::LoadFromDB(ObjectGuid playerGuid, LoginQueryHolder holder)
 

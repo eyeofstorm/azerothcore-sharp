@@ -50,6 +50,7 @@ public enum LogFilter
     Maps,
     Movement,
     Network,
+    Object,
     Outdoorpvp,
     Pet,
     Player,

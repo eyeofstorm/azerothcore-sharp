@@ -65,19 +65,20 @@ public abstract class BaseObject
     protected List<ObjectValue>? _values;
     protected ushort _valuesCount;
     protected ushort _objectType;
+    protected TypeID _objectTypeId;
     protected bool _objectUpdated;
     protected PackedGuid _packGUID;
     protected UpdateMask _changesMask;
-
-    private bool _inWorld;
+    protected bool _inWorld;
 
     protected BaseObject()
     {
         _values = null;
-        _valuesCount = (ushort)EObjectFields.OBJECT_FIELD_GUID;
+        _valuesCount = 0;
         _changesMask = new UpdateMask();
         _inWorld = false;
         _objectUpdated = false;
+        _objectTypeId = TypeID.TYPEID_OBJECT;
         _objectType = (ushort)TypeMask.TYPEMASK_OBJECT;
         _packGUID = new PackedGuid();
     }
@@ -93,6 +94,7 @@ public abstract class BaseObject
 
         SetGuidValue((ushort)EObjectFields.OBJECT_FIELD_GUID, guid);
         SetUInt32Value((ushort)EObjectFields.OBJECT_FIELD_TYPE, _objectType);
+
         _packGUID.Set(guid);
     }
 
@@ -110,9 +112,34 @@ public abstract class BaseObject
         _objectUpdated = false;
     }
 
-    public void SetUInt32Value(ushort index, uint value)
+    public ObjectGuid GetGUID()
     {
-        if ((index + 1) < _valuesCount)
+        return GetGuidValue((ushort)EObjectFields.OBJECT_FIELD_GUID);
+    }
+
+    public TypeID GetTypeId()
+    {
+        return _objectTypeId;
+    }
+
+    public int GetInt32Value(ushort index)
+    {
+        if (index < _valuesCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        if (_values == null)
+        {
+            throw new NullReferenceException(nameof(_values));
+        }
+
+        return _values[index].Int32Value;
+    }
+
+    public void SetInt32Value(ushort index, int value)
+    {
+        if (index < _valuesCount)
         {
             throw new ArgumentOutOfRangeException(nameof(index));
         }
@@ -122,6 +149,44 @@ public abstract class BaseObject
             if (_values[index].UInt32Value != value)
             {
                 var objVal = _values[index];
+
+                objVal.Int32Value = value;
+
+                _changesMask.SetBit(index);
+
+                AddToObjectUpdateIfNeeded();
+            }
+        }
+    }
+
+    public uint GetUInt32Value(ushort index)
+    {
+        if (index < _valuesCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        if (_values == null)
+        {
+            throw new NullReferenceException(nameof(_values));
+        }
+
+        return _values[index].UInt32Value;
+    }
+
+    public void SetUInt32Value(ushort index, uint value)
+    {
+        if (index < _valuesCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        if (_values != null)
+        {
+            if (_values[index].UInt32Value != value)
+            {
+                var objVal = _values[index];
+
                 objVal.UInt32Value = value;
 
                 _changesMask.SetBit(index);
@@ -131,9 +196,24 @@ public abstract class BaseObject
         }
     }
 
+    public float GetFloatValue(ushort index)
+    {
+        if (index < _valuesCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        if (_values == null)
+        {
+            throw new NullReferenceException(nameof(_values));
+        }
+
+        return _values[index].FloatValue;
+    }
+
     public void SetFloatValue(ushort index, float value)
     {
-        if ((index + 1) < _valuesCount)
+        if (index < _valuesCount)
         {
             throw new ArgumentOutOfRangeException(nameof(index));
         }
@@ -152,9 +232,84 @@ public abstract class BaseObject
         }
     }
 
-    public ObjectGuid GetGUID()
+    public ulong GetUInt64Value(ushort index)
     {
-        return GetGuidValue((ushort)EObjectFields.OBJECT_FIELD_GUID);
+        if ((index + 1) < _valuesCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        if (_values == null)
+        {
+            throw new NullReferenceException(nameof(_values));
+        }
+
+        uint lo = _values[index].UInt32Value;
+        uint hi = _values[index + 1].UInt32Value;
+
+        byte[] uint64Arr = BitConverter.GetBytes(lo).Concat(BitConverter.GetBytes(hi)).ToArray();
+        ulong uint64Val = BitConverter.ToUInt64(uint64Arr);
+
+        return uint64Val;
+    }
+
+    public void SetUInt64Value(ushort index, ulong value)
+    {
+        if ((index + 1) < _valuesCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        if (_values != null)
+        {
+            var objValLow = _values[index];
+            var objValHigh = _values[index + 1];
+
+            byte[] oldValArr = BitConverter.GetBytes(objValLow.UInt32Value).Concat(BitConverter.GetBytes(objValHigh.UInt32Value)).ToArray();
+            ulong oldValue = BitConverter.ToUInt64(oldValArr); ;
+
+            if (oldValue != value)
+            {
+                objValLow.UInt32Value = PAIR64_LOPART(value);
+                objValHigh.UInt32Value = PAIR64_HIPART(value);
+
+                _changesMask.SetBit(index);
+                _changesMask.SetBit(index + 1U);
+
+                AddToObjectUpdateIfNeeded();
+            }
+        }
+    }
+
+    private static uint PAIR64_LOPART(ulong x)
+    {
+        return (uint)((x >> 32) & 0x00000000FFFFFFFFUL);
+    }
+
+    private static uint PAIR64_HIPART(ulong x)
+    {
+        return (uint)(x & 0x00000000FFFFFFFFUL);
+    }
+
+    public ObjectGuid GetGuidValue(ushort index)
+    {
+        if ((index + 1) < _valuesCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        if (_values == null)
+        {
+            throw new NullReferenceException(nameof(_values));
+        }
+
+        uint lo = _values[index].UInt32Value;
+        uint hi = _values[index + 1].UInt32Value;
+
+        byte[] guidRaw = BitConverter.GetBytes(lo).Concat(BitConverter.GetBytes(hi)).ToArray();
+        ulong guid = BitConverter.ToUInt64(guidRaw);
+
+        return ObjectGuid.Create(guid);
     }
 
     public void SetGuidValue(ushort index, ObjectGuid value)
@@ -179,11 +334,16 @@ public abstract class BaseObject
         }
     }
 
-    public ObjectGuid GetGuidValue(ushort index)
+    public byte GetByteValue(ushort index, byte offset)
     {
-        if ((index + 1) < _valuesCount)
+        if (index < _valuesCount)
         {
             throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        if (offset >= 4)
+        {
+            throw new ArgumentOutOfRangeException(nameof(offset));
         }
 
         if (_values == null)
@@ -191,9 +351,9 @@ public abstract class BaseObject
             throw new NullReferenceException(nameof(_values));
         }
 
-        ulong guid = _values[index].UInt32Value;
+        var objValBytes = BitConverter.GetBytes(_values[index].UInt32Value);
 
-        return ObjectGuid.Create(guid);
+        return objValBytes[offset];
     }
 
     public void AddToObjectUpdateIfNeeded()
@@ -209,8 +369,14 @@ public abstract class BaseObject
 
     public Player? ToPlayer()
     {
-        // TODO: game: BaseObject::ToPlayer()
-        return null;
+        if (GetTypeId() == TypeID.TYPEID_PLAYER)
+        {
+            return this as Player;
+        }
+        else
+        {
+            return null;
+        }
     }
 
     public bool LoadIntoDataField(string? data, uint startOffset, uint count)
@@ -251,6 +417,35 @@ public abstract class BaseObject
     public virtual void SetObjectScale(float scale)
     {
         SetFloatValue((ushort)EObjectFields.OBJECT_FIELD_SCALE_X, scale);
+    }
+
+    public void SetByteValue(ushort index, byte offset, byte value)
+    {
+        if ((index + 1) < _valuesCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        if (offset > 3)
+        {
+            logger.Error(LogFilter.Object, $"BaseObject::SetByteValue: wrong offset {offset}");
+            return;
+        }
+
+        if (_values != null)
+        {
+            if ((_values[index].UInt32Value >> (offset * 8)) != value)
+            {
+                var objVal = _values[index];
+
+                objVal.UInt32Value &= ~((uint)0xFF << (offset * 8));
+                objVal.UInt32Value |= (uint)value << (offset * 8);
+
+                _changesMask.SetBit(index);
+
+                AddToObjectUpdateIfNeeded();
+            }
+        }
     }
 }
 

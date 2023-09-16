@@ -202,7 +202,7 @@ public enum Classes : ushort
     CLASS_DRUID = 11        // TITLE Druid
 }
 
-public enum Gender : ushort
+public enum Gender : byte
 {
     GENDER_MALE = 0,
     GENDER_FEMALE = 1,
