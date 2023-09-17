@@ -64,11 +64,11 @@ public static class ItemTemplateConst
 public struct ItemTemplate
 {
     public uint ItemId;
-    public uint Class;                                           // id from ItemClass.dbc
-    public uint SubClass;                                        // id from ItemSubClass.dbc
+    public uint Class;                                          // id from ItemClass.dbc
+    public uint SubClass;                                       // id from ItemSubClass.dbc
     public int SoundOverrideSubclass;                           // < 0: id from ItemSubClass.dbc, used to override weapon sound from actual SubClass
     public string Name1;
-    public uint DisplayInfoID;                                   // id from ItemDisplayInfo.dbc
+    public uint DisplayInfoID;                                  // id from ItemDisplayInfo.dbc
     public uint Quality;
     public uint Flags;
     public uint Flags2;
@@ -80,20 +80,20 @@ public struct ItemTemplate
     public uint AllowableRace;
     public uint ItemLevel;
     public uint RequiredLevel;
-    public uint RequiredSkill;                                   // id from SkillLine.dbc
+    public uint RequiredSkill;                                  // id from SkillLine.dbc
     public uint RequiredSkillRank;
-    public uint RequiredSpell;                                   // id from Spell.dbc
+    public uint RequiredSpell;                                  // id from Spell.dbc
     public uint RequiredHonorRank;
     public uint RequiredCityRank;
-    public uint RequiredReputationFaction;                       // id from Faction.dbc
+    public uint RequiredReputationFaction;                      // id from Faction.dbc
     public uint RequiredReputationRank;
     public int MaxCount;                                        // <= 0: no limit
     public int Stackable;                                       // 0: not allowed, -1: put in player coin info tab and don't limit stacking (so 1 slot)
     public uint ContainerSlots;
     public uint StatsCount;
     public ItemStat[] ItemStat;
-    public uint ScalingStatDistribution;                         // id from ScalingStatDistribution.dbc
-    public uint ScalingStatValue;                                // mask for selecting column in ScalingStatValues.dbc
+    public uint ScalingStatDistribution;                        // id from ScalingStatDistribution.dbc
+    public uint ScalingStatValue;                               // mask for selecting column in ScalingStatValues.dbc
     public Damage[] Damage;
     public uint Armor;
     public int HolyRes;
@@ -111,27 +111,27 @@ public struct ItemTemplate
     public uint PageText;
     public uint LanguageID;
     public uint PageMaterial;
-    public uint StartQuest;                                      // id from QuestCache.wdb
+    public uint StartQuest;                                     // id from QuestCache.wdb
     public uint LockID;
     public int Material;                                        // id from Material.dbc
     public uint Sheath;
     public int RandomProperty;                                  // id from ItemRandomProperties.dbc
     public int RandomSuffix;                                    // id from ItemRandomSuffix.dbc
     public uint Block;
-    public uint ItemSet;                                         // id from ItemSet.dbc
+    public uint ItemSet;                                        // id from ItemSet.dbc
     public uint MaxDurability;
-    public uint Area;                                            // id from AreaTable.dbc
-    public uint Map;                                             // id from Map.dbc
-    public uint BagFamily;                                       // bit mask (1 << id from ItemBagFamily.dbc)
-    public uint TotemCategory;                                   // id from TotemCategory.dbc
+    public uint Area;                                           // id from AreaTable.dbc
+    public uint Map;                                            // id from Map.dbc
+    public uint BagFamily;                                      // bit mask (1 << id from ItemBagFamily.dbc)
+    public uint TotemCategory;                                  // id from TotemCategory.dbc
     public ItemSocket[] Socket;
-    public uint socketBonus;                                     // id from SpellItemEnchantment.dbc
-    public uint GemProperties;                                   // id from GemProperties.dbc
+    public uint socketBonus;                                    // id from SpellItemEnchantment.dbc
+    public uint GemProperties;                                  // id from GemProperties.dbc
     public uint RequiredDisenchantSkill;
     public float ArmorDamageModifier;
     public uint Duration;
-    public uint ItemLimitCategory;                               // id from ItemLimitCategory.dbc
-    public uint HolidayId;                                       // id from Holidays.dbc
+    public uint ItemLimitCategory;                              // id from ItemLimitCategory.dbc
+    public uint HolidayId;                                      // id from Holidays.dbc
     public uint ScriptId;
     public uint DisenchantID;
     public uint FoodType;

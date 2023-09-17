@@ -19,15 +19,15 @@ namespace AzerothCore.Database;
 
 public class QueryCallback : ISqlCallback
 {
-    private Task<SQLResult>? _result;
+    private Task<QueryResult>? _result;
     private Queue<QueryCallbackData> _callbacks = new();
 
-    public QueryCallback(Task<SQLResult>? result)
+    public QueryCallback(Task<QueryResult>? result)
     {
         _result = result;
     }
 
-    public QueryCallback WithCallback(Action<SQLResult> callback)
+    public QueryCallback WithCallback(Action<QueryResult> callback)
     {
         return WithChainingCallback((queryCallback, result) =>
         {
@@ -35,7 +35,7 @@ public class QueryCallback : ISqlCallback
         });
     }
 
-    public QueryCallback WithCallback<T>(Action<T, SQLResult> callback, T obj)
+    public QueryCallback WithCallback<T>(Action<T, QueryResult> callback, T obj)
     {
         return WithChainingCallback((queryCallback, result) =>
         {
@@ -43,7 +43,7 @@ public class QueryCallback : ISqlCallback
         });
     }
 
-    public QueryCallback WithChainingCallback(Action<QueryCallback, SQLResult> callback)
+    public QueryCallback WithChainingCallback(Action<QueryCallback, QueryResult> callback)
     {
         QueryCallbackData queryCallbackData = new QueryCallbackData(callback);
 
@@ -65,8 +65,8 @@ public class QueryCallback : ISqlCallback
         {
             if (_result != null && _result.Wait(0))
             {
-                Task<SQLResult> f = _result;
-                Action<QueryCallback, SQLResult>? cb = callbackData.callback;
+                Task<QueryResult> f = _result;
+                Action<QueryCallback, QueryResult>? cb = callbackData.callback;
                 _result = null;
 
                 if (cb != null)
@@ -100,7 +100,7 @@ public class QueryCallback : ISqlCallback
 
 public struct QueryCallbackData
 {
-    public QueryCallbackData(Action<QueryCallback, SQLResult> action)
+    public QueryCallbackData(Action<QueryCallback, QueryResult> action)
     {
         callback = action;
     }
@@ -110,5 +110,5 @@ public struct QueryCallbackData
         callback = null;
     }
 
-    public Action<QueryCallback, SQLResult>? callback;
+    public Action<QueryCallback, QueryResult>? callback;
 }

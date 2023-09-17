@@ -20,20 +20,20 @@ using MySqlConnector;
 
 namespace AzerothCore.Database;
 
-public class SQLResult
+public class QueryResult
 {
     MySqlDataReader? _reader;
 
-    public SQLResult() { }
+    public QueryResult() { }
 
-    public SQLResult(MySqlDataReader reader)
+    public QueryResult(MySqlDataReader reader)
     {
         _reader = reader;
 
         NextRow();
     }
 
-    ~SQLResult()
+    ~QueryResult()
     {
         _reader = null;
     }
@@ -165,7 +165,7 @@ public class SQLResult
         return _reader.IsClosed || !_reader.HasRows;
     }
 
-    public SQLFields GetFields()
+    public Fields Fetch()
     {
         if (_reader == null)
         {
@@ -176,7 +176,14 @@ public class SQLResult
 
         _reader.GetValues(values);
 
-        return new SQLFields(values);
+        Fields fields = new ();
+
+        foreach (var val in values)
+        {
+            fields.Add(new Field(val));
+        }
+
+        return fields;
     }
 
     public bool NextRow()
@@ -193,44 +200,45 @@ public class SQLResult
     }
 }
 
-public class SQLFields
+public class Field
 {
-    readonly object[] _currentRow;
+    readonly object _currentCol;
 
-    public SQLFields(object[] row) { _currentRow = row; }
+    public Field(object col) { _currentCol = col; }
 
-    public T? Get<T>(int column)
+    public T? Get<T>()
     {
-        var value = _currentRow[column];
-
-        if (value == DBNull.Value)
+        if (_currentCol == DBNull.Value)
         {
             return default;
         }
 
-        if (value.GetType() is not T)
+        if (_currentCol.GetType() is not T)
         {
             // TODO: common: Remove me when all fields are the right type  this is super slow
-            return (T)Convert.ChangeType(value, typeof(T));
+            return (T)Convert.ChangeType(_currentCol, typeof(T));
         }
 
-        return (T)value;
+        return (T)_currentCol;
     }
 
+    public bool IsNull()
+    {
+        return _currentCol == DBNull.Value;
+    }
+}
+
+public class Fields : List<Field>
+{
     public T?[] ReadValues<T>(int startIndex, int numColumns)
     {
         T?[] values = new T[numColumns];
 
         for (var c = 0; c < numColumns; ++c)
         {
-            values[c] = Get<T>(startIndex + c);
+            values[c] = this.ElementAt(startIndex + c).Get<T>();
         }
 
         return values;
-    }
-
-    public bool IsNull(int column)
-    {
-        return _currentRow[column] == DBNull.Value;
     }
 }

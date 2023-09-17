@@ -55,7 +55,7 @@ public class RealmList : Singleton<RealmList>
     private void LoadBuildInfo()
     {
         //                                         0             1             2              3              4      5                6
-        SQLResult result = DB.Login.Query("SELECT majorVersion, minorVersion, bugfixVersion, hotfixVersion, build, winChecksumSeed, macChecksumSeed FROM build_info ORDER BY build ASC");
+        QueryResult result = DB.Login.Query("SELECT majorVersion, minorVersion, bugfixVersion, hotfixVersion, build, winChecksumSeed, macChecksumSeed FROM build_info ORDER BY build ASC");
 
         if (!result.IsEmpty())
         {
@@ -113,7 +113,7 @@ public class RealmList : Singleton<RealmList>
     private void UpdateRealms(object? source, ElapsedEventArgs? e)
     {
         PreparedStatement               stmt            = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_SEL_REALMLIST);
-        SQLResult                       result          = DB.Login.Query(stmt);
+        QueryResult                       result          = DB.Login.Query(stmt);
         Dictionary<RealmHandle, string> existingRealms  = new();
 
         foreach (var p in _realms)

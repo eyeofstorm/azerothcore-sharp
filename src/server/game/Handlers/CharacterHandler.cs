@@ -73,13 +73,13 @@ public partial class WorldSession : ICharacterHandler
             CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_ENUM);
 
         // get all the data necessary for loading all characters (along with their pets) on the account
-        stmt.AddValue(0, (sbyte)PetSaveMode.PET_SAVE_AS_CURRENT);
-        stmt.AddValue(1, GetAccountId());
+        stmt.SetData(0, (sbyte)PetSaveMode.PET_SAVE_AS_CURRENT);
+        stmt.SetData(1, GetAccountId());
 
         _queryProcessor.AddCallback(DB.Characters.AsyncQuery(stmt).WithCallback(HandleCharEnumCallback));
     }
 
-    private void HandleCharEnumCallback(SQLResult result)
+    private void HandleCharEnumCallback(QueryResult result)
     {
         WorldPacketData data = new(Opcodes.SMSG_CHAR_ENUM);
 
@@ -314,68 +314,68 @@ public class LoginQueryHolder : SQLQueryHolder<PlayerLoginQueryIndex>
         uint lowGuid = m_guid.GetCounter();
 
         var stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_FROM, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_AURAS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_AURAS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_SPELL);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_SPELLS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_QUESTSTATUS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_QUEST_STATUS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_DAILYQUESTSTATUS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_DAILY_QUEST_STATUS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_WEEKLYQUESTSTATUS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_WEEKLY_QUEST_STATUS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_MONTHLYQUESTSTATUS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_MONTHLY_QUEST_STATUS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_SEASONALQUESTSTATUS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_SEASONAL_QUEST_STATUS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_REPUTATION);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_REPUTATION, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_INVENTORY);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_INVENTORY, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_ACTIONS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_ACTIONS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_MAIL);
-        stmt.AddValue(0, lowGuid);
-        stmt.AddValue(1, TimeHelper.UnixTime);
+        stmt.SetData(0, lowGuid);
+        stmt.SetData(1, TimeHelper.UnixTime);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_MAILS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_MAILITEMS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_MAIL_ITEMS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_SOCIALLIST);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_SOCIAL_LIST, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_HOMEBIND);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_HOME_BIND, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_SPELLCOOLDOWNS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_SPELL_COOLDOWNS, stmt);
 
         RealmZone zone = ConfigMgr.GetOption("RealmZone", RealmZone.REALM_ZONE_DEVELOPMENT);
@@ -384,72 +384,72 @@ public class LoginQueryHolder : SQLQueryHolder<PlayerLoginQueryIndex>
         if (isDeclinedNamesUsed)
         {
             stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_DECLINEDNAMES);
-            stmt.AddValue(0, lowGuid);
+            stmt.SetData(0, lowGuid);
             SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_DECLINED_NAMES, stmt);
         }
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_ACHIEVEMENTS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_ACHIEVEMENTS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_CRITERIAPROGRESS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_CRITERIA_PROGRESS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_EQUIPMENTSETS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_EQUIPMENT_SETS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_ENTRY_POINT);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_ENTRY_POINT, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_GLYPHS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_GLYPHS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_TALENTS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_TALENTS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_PLAYER_ACCOUNT_DATA);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_ACCOUNT_DATA, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_SKILLS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_SKILLS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_RANDOMBG);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_RANDOM_BG, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_BANNED);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_BANNED, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHARACTER_QUESTSTATUSREW);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_QUEST_STATUS_REW, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_BREW_OF_THE_MONTH);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_BREW_OF_THE_MONTH, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_ACCOUNT_INSTANCELOCKTIMES);
-        stmt.AddValue(0, m_accountId);
+        stmt.SetData(0, m_accountId);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_INSTANCE_LOCK_TIMES, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CORPSE_LOCATION);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_CORPSE_LOCATION, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHAR_SETTINGS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_CHARACTER_SETTINGS, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_CHAR_PETS);
-        stmt.AddValue(0, lowGuid);
+        stmt.SetData(0, lowGuid);
         SetQuery(PlayerLoginQueryIndex.PLAYER_LOGIN_QUERY_LOAD_PET_SLOTS, stmt);
     }
 }

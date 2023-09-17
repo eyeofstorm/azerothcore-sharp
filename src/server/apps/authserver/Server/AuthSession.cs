@@ -48,7 +48,7 @@ internal struct AccountInfo
         SecurityLevel = AccountTypes.SEC_PLAYER;
     }
 
-    internal void LoadResult(SQLFields fields)
+    internal void LoadResult(Fields fields)
     {
         //          0        1          2           3             4             5
         // SELECT a.id, a.username, a.locked, a.lock_country, a.last_ip, a.failed_logins,
@@ -60,15 +60,15 @@ internal struct AccountInfo
         // aa.gmlevel (, more query-specific fields)
         // FROM account a LEFT JOIN account_access aa ON a.id = aa.id LEFT JOIN account_banned ab ON ab.id = a.id AND ab.active = 1 LEFT JOIN ip_banned ipb ON ipb.ip = ? WHERE a.username = ?
 
-        Id = fields.Get<uint>(0);
-        Login = fields.Get<string>(1);
-        IsLockedToIP = fields.Get<bool>(2);
-        LockCountry = fields.Get<string> (3);
-        LastIP = fields.Get<string> (4);
-        FailedLogins = fields.Get<uint>(5);
-        IsBanned = fields.Get<bool>(6) || fields.Get<bool>(8);
-        IsPermanentlyBanned = fields.Get<bool>(7) || fields.Get<bool>(9);
-        SecurityLevel = fields.Get<byte>(10) > (byte)AccountTypes.SEC_CONSOLE ? AccountTypes.SEC_CONSOLE : (AccountTypes)fields.Get<byte>(10);
+        Id = fields[0].Get<uint>();
+        Login = fields[1].Get<string>();
+        IsLockedToIP = fields[2].Get<bool>();
+        LockCountry = fields[3].Get<string> ();
+        LastIP = fields[4].Get<string> ();
+        FailedLogins = fields[5].Get<uint>();
+        IsBanned = fields[6].Get<bool>() || fields[8].Get<bool>();
+        IsPermanentlyBanned = fields[7].Get<bool>() || fields[9].Get<bool>();
+        SecurityLevel = fields[10].Get<byte>() > (byte)AccountTypes.SEC_CONSOLE ? AccountTypes.SEC_CONSOLE : (AccountTypes)fields[10].Get<byte>();
 
         // Use our own uppercasing of the account name instead of using UPPER() in mysql query
         // This is how the account was created in the first place and changing it now would result in breaking
@@ -261,7 +261,7 @@ internal class AuthSession : SocketBase
         logger.Debug(LogFilter.Session, $"Accepted connection from {ipAddress.Address.ToString()}");
 
         var stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_SEL_IP_INFO);
-        stmt.AddValue(0, ipAddress.Address.ToString());
+        stmt.SetData(0, ipAddress.Address.ToString());
 
         QueryCallback asyncQuery = DB.Login.AsyncQuery(stmt);
         asyncQuery.WithCallback(CheckIpCallback);
@@ -281,7 +281,7 @@ internal class AuthSession : SocketBase
         return true;
     }
 
-    private void CheckIpCallback(SQLResult result)
+    private void CheckIpCallback(QueryResult result)
     {
         var ipAddress = GetRemoteIpAddress();
 
@@ -443,15 +443,15 @@ internal class AuthSession : SocketBase
 
         // Get the account details from the account table
         var stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_SEL_LOGONCHALLENGE);
-        stmt.AddValue(0, GetRemoteIpAddress()?.Address.ToString());
-        stmt.AddValue(1, login);
+        stmt.SetData(0, GetRemoteIpAddress()?.Address.ToString());
+        stmt.SetData(1, login);
 
         _queryProcessor.AddCallback(DB.Login.AsyncQuery(stmt).WithCallback(LogonChallengeCallback));
 
         return true;
     }
 
-    private void LogonChallengeCallback(SQLResult result)
+    private void LogonChallengeCallback(QueryResult result)
     {
         ByteBuffer pkt = new ByteBuffer();
 
@@ -465,7 +465,7 @@ internal class AuthSession : SocketBase
             return;
         }
 
-        SQLFields fields = result.GetFields();
+        Fields fields = result.Fetch();
         _accountInfo.LoadResult(fields);
 
         string? ipAddress = GetRemoteIpAddress()?.Address.ToString();
@@ -534,7 +534,7 @@ internal class AuthSession : SocketBase
         byte securityFlags = 0;
 
         // Check if a TOTP token is needed
-        if (!fields.IsNull(11))
+        if (!fields[11].IsNull())
         {
             securityFlags = 4;
             _totpSecret = result.ReadBytes(11, 128);
@@ -688,11 +688,11 @@ internal class AuthSession : SocketBase
             string address = ConfigMgr.GetOption<bool>("AllowLoggingIPAddressesInDatabase", true) ? ipAddress.Address.ToString() : "0.0.0.0";
 
             PreparedStatement stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_UPD_LOGONPROOF);
-            stmt.AddValue(0, _sessionKey);
-            stmt.AddValue(1, address);
-            stmt.AddValue(2, (byte)LocaleHelper.GetLocaleByName(_localizationName));
-            stmt.AddValue(3, _os);
-            stmt.AddValue(4, _accountInfo.Login);
+            stmt.SetData(0, _sessionKey);
+            stmt.SetData(1, address);
+            stmt.SetData(2, (byte)LocaleHelper.GetLocaleByName(_localizationName));
+            stmt.SetData(3, _os);
+            stmt.SetData(4, _accountInfo.Login);
 
             DB.Login.DirectExecute(stmt);
 
@@ -748,9 +748,9 @@ internal class AuthSession : SocketBase
             if (ConfigMgr.GetOption<bool>("WrongPass.Logging", false))
             {
                 PreparedStatement logstmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_INS_FALP_IP_LOGGING);
-                logstmt.AddValue(0, _accountInfo.Id);
-                logstmt.AddValue(1, ipAddress.Address.ToString());
-                logstmt.AddValue(2, "Login to WoW Failed - Incorrect Password");
+                logstmt.SetData(0, _accountInfo.Id);
+                logstmt.SetData(1, ipAddress.Address.ToString());
+                logstmt.SetData(2, "Login to WoW Failed - Incorrect Password");
 
                 DB.Login.Execute(logstmt);
             }
@@ -759,7 +759,7 @@ internal class AuthSession : SocketBase
             {
                 //Increment number of failed logins by one and if it reaches the limit temporarily ban that account or IP
                 PreparedStatement stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_UPD_FAILEDLOGINS);
-                stmt.AddValue(0, _accountInfo.Login);
+                stmt.SetData(0, _accountInfo.Login);
                 DB.Login.Execute(stmt);
 
                 if (++_accountInfo.FailedLogins >= maxWrongPassCount)
@@ -770,8 +770,8 @@ internal class AuthSession : SocketBase
                     if (wrongPassBanType)
                     {
                         stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_INS_ACCOUNT_AUTO_BANNED);
-                        stmt.AddValue(0, _accountInfo.Id);
-                        stmt.AddValue(1, wrongPassBanTime);
+                        stmt.SetData(0, _accountInfo.Id);
+                        stmt.SetData(1, wrongPassBanTime);
                         DB.Login.Execute(stmt);
 
                         logger.Debug(LogFilter.Server, $"'{ipAddress.Address.ToString()}:{ipAddress.Port}' [AuthChallenge] account {_accountInfo.Login} got banned for '{wrongPassBanTime}' seconds because it failed to authenticate '{_accountInfo.FailedLogins}' times");
@@ -779,8 +779,8 @@ internal class AuthSession : SocketBase
                     else
                     {
                         stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_INS_IP_AUTO_BANNED);
-                        stmt.AddValue(0, ipAddress.Address.ToString());
-                        stmt.AddValue(1, wrongPassBanTime);
+                        stmt.SetData(0, ipAddress.Address.ToString());
+                        stmt.SetData(1, wrongPassBanTime);
                         DB.Login.Execute(stmt);
 
                         logger.Debug(LogFilter.Server, $"'{ipAddress.Address.ToString()}:{ipAddress.Port}' [AuthChallenge] IP got banned for '{wrongPassBanTime}' seconds because account {_accountInfo.Login} failed to authenticate '{_accountInfo.FailedLogins}' times");
@@ -829,15 +829,15 @@ internal class AuthSession : SocketBase
 
         // Get the account details from the account table
         PreparedStatement stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_SEL_RECONNECTCHALLENGE);
-        stmt.AddValue(0, GetRemoteIpAddress()?.Address.ToString());
-        stmt.AddValue(1, login);
+        stmt.SetData(0, GetRemoteIpAddress()?.Address.ToString());
+        stmt.SetData(1, login);
 
         _queryProcessor.AddCallback(DB.Login.AsyncQuery(stmt).WithCallback(ReconnectChallengeCallback));
 
         return true;
     }
 
-    private void ReconnectChallengeCallback(SQLResult result)
+    private void ReconnectChallengeCallback(QueryResult result)
     {
         ByteBuffer pkt = new ByteBuffer();
 
@@ -852,7 +852,7 @@ internal class AuthSession : SocketBase
             return;
         }
 
-        SQLFields fields = result.GetFields();
+        Fields fields = result.Fetch();
 
         _accountInfo.LoadResult(fields);
         _sessionKey = result.ReadBytes(11, 40);
@@ -939,14 +939,14 @@ internal class AuthSession : SocketBase
         _status = AuthStatus.STATUS_WAITING_FOR_REALM_LIST;
 
         PreparedStatement stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_SEL_REALM_CHARACTER_COUNTS);
-        stmt.AddValue(0, _accountInfo.Id);
+        stmt.SetData(0, _accountInfo.Id);
 
         _queryProcessor.AddCallback(DB.Login.AsyncQuery(stmt).WithCallback(RealmListCallback));
 
         return true;
     }
 
-    private void RealmListCallback(SQLResult result)
+    private void RealmListCallback(QueryResult result)
     {
         Dictionary<UInt32, byte> characterCounts = new Dictionary<uint, byte>();
 

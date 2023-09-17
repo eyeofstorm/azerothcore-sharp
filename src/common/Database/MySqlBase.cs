@@ -196,12 +196,12 @@ public abstract class MySqlBase<T> where T : notnull
         }
     }
 
-    public SQLResult Query(string sql, params object[] args)
+    public QueryResult Query(string sql, params object[] args)
     {
         return Query(new PreparedStatement(string.Format(sql, args)));
     }
 
-    public SQLResult Query(PreparedStatement stmt)
+    public QueryResult Query(PreparedStatement stmt)
     {
         try
         {
@@ -222,13 +222,13 @@ public abstract class MySqlBase<T> where T : notnull
                 cmd.Parameters.AddWithValue("@" + parameter.Key, parameter.Value);
             }
 
-            return new SQLResult(cmd.ExecuteReader(System.Data.CommandBehavior.CloseConnection));
+            return new QueryResult(cmd.ExecuteReader(System.Data.CommandBehavior.CloseConnection));
         }
         catch (MySqlException ex)
         {
             MySqlBase<T>.HandleMySQLException(ex, stmt.CommandText, stmt.Parameters);
 
-            return new SQLResult();
+            return new QueryResult();
         }
     }
 
@@ -237,7 +237,7 @@ public abstract class MySqlBase<T> where T : notnull
         PreparedStatementTask preparedStmtExecTask = new PreparedStatementTask(stmt, true);
 
         // Store future result before enqueueing - task might get already processed and deleted before returning from this method
-        Task<SQLResult>? preparedStmtExecTaskResult = preparedStmtExecTask.GetFuture();
+        Task<QueryResult>? preparedStmtExecTaskResult = preparedStmtExecTask.GetFuture();
         _sqlOperationQueue.Push(preparedStmtExecTask);
 
         QueryCallback callback = new QueryCallback(preparedStmtExecTaskResult);

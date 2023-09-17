@@ -1331,10 +1331,10 @@ public enum Opcodes : ushort
     SMSG_COMMENTATOR_SKIRMISH_QUEUE_RESULT2 = 0x51D,
     SMSG_MULTIPLE_MOVES = 0x51E, // uncompressed version of SMSG_COMPRESSED_MOVES
     NUM_MSG_TYPES = 0x51F
-};
+}
 
 public enum OpcodeMisc : ushort
 {
     NUM_OPCODE_HANDLERS = Opcodes.NUM_MSG_TYPES,
     NULL_OPCODE = 0x0000
-};
+}

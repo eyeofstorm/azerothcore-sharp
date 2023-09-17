@@ -191,18 +191,18 @@ internal class WorldServer
 
     private static bool LoadRealmInfo()
     {
-        SQLResult result = DB.Login.Query($"SELECT id, name, address, localAddress, localSubnetMask, port, icon, flag, timezone, allowedSecurityLevel, population, gamebuild FROM realmlist WHERE id = {Global.sWorld.GetRealm().Id.Index}");
+        QueryResult result = DB.Login.Query($"SELECT id, name, address, localAddress, localSubnetMask, port, icon, flag, timezone, allowedSecurityLevel, population, gamebuild FROM realmlist WHERE id = {Global.sWorld.GetRealm().Id.Index}");
 
         if (result.IsEmpty())
         {
             return false;
         }
 
-        SQLFields fields = result.GetFields();
+        Fields fields = result.Fetch();
 
         Realm realm = Global.sWorld.GetRealm();
 
-        realm.Name = fields.Get<string>(1) ?? string.Empty;
+        realm.Name = fields[1].Get<string>() ?? string.Empty;
 
         if (!IPAddress.TryParse(result.Read<string>(2), out realm.ExternalAddress))
         {

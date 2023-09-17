@@ -37,7 +37,7 @@ public class DatabaseUpdater<T> where T : notnull
 
     public bool Populate()
     {
-        SQLResult result = _database.Query("SHOW TABLES");
+        QueryResult result = _database.Query("SHOW TABLES");
 
         if (!result.IsEmpty() && !result.IsEmpty())
             return true;
@@ -346,7 +346,7 @@ public class DatabaseUpdater<T> where T : notnull
     {
         List<FileEntry> fileList = new();
 
-        SQLResult result = _database.Query("SELECT `path`, `state` FROM `updates_include`");
+        QueryResult result = _database.Query("SELECT `path`, `state` FROM `updates_include`");
 
         if (result.IsEmpty())
             return fileList;
@@ -384,7 +384,7 @@ public class DatabaseUpdater<T> where T : notnull
     {
         Dictionary<string, AppliedFileEntry> map = new();
 
-        SQLResult result = _database.Query("SELECT `name`, `hash`, `state`, UNIX_TIMESTAMP(`timestamp`) FROM `updates` ORDER BY `name` ASC");
+        QueryResult result = _database.Query("SELECT `name`, `hash`, `state`, UNIX_TIMESTAMP(`timestamp`) FROM `updates` ORDER BY `name` ASC");
 
         if (result.IsEmpty())
         {

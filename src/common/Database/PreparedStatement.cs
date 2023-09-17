@@ -15,9 +15,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 namespace AzerothCore.Database;
 
 public class PreparedStatement
@@ -30,67 +27,67 @@ public class PreparedStatement
         CommandText = commandText;
     }
 
-    public void AddValue(int index, sbyte value)
+    public void SetData(int index, sbyte value)
     {
         Parameters.Add(index, value);
     }
 
-    public void AddValue(int index, byte value)
+    public void SetData(int index, byte value)
     {
         Parameters.Add(index, value);
     }
 
-    public void AddValue(int index, short value)
+    public void SetData(int index, short value)
     {
         Parameters.Add(index, value);
     }
 
-    public void AddValue(int index, ushort value)
+    public void SetData(int index, ushort value)
     {
         Parameters.Add(index, value);
     }
 
-    public void AddValue(int index, int value)
+    public void SetData(int index, int value)
     {
         Parameters.Add(index, value);
     }
 
-    public void AddValue(int index, uint value)
+    public void SetData(int index, uint value)
     {
         Parameters.Add(index, value);
     }
 
-    public void AddValue(int index, long value)
+    public void SetData(int index, long value)
     {
         Parameters.Add(index, value);
     }
 
-    public void AddValue(int index, ulong value)
+    public void SetData(int index, ulong value)
     {
         Parameters.Add(index, value);
     }
 
-    public void AddValue(int index, float value)
+    public void SetData(int index, float value)
     {
         Parameters.Add(index, value);
     }
 
-    public void AddValue(int index, byte[]? value)
+    public void SetData(int index, byte[]? value)
     {
         Parameters.Add(index, value);
     }
 
-    public void AddValue(int index, string? value)
+    public void SetData(int index, string? value)
     {
         Parameters.Add(index, value);
     }
 
-    public void AddValue(int index, bool value)
+    public void SetData(int index, bool value)
     {
         Parameters.Add(index, value);
     }
 
-    public void AddNull(int index)
+    public void SetNull(int index)
     {
         Parameters.Add(index, null);
     }
@@ -105,7 +102,7 @@ public class PreparedStatementTask : ISqlOperation
 {
     private PreparedStatement m_stmt;
     private bool _needsResult;
-    private TaskCompletionSource<SQLResult>? m_taskFuture;
+    private TaskCompletionSource<QueryResult>? m_taskFuture;
 
     public PreparedStatementTask(PreparedStatement stmt, bool needsResult = false)
     {
@@ -114,7 +111,7 @@ public class PreparedStatementTask : ISqlOperation
 
         if (_needsResult)
         {
-            m_taskFuture = new TaskCompletionSource<SQLResult>();
+            m_taskFuture = new TaskCompletionSource<QueryResult>();
         }
     }
 
@@ -122,11 +119,11 @@ public class PreparedStatementTask : ISqlOperation
     {
         if (_needsResult && m_taskFuture != null)
         {
-            SQLResult queryResult = mySqlBase.Query(m_stmt);
+            QueryResult queryResult = mySqlBase.Query(m_stmt);
 
             if (queryResult == null)
             {
-                m_taskFuture.SetResult(new SQLResult());
+                m_taskFuture.SetResult(new QueryResult());
                 return false;
             }
             else
@@ -139,7 +136,7 @@ public class PreparedStatementTask : ISqlOperation
         return mySqlBase.DirectExecute(m_stmt);
     }
 
-    public Task<SQLResult>? GetFuture()
+    public Task<QueryResult>? GetFuture()
     {
         return m_taskFuture?.Task;
     }

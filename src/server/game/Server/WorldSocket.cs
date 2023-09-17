@@ -65,7 +65,7 @@ public struct AccountInfo
     public bool         IsBanned;
     public uint         TotalTime;
 
-    public AccountInfo(SQLResult result)
+    public AccountInfo(QueryResult result)
     {
         //           0             1          2         3               4            5           6         7            8     9           10          11
         // SELECT a.id, a.sessionkey, a.last_ip, a.locked, a.lock_country, a.expansion, a.mutetime, a.locale, a.recruiter, a.os, a.totaltime, aa.gmLevel,
@@ -234,7 +234,7 @@ public partial class WorldSocket : SocketBase
         logger.Debug(LogFilter.Session, $"Accepted connection from {ipAddress.Address}");
 
         var stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_SEL_IP_INFO);
-        stmt.AddValue(0, ipAddress.Address.ToString());
+        stmt.SetData(0, ipAddress.Address.ToString());
 
         QueryCallback asyncQuery = DB.Login.AsyncQuery(stmt);
         asyncQuery.WithCallback(CheckIpCallback);
@@ -242,7 +242,7 @@ public partial class WorldSocket : SocketBase
         _queryProcessor.AddCallback(asyncQuery);
     }
 
-    private void CheckIpCallback(SQLResult result)
+    private void CheckIpCallback(QueryResult result)
     {
         var ipAddress = GetRemoteIpAddress();
 
@@ -638,13 +638,13 @@ public partial class WorldSocket : SocketBase
 
         // Get the account details from the account table
         var stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_SEL_ACCOUNT_INFO_BY_NAME);
-        stmt.AddValue(0, Global.sWorld.GetRealm().Id.Index);
-        stmt.AddValue(1, authSession.Account);
+        stmt.SetData(0, Global.sWorld.GetRealm().Id.Index);
+        stmt.SetData(1, authSession.Account);
 
         _queryProcessor.AddCallback(DB.Login.AsyncQuery(stmt).WithCallback(HandleAuthSessionCallback, authSession));
     }
 
-    private void HandleAuthSessionCallback(AuthSession authSession, SQLResult result)
+    private void HandleAuthSessionCallback(AuthSession authSession, QueryResult result)
     {
         // Stop if the account is not found
         if (result.IsEmpty())
@@ -664,8 +664,8 @@ public partial class WorldSocket : SocketBase
 
         // As we don't know if attempted login process by ip works, we update last_attempt_ip right away
         var stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_UPD_LAST_ATTEMPT_IP);
-        stmt.AddValue(0, address);
-        stmt.AddValue(1, authSession.Account);
+        stmt.SetData(0, address);
+        stmt.SetData(1, authSession.Account);
 
         DB.Login.Execute(stmt);
 
@@ -774,8 +774,8 @@ public partial class WorldSocket : SocketBase
             account.MuteTime = TimeHelper.UnixTime + Math.Abs(account.MuteTime);
 
             stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_UPD_MUTE_TIME_LOGIN);
-            stmt.AddValue(0, account.MuteTime);
-            stmt.AddValue(1, account.Id);
+            stmt.SetData(0, account.MuteTime);
+            stmt.SetData(1, account.Id);
 
             DB.Login.Execute(stmt);
         }
@@ -808,8 +808,8 @@ public partial class WorldSocket : SocketBase
 
         // Update the last_ip in the database as it was successful for login
         stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_UPD_LAST_IP);
-        stmt.AddValue(0, address);
-        stmt.AddValue(1, authSession.Account);
+        stmt.SetData(0, address);
+        stmt.SetData(1, authSession.Account);
 
         DB.Login.Execute(stmt);
 

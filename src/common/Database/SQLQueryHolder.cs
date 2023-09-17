@@ -20,7 +20,7 @@ namespace AzerothCore.Database;
 public class SQLQueryHolder<T> where T : notnull
 {
     public Dictionary<T, PreparedStatement> Queries { get; private set; }  = new();
-    public Dictionary<T, SQLResult> Results { get; private set; } = new();
+    public Dictionary<T, QueryResult> Results { get; private set; } = new();
 
     public void SetQuery(T index, string sql, params object[] args)
     {
@@ -32,16 +32,16 @@ public class SQLQueryHolder<T> where T : notnull
         Queries[index] = stmt;
     }
 
-    public void SetResult(T index, SQLResult result)
+    public void SetResult(T index, QueryResult result)
     {
         Results[index] = result;
     }
 
-    public SQLResult GetResult(T index)
+    public QueryResult GetResult(T index)
     {
         if (!Results.ContainsKey(index))
         {
-            return new SQLResult();
+            return new QueryResult();
         }
 
         return Results[index];

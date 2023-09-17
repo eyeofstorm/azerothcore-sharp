@@ -174,16 +174,16 @@ public class World : Singleton<World>, IWorld
 
     public void LoadDBVersion()
     {
-        SQLResult result = DB.World.Query("SELECT db_version, cache_id FROM version LIMIT 1");
+        QueryResult result = DB.World.Query("SELECT db_version, cache_id FROM version LIMIT 1");
 
         if (!result.IsEmpty())
         {
-            SQLFields fields = result.GetFields();
+            Fields fields = result.Fetch();
 
-            _dbVersion = fields.Get<string> (0);
+            _dbVersion = fields[0].Get<string>();
 
             // will be overwrite by config values if different and non-0
-            _int_configs[(uint)WorldIntConfigs.CONFIG_CLIENTCACHE_VERSION] = fields.Get<uint>(1);
+            _int_configs[(uint)WorldIntConfigs.CONFIG_CLIENTCACHE_VERSION] = fields[1].Get<uint>();
         }
 
         if (string.IsNullOrEmpty(_dbVersion))
@@ -238,9 +238,9 @@ public class World : Singleton<World>, IWorld
     private void LoadDBAllowedSecurityLevel()
     {
         var stmt = LoginDatabase.GetPreparedStatement(LoginStatements.LOGIN_SEL_REALMLIST_SECURITY_LEVEL);
-        stmt.AddValue(0, GetRealm().Id.Index);
+        stmt.SetData(0, GetRealm().Id.Index);
 
-        SQLResult result = DB.Login.Query(stmt);
+        QueryResult result = DB.Login.Query(stmt);
 
         if (!result.IsEmpty())
         {

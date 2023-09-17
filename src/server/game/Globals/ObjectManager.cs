@@ -46,11 +46,11 @@ public class ObjectMgr : Singleton<ObjectMgr>
 
     private static readonly ILogger logger = LoggerFactory.GetLogger();
 
-    private readonly PlayerInfo[,] _playerInfo;
-    private readonly Dictionary<short, InstanceTemplate> _instanceTemplateStore;
-    private readonly List<string> _scriptNamesStore;
-    private readonly Dictionary<uint, CreatureTemplate> _creatureTemplateStore;
-    private readonly Dictionary<uint, ItemTemplate> _itemTemplateStore;
+    private readonly PlayerInfo[,]                          _playerInfo;
+    private readonly Dictionary<short, InstanceTemplate>    _instanceTemplateStore;
+    private readonly List<string>                           _scriptNamesStore;
+    private readonly Dictionary<uint, CreatureTemplate>     _creatureTemplateStore;
+    private readonly Dictionary<uint, ItemTemplate>         _itemTemplateStore;
 
     private ObjectMgr()
 	{
@@ -70,7 +70,7 @@ public class ObjectMgr : Singleton<ObjectMgr>
             uint oldMSTime = TimeHelper.GetMSTime();
 
             //                                                0     1      2    3        4          5           6
-            SQLResult result = DB.World.Query("SELECT race, class, map, zone, position_x, position_y, position_z, orientation FROM playercreateinfo");
+            QueryResult result = DB.World.Query("SELECT race, class, map, zone, position_x, position_y, position_z, orientation FROM playercreateinfo");
 
             if (result.IsEmpty())
             {
@@ -85,16 +85,16 @@ public class ObjectMgr : Singleton<ObjectMgr>
 
                 do
                 {
-                    SQLFields fields = result.GetFields();
+                    Fields fields = result.Fetch();
 
-                    uint currentRace = fields.Get<byte>(0);
-                    uint currentClass = fields.Get<byte>(1);
-                    uint mapId = fields.Get<ushort>(2);
-                    uint areaId = fields.Get<uint>(3); // zone
-                    float positionX = fields.Get<float>(4);
-                    float positionY = fields.Get<float>(5);
-                    float positionZ = fields.Get<float>(6);
-                    float orientation = fields.Get<float>(7);
+                    uint currentRace = fields[0].Get<byte>();
+                    uint currentClass = fields[1].Get<byte>();
+                    uint mapId = fields[2].Get<ushort>();
+                    uint areaId = fields[3].Get<uint>(); // zone
+                    float positionX = fields[4].Get<float>();
+                    float positionY = fields[5].Get<float>();
+                    float positionZ = fields[6].Get<float>();
+                    float orientation = fields[7].Get<float>();
 
                     if (currentRace >= SharedConst.MAX_RACES)
                     {
@@ -784,7 +784,7 @@ public class ObjectMgr : Singleton<ObjectMgr>
         uint oldMSTime = TimeHelper.GetMSTime();
 
         //                                                0     1       2        4
-        SQLResult result = DB.World.Query("SELECT map, parent, script, allowMount FROM instance_template");
+        QueryResult result = DB.World.Query("SELECT map, parent, script, allowMount FROM instance_template");
 
         if (result.IsEmpty())
         {
@@ -798,9 +798,9 @@ public class ObjectMgr : Singleton<ObjectMgr>
 
         do
         {
-            SQLFields fields = result.GetFields();
+            Fields fields = result.Fetch();
 
-            short mapID = fields.Get<short>(0);
+            short mapID = fields[0].Get<short>();
 
             if (!MapMgr.IsValidMAP((uint)mapID, true))
             {
@@ -810,9 +810,9 @@ public class ObjectMgr : Singleton<ObjectMgr>
 
             InstanceTemplate instanceTemplate = new InstanceTemplate();
 
-            instanceTemplate.AllowMount = fields.Get<bool>(3);
-            instanceTemplate.Parent = (uint)fields.Get<short>(1);
-            instanceTemplate.ScriptId = Global.sObjectMgr.GetScriptId(fields.Get<string>(2));
+            instanceTemplate.AllowMount = fields[3].Get<bool>();
+            instanceTemplate.Parent = (uint)fields[1].Get<short>();
+            instanceTemplate.ScriptId = Global.sObjectMgr.GetScriptId(fields[2].Get<string>());
 
             _instanceTemplateStore[mapID] = instanceTemplate;
 
@@ -832,7 +832,7 @@ public class ObjectMgr : Singleton<ObjectMgr>
         // script id 0 as dummy for "no script found".
         _scriptNamesStore.Add("");
 
-        SQLResult result = DB.World.Query(
+        QueryResult result = DB.World.Query(
             @"SELECT DISTINCT(ScriptName) FROM achievement_criteria_data WHERE ScriptName <> '' AND type = 11 
               UNION 
               SELECT DISTINCT(ScriptName) FROM battleground_template WHERE ScriptName <> '' 

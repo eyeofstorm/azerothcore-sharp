@@ -98,11 +98,11 @@ public class AccountInfoQueryHolderPerRealm : SQLQueryHolder<AccountInfoQueryInd
     public void Initialize(uint accountId)
     {
         PreparedStatement stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_ACCOUNT_DATA);
-        stmt.AddValue(0, accountId);
+        stmt.SetData(0, accountId);
         SetQuery(AccountInfoQueryIndex.GLOBAL_ACCOUNT_DATA, stmt);
 
         stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_TUTORIALS);
-        stmt.AddValue(0, accountId);
+        stmt.SetData(0, accountId);
         SetQuery(AccountInfoQueryIndex.TUTORIALS, stmt);
     }
 }
@@ -497,7 +497,7 @@ public partial class WorldSession : IOpcodeHandler
         SendPacket(data);
     }
 
-    internal void LoadAccountData(SQLResult result, uint mask)
+    internal void LoadAccountData(QueryResult result, uint mask)
     {
         for (uint i = 0; i < NUM_ACCOUNT_DATA_TYPES; ++i)
         {
@@ -514,9 +514,9 @@ public partial class WorldSession : IOpcodeHandler
 
         do
         {
-            SQLFields fields = result.GetFields();
+            Fields fields = result.Fetch();
 
-            byte type = fields.Get<byte>(0);
+            byte type = fields[0].Get<byte>();
 
             string tableName = mask == GLOBAL_CACHE_MASK ? "account_data" : "character_account_data";
 
@@ -534,9 +534,9 @@ public partial class WorldSession : IOpcodeHandler
                 continue;
             }
 
-            byte[] accountData = fields.Get<byte[]>(2) ?? Array.Empty<byte>();
+            byte[] accountData = fields[2].Get<byte[]>() ?? Array.Empty<byte>();
 
-            _accountData[type].Time = fields.Get<uint>(1);
+            _accountData[type].Time = fields[1].Get<uint>();
             _accountData[type].Data = Encoding.UTF8.GetString(accountData);
         }
         while (result.NextRow());
@@ -561,7 +561,7 @@ public partial class WorldSession : IOpcodeHandler
         SendPacket(data);
     }
 
-    internal void LoadTutorialsData(SQLResult result)
+    internal void LoadTutorialsData(QueryResult result)
     {
         for (byte i = 0; i < SharedConst.MAX_ACCOUNT_TUTORIAL_VALUES; i++ )
         {
@@ -599,7 +599,7 @@ public partial class WorldSession : IOpcodeHandler
         }
 
         var stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_SEL_HAS_TUTORIALS);
-        stmt.AddValue(0, GetAccountId());
+        stmt.SetData(0, GetAccountId());
 
         bool hasTutorials = !DB.Characters.Query(stmt).IsEmpty();
 
@@ -607,10 +607,10 @@ public partial class WorldSession : IOpcodeHandler
 
         for (byte i = 0; i < SharedConst.MAX_ACCOUNT_TUTORIAL_VALUES; ++i)
         {
-            stmt.AddValue(i, _tutorials[i]);
+            stmt.SetData(i, _tutorials[i]);
         }
 
-        stmt.AddValue(SharedConst.MAX_ACCOUNT_TUTORIAL_VALUES, GetAccountId());
+        stmt.SetData(SharedConst.MAX_ACCOUNT_TUTORIAL_VALUES, GetAccountId());
 
         trans.Append(stmt);
 

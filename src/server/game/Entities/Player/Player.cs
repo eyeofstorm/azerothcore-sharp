@@ -757,7 +757,7 @@ public partial class Player : Unit
         _mover = this;
     }
 
-    public static bool BuildEnumData(SQLResult result, ref WorldPacketData data)
+    public static bool BuildEnumData(QueryResult result, ref WorldPacketData data)
     {
         //             0               1                2                3                 4                  5                 6               7
         //    "SELECT characters.guid, characters.name, characters.race, characters.class, characters.gender, characters.skin, characters.face, characters.hairStyle,
@@ -768,13 +768,13 @@ public partial class Player : Unit
         //    24                      25
         //    characters.extra_flags, character_declinedname.genitive
 
-        SQLFields fields = result.GetFields();
+        Fields fields = result.Fetch();
 
-        uint guidLow = fields.Get<uint>(0);
-        string? plrName = fields.Get<string>(1);
-        byte plrRace = fields.Get<byte>(2);
-        byte plrClass = fields.Get<byte>(3);
-        byte gender = fields.Get<byte>(4);
+        uint guidLow = fields[0].Get<uint>();
+        string? plrName = fields[1].Get<string>();
+        byte plrRace = fields[2].Get<byte>();
+        byte plrClass = fields[3].Get<byte>();
+        byte gender = fields[4].Get<byte>();
 
         ObjectGuid guid = ObjectGuid.Create(HighGuid.Player, guidLow);
 
@@ -797,16 +797,16 @@ public partial class Player : Unit
         data.WriteByte(plrClass);                                // class
         data.WriteByte(gender);                                  // gender
 
-        byte skin = fields.Get<byte>(5);
-        byte face = fields.Get<byte>(6);
-        byte hairStyle = fields.Get<byte>(7);
-        byte hairColor = fields.Get<byte>(8);
-        byte facialStyle = fields.Get<byte>(9);
+        byte skin = fields[5].Get<byte>();
+        byte face = fields[6].Get<byte>();
+        byte hairStyle = fields[7].Get<byte>();
+        byte hairColor = fields[8].Get<byte>();
+        byte facialStyle = fields[9].Get<byte>();
 
         uint charFlags = 0;
-        uint playerFlags = fields.Get<uint>(17);
-        ushort atLoginFlags = fields.Get<ushort>(18);
-        uint zone = (atLoginFlags & (ushort)AtLoginFlags.AT_LOGIN_FIRST) != 0 ? (ushort)0 : fields.Get<ushort>(11); // if first login do not show the zone
+        uint playerFlags = fields[17].Get<uint>();
+        ushort atLoginFlags = fields[18].Get<ushort>();
+        uint zone = (atLoginFlags & (ushort)AtLoginFlags.AT_LOGIN_FIRST) != 0 ? (ushort)0 : fields[11].Get<ushort>(); // if first login do not show the zone
 
         data.WriteByte(skin);
         data.WriteByte(face);
@@ -814,15 +814,15 @@ public partial class Player : Unit
         data.WriteByte(hairColor);
         data.WriteByte(facialStyle);
 
-        data.WriteByte(fields.Get<byte>(10));                      // level
+        data.WriteByte(fields[10].Get<byte>());                      // level
         data.WriteUInt(zone);                                       // zone
-        data.WriteUInt(fields.Get<ushort>(12));                    // map
+        data.WriteUInt(fields[12].Get<ushort>());                    // map
 
-        data.WriteFloat(fields.Get<float>(13));                    // x
-        data.WriteFloat(fields.Get<float>(14));                    // y
-        data.WriteFloat(fields.Get<float>(15));                    // z
+        data.WriteFloat(fields[13].Get<float>());                    // x
+        data.WriteFloat(fields[14].Get<float>());                    // y
+        data.WriteFloat(fields[15].Get<float>());                    // z
 
-        data.WriteUInt(fields.Get<uint>(16));                      // guild id
+        data.WriteUInt(fields[16].Get<uint>());                      // guild id
 
         if ((atLoginFlags & (ushort)AtLoginFlags.AT_LOGIN_RESURRECT) != 0)
         {
@@ -849,7 +849,7 @@ public partial class Player : Unit
             charFlags |= (uint)CharacterFlags.CHARACTER_FLAG_RENAME;
         }
 
-        if (fields.Get<uint>(23) != 0)
+        if (fields[23].Get<uint>() != 0)
         {
             charFlags |= (uint)CharacterFlags.CHARACTER_FLAG_LOCKED_BY_BILLING;
         }
@@ -857,7 +857,7 @@ public partial class Player : Unit
         if (ConfigMgr.GetOption("RealmZone", RealmZone.REALM_ZONE_DEVELOPMENT) == RealmZone.REALM_ZONE_RUSSIAN ||
             ConfigMgr.GetOption("DeclinedNames", false))
         {
-            if (!fields.Get<string>(25).IsEmpty())
+            if (!fields[25].Get<string>().IsEmpty())
             {
                 charFlags |= (uint)CharacterFlags.CHARACTER_FLAG_DECLINED;
             }
@@ -900,15 +900,15 @@ public partial class Player : Unit
             (playerFlags & (uint)PlayerFlags.PLAYER_FLAGS_GHOST) == 0 &&
             (plrClass == (byte)Classes.CLASS_WARLOCK ||
             plrClass == (byte)Classes.CLASS_HUNTER ||
-            (plrClass == (byte)Classes.CLASS_DEATH_KNIGHT && ((fields.Get<uint>(21) & (uint)PlayerExtraFlags.PLAYER_EXTRA_SHOW_DK_PET) != 0))))
+            (plrClass == (byte)Classes.CLASS_DEATH_KNIGHT && ((fields[21].Get<uint>() & (uint)PlayerExtraFlags.PLAYER_EXTRA_SHOW_DK_PET) != 0))))
         {
-            uint entry = fields.Get<uint>(19);
+            uint entry = fields[19].Get<uint>();
             CreatureTemplate? creatureInfo = Global.sObjectMgr.GetCreatureTemplate(entry);
 
             if (creatureInfo.HasValue)
             {
-                petDisplayId = fields.Get<uint>(20);
-                petLevel = fields.Get<ushort>(21);
+                petDisplayId = fields[20].Get<uint>();
+                petLevel = fields[21].Get<ushort>();
                 petFamily = creatureInfo.Value.Family;
             }
         }
@@ -917,7 +917,7 @@ public partial class Player : Unit
         data.WriteUInt(petLevel);
         data.WriteUInt(petFamily);
 
-        string[] equipment = (fields.Get<string>(22) ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        string[] equipment = (fields[22].Get<string>() ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
         for (byte slot = 0; slot < (byte)InventorySlots.INVENTORY_SLOT_BAG_END; ++slot)
         {

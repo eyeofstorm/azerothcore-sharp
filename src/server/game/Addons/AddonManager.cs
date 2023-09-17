@@ -80,7 +80,7 @@ public static class AddonMgr
     {
         uint oldMSTime = TimeHelper.GetMSTime();
 
-        SQLResult result = DB.Characters.Query("SELECT name, crc FROM addons");
+        QueryResult result = DB.Characters.Query("SELECT name, crc FROM addons");
 
         if (result.IsEmpty())
         {
@@ -94,10 +94,10 @@ public static class AddonMgr
 
         do
         {
-            SQLFields fields = result.GetFields();
+            Fields fields = result.Fetch();
 
-            string? name = fields.Get<string>(0);
-            uint crc = fields.Get<uint>(1);
+            string? name = fields[0].Get<string>();
+            uint crc = fields[1].Get<uint>();
 
             _knownAddons.Add(new SavedAddon(name ?? string.Empty, crc));
 
@@ -118,14 +118,14 @@ public static class AddonMgr
 
             do
             {
-                SQLFields fields = result.GetFields();
+                Fields fields = result.Fetch();
 
                 BannedAddon addon = new();
 
-                addon.Id = fields.Get<uint>(0) + offset;
-                addon.Timestamp = (uint)fields.Get<ulong>(3);
-                addon.NameMD5 = MD5.HashData(Encoding.ASCII.GetBytes(fields.Get<string>(1) ?? string.Empty));
-                addon.VersionMD5 = MD5.HashData(Encoding.ASCII.GetBytes(fields.Get<string>(2) ?? string.Empty));
+                addon.Id = fields[0].Get<uint>() + offset;
+                addon.Timestamp = (uint)fields[3].Get<ulong>();
+                addon.NameMD5 = MD5.HashData(Encoding.ASCII.GetBytes(fields[1].Get<string>() ?? string.Empty));
+                addon.VersionMD5 = MD5.HashData(Encoding.ASCII.GetBytes(fields[2].Get<string>() ?? string.Empty));
 
                 _bannedAddons.Add(addon);
 
@@ -142,8 +142,8 @@ public static class AddonMgr
     {
         var stmt = CharacterDatabase.GetPreparedStatement(CharStatements.CHAR_INS_ADDON);
 
-        stmt.AddValue(0, addon.Name);
-        stmt.AddValue(1, addon.CRC);
+        stmt.SetData(0, addon.Name);
+        stmt.SetData(1, addon.CRC);
 
         DB.Characters.Execute(stmt);
 
