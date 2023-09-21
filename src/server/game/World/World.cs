@@ -87,9 +87,9 @@ public enum RealmZone : int
     REALM_ZONE_FRENCH = 10,                         // extended-Latin
     REALM_ZONE_SPANISH = 11,                        // extended-Latin
     REALM_ZONE_RUSSIAN = 12,                        // Cyrillic
-    REALM_ZONE_TOURNAMENT_13 = 13,                          // basic-Latin at create, any at login
+    REALM_ZONE_TOURNAMENT_13 = 13,                  // basic-Latin at create, any at login
     REALM_ZONE_TAIWAN = 14,                         // East-Asian
-    REALM_ZONE_TOURNAMENT_15 = 15,                          // basic-Latin at create, any at login
+    REALM_ZONE_TOURNAMENT_15 = 15,                  // basic-Latin at create, any at login
     REALM_ZONE_CHINA = 16,                          // East-Asian
     REALM_ZONE_CN1 = 17,                            // basic-Latin at create, any at login
     REALM_ZONE_CN2 = 18,                            // basic-Latin at create, any at login
@@ -172,6 +172,18 @@ public class World : Singleton<World>, IWorld
         return (intConfigsIndex < WorldIntConfigs.INT_CONFIG_VALUE_COUNT) ? _int_configs[(uint)intConfigsIndex] : 0;
     }
 
+    // Get a server configuration element (see #WorldConfigs)
+    public bool GetBoolConfig(WorldBoolConfigs index)
+    {
+        return index < WorldBoolConfigs.BOOL_CONFIG_VALUE_COUNT && _bool_configs[(uint)index];
+    }
+
+    // Get a server configuration element (see #WorldConfigs)
+    public float GetFloatConfig(WorldFloatConfigs index)
+    {
+        return index < WorldFloatConfigs.FLOAT_CONFIG_VALUE_COUNT ? _float_configs[(uint)index] : 0.0f;
+    }
+
     public void LoadDBVersion()
     {
         QueryResult result = DB.World.Query("SELECT db_version, cache_id FROM version LIMIT 1");
@@ -233,6 +245,9 @@ public class World : Singleton<World>, IWorld
 
         logger.Info(LogFilter.ServerLoading, $"Loading Client Addons...");
         AddonMgr.LoadFromDB();
+
+        logger.Info(LogFilter.ServerLoading, $"Loading Items...");  // must be after LoadRandomEnchantmentsTable and LoadPageTexts
+        Global.sObjectMgr.LoadItemTemplates();
     }
 
     private void LoadDBAllowedSecurityLevel()
@@ -1312,7 +1327,7 @@ public class World : Singleton<World>, IWorld
         VMapFactory.CreateOrGetVMapMgr().SetEnableLineOfSightCalc(enableLOS);
         VMapFactory.CreateOrGetVMapMgr().SetEnableHeightCalc(enableHeight);
 
-        logger.Info(LogFilter.ServerLoading, $"WORLD: VMap support included. LineOfSight:{enableLOS}, getHeight:{enableHeight}, indoorCheck:{enableIndoor} PetLOS:{enablePetLOS}");
+        logger.Info(LogFilter.ServerLoading, $"WORLD: VMap support included. LineOfSight:{enableLOS}, GetHeight:{enableHeight}, IndoorCheck:{enableIndoor}, PetLOS:{enablePetLOS}");
 
         _bool_configs[(uint)WorldBoolConfigs.CONFIG_PET_LOS] = ConfigMgr.GetOption("vmap.petLOS", true);
         _bool_configs[(uint)WorldBoolConfigs.CONFIG_START_CUSTOM_SPELLS] = ConfigMgr.GetOption("PlayerStart.CustomSpells", false);
@@ -1478,17 +1493,17 @@ public class World : Singleton<World>, IWorld
         _bool_configs[(uint)WorldBoolConfigs.CONFIG_REALM_LOGIN_ENABLED] = ConfigMgr.GetOption("World.RealmAvailability", true);
     }
 
-    private void SetNewCharString(string str)
+    public void SetNewCharString(string str)
     {
         _newCharString = str;
     }
 
-    private void SetPlayerAmountLimit(uint limit)
+    public void SetPlayerAmountLimit(uint limit)
     {
         _playerLimit = limit;
     }
 
-    private float GetRate(Rates rate)
+    public float GetRate(Rates rate)
     {
         return _rate_values[(uint)rate];
     }

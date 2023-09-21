@@ -922,6 +922,194 @@ public class ObjectMgr : Singleton<ObjectMgr>
         return _creatureTemplateStore.ContainsKey(entry) ? _creatureTemplateStore[entry] : null;
     }
 
+    public void LoadItemTemplates()
+    {
+        uint oldMSTime = TimeHelper.GetMSTime();
+
+        //                                            0      1       2               3              4        5        6       7          8         9        10        11           12
+        QueryResult result = DB.World.Query("SELECT entry, class, subclass, SoundOverrideSubclass, name, displayid, Quality, Flags, FlagsExtra, BuyCount, BuyPrice, SellPrice, InventoryType, " +
+                             //                                              13              14           15          16             17               18                19              20
+                             "AllowableClass, AllowableRace, ItemLevel, RequiredLevel, RequiredSkill, RequiredSkillRank, requiredspell, requiredhonorrank, " +
+                             //                                              21                      22                       23               24        25          26             27           28
+                             "RequiredCityRank, RequiredReputationFaction, RequiredReputationRank, maxcount, stackable, ContainerSlots, StatsCount, stat_type1, " +
+                             //                                            29           30          31           32          33           34          35           36          37           38
+                             "stat_value1, stat_type2, stat_value2, stat_type3, stat_value3, stat_type4, stat_value4, stat_type5, stat_value5, stat_type6, " +
+                             //                                            39           40          41           42           43          44           45           46           47
+                             "stat_value6, stat_type7, stat_value7, stat_type8, stat_value8, stat_type9, stat_value9, stat_type10, stat_value10, " +
+                             //                                                   48                    49           50        51        52         53        54         55      56      57        58
+                             "ScalingStatDistribution, ScalingStatValue, dmg_min1, dmg_max1, dmg_type1, dmg_min2, dmg_max2, dmg_type2, armor, holy_res, fire_res, " +
+                             //                                            59          60         61          62       63       64            65            66          67               68
+                             "nature_res, frost_res, shadow_res, arcane_res, delay, ammo_type, RangedModRange, spellid_1, spelltrigger_1, spellcharges_1, " +
+                             //                                              69              70                71                 72                 73           74               75
+                             "spellppmRate_1, spellcooldown_1, spellcategory_1, spellcategorycooldown_1, spellid_2, spelltrigger_2, spellcharges_2, " +
+                             //                                              76               77              78                  79                 80           81               82
+                             "spellppmRate_2, spellcooldown_2, spellcategory_2, spellcategorycooldown_2, spellid_3, spelltrigger_3, spellcharges_3, " +
+                             //                                              83               84              85                  86                 87           88               89
+                             "spellppmRate_3, spellcooldown_3, spellcategory_3, spellcategorycooldown_3, spellid_4, spelltrigger_4, spellcharges_4, " +
+                             //                                              90               91              92                  93                  94          95               96
+                             "spellppmRate_4, spellcooldown_4, spellcategory_4, spellcategorycooldown_4, spellid_5, spelltrigger_5, spellcharges_5, " +
+                             //                                              97               98              99                  100                 101        102         103       104          105
+                             "spellppmRate_5, spellcooldown_5, spellcategory_5, spellcategorycooldown_5, bonding, description, PageText, LanguageID, PageMaterial, " +
+                             //                                            106       107     108      109          110            111       112     113         114       115   116     117
+                             "startquest, lockid, Material, sheath, RandomProperty, RandomSuffix, block, itemset, MaxDurability, area, Map, BagFamily, " +
+                             //                                            118             119             120             121             122            123              124            125
+                             "TotemCategory, socketColor_1, socketContent_1, socketColor_2, socketContent_2, socketColor_3, socketContent_3, socketBonus, " +
+                             //                                            126                 127                     128            129            130            131         132         133
+                             "GemProperties, RequiredDisenchantSkill, ArmorDamageModifier, duration, ItemLimitCategory, HolidayId, ScriptName, DisenchantID, " +
+                             //                                           134        135            136
+                             "FoodType, minMoneyLoot, maxMoneyLoot, flagsCustom FROM item_template");
+
+        if (result.IsEmpty())
+        {
+            logger.Warn(LogFilter.ServerLoading, ">> Loaded 0 item templates. DB table `item_template` is empty.");
+            logger.Info(LogFilter.ServerLoading, " ");
+
+            return;
+        }
+
+        uint count = 0;
+
+        // original inspiration https://github.com/TrinityCore/TrinityCore/commit/0c44bd33ee7b42c924859139a9f4b04cf2b91261
+        bool enforceDBCAttributes = Global.sWorld.GetBoolConfig(WorldBoolConfigs.CONFIG_DBC_ENFORCE_ITEM_ATTRIBUTES);
+
+        do
+        {
+            List<Field> fields = result.Fetch();
+
+            uint entry = fields[0].Get<uint>();
+
+            ItemTemplate itemTemplate = new();
+            _itemTemplateStore[entry] = itemTemplate;
+
+            itemTemplate.ItemId = entry;
+            itemTemplate.Class = fields[1].Get<byte>();
+            itemTemplate.SubClass = fields[2].Get<byte>();
+            itemTemplate.SoundOverrideSubclass = fields[3].Get<sbyte>();
+            itemTemplate.Name1 = fields[4].Get<string>() ?? string.Empty;
+            itemTemplate.DisplayInfoID = fields[5].Get<uint>();
+            itemTemplate.Quality = fields[6].Get<byte>();
+            itemTemplate.Flags = fields[7].Get<uint>();
+            itemTemplate.Flags2 = fields[8].Get<uint>();
+            itemTemplate.BuyCount = fields[9].Get<byte>();
+            itemTemplate.BuyPrice = (int)(fields[10].Get<long>() * Global.sWorld.GetRate(Rates.RATE_BUYVALUE_ITEM_POOR + itemTemplate.Quality));
+            itemTemplate.SellPrice = (uint)(fields[11].Get<uint>() * Global.sWorld.GetRate(Rates.RATE_SELLVALUE_ITEM_POOR + itemTemplate.Quality));
+            itemTemplate.InventoryType = fields[12].Get<byte>();
+            itemTemplate.AllowableClass = (uint)fields[13].Get<int>();
+            itemTemplate.AllowableRace = (uint)fields[14].Get<int>();
+            itemTemplate.ItemLevel = fields[15].Get<ushort>();
+            itemTemplate.RequiredLevel = fields[16].Get<byte>();
+            itemTemplate.RequiredSkill = fields[17].Get<ushort>();
+            itemTemplate.RequiredSkillRank = fields[18].Get<ushort>();
+            itemTemplate.RequiredSpell = fields[19].Get<uint>();
+            itemTemplate.RequiredHonorRank = fields[20].Get<uint>();
+            itemTemplate.RequiredCityRank = fields[21].Get<uint>();
+            itemTemplate.RequiredReputationFaction = fields[22].Get<ushort>();
+            itemTemplate.RequiredReputationRank = fields[23].Get<ushort>();
+            itemTemplate.MaxCount = fields[24].Get<int>();
+            itemTemplate.Stackable = fields[25].Get<int>();
+            itemTemplate.ContainerSlots = fields[26].Get<byte>();
+            itemTemplate.StatsCount = fields[27].Get<byte>();
+
+            for (byte i = 0; i < itemTemplate.StatsCount; ++i)
+            {
+                itemTemplate.ItemStat[i].ItemStatType = fields[28 + i * 2].Get<byte>();
+                itemTemplate.ItemStat[i].ItemStatValue = fields[29 + i * 2].Get<int>();
+            }
+
+            itemTemplate.ScalingStatDistribution = fields[48].Get<ushort>();
+            itemTemplate.ScalingStatValue = fields[49].Get<uint>();
+
+            for (byte i = 0; i < ItemTemplateConst.MAX_ITEM_PROTO_DAMAGES; ++i)
+            {
+                itemTemplate.Damage[i].DamageMin = fields[50 + i * 3].Get<float>();
+                itemTemplate.Damage[i].DamageMax = fields[51 + i * 3].Get<float>();
+                itemTemplate.Damage[i].DamageType = fields[52 + i * 3].Get<byte>();
+            }
+
+            itemTemplate.Armor = fields[56].Get<uint>();
+            itemTemplate.HolyRes = fields[57].Get<int>();
+            itemTemplate.FireRes = fields[58].Get<int>();
+            itemTemplate.NatureRes = fields[59].Get<int>();
+            itemTemplate.FrostRes = fields[60].Get<int>();
+            itemTemplate.ShadowRes = fields[61].Get<int>();
+            itemTemplate.ArcaneRes = fields[62].Get<int>();
+            itemTemplate.Delay = fields[63].Get<ushort>();
+            itemTemplate.AmmoType = fields[64].Get<byte>();
+            itemTemplate.RangedModRange = fields[65].Get<float>();
+
+            for (byte i = 0; i < ItemTemplateConst.MAX_ITEM_PROTO_SPELLS; ++i)
+            {
+                itemTemplate.Spells[i].SpellId = fields[66 + i * 7].Get<int>();
+                itemTemplate.Spells[i].SpellTrigger = fields[67 + i * 7].Get<byte>();
+                itemTemplate.Spells[i].SpellCharges = fields[68 + i * 7].Get<short>();
+                itemTemplate.Spells[i].SpellPPMRate = fields[69 + i * 7].Get<float>();
+                itemTemplate.Spells[i].SpellCooldown = fields[70 + i * 7].Get<int>();
+                itemTemplate.Spells[i].SpellCategory = fields[71 + i * 7].Get<ushort>();
+                itemTemplate.Spells[i].SpellCategoryCooldown = fields[72 + i * 7].Get<int>();
+            }
+
+            itemTemplate.Bonding = fields[101].Get<byte>();
+            itemTemplate.Description = fields[102].Get <string>() ?? string.Empty;
+            itemTemplate.PageText = fields[103].Get<uint>();
+            itemTemplate.LanguageID = fields[104].Get<byte>();
+            itemTemplate.PageMaterial = fields[105].Get<byte>();
+            itemTemplate.StartQuest = fields[106].Get<uint>();
+            itemTemplate.LockID = fields[107].Get<uint>();
+            itemTemplate.Material = fields[108].Get<sbyte>();
+            itemTemplate.Sheath = fields[109].Get<byte>();
+            itemTemplate.RandomProperty = fields[110].Get<int>();
+            itemTemplate.RandomSuffix = fields[111].Get<int>();
+            itemTemplate.Block = fields[112].Get<uint>();
+            itemTemplate.ItemSet = fields[113].Get<uint>();
+            itemTemplate.MaxDurability = fields[114].Get<ushort>();
+            itemTemplate.Area = fields[115].Get<uint>();
+            itemTemplate.Map = fields[116].Get<ushort>();
+            itemTemplate.BagFamily = fields[117].Get<uint>();
+            itemTemplate.TotemCategory = fields[118].Get<uint>();
+
+            for (byte i = 0; i < ItemTemplateConst.MAX_ITEM_PROTO_SOCKETS; ++i)
+            {
+                itemTemplate.Socket[i].Color = fields[119 + i * 2].Get<byte>();
+                itemTemplate.Socket[i].Content = fields[120 + i * 2].Get<uint>();
+            }
+
+            itemTemplate.socketBonus = fields[125].Get<uint>();
+            itemTemplate.GemProperties = fields[126].Get<uint>();
+            itemTemplate.RequiredDisenchantSkill = (uint)fields[127].Get<short>();
+            itemTemplate.ArmorDamageModifier = fields[128].Get<float>();
+            itemTemplate.Duration = fields[129].Get<uint>();
+            itemTemplate.ItemLimitCategory = (uint)fields[130].Get<short>();
+            itemTemplate.HolidayId = fields[131].Get<uint>();
+            itemTemplate.ScriptId = Global.sObjectMgr.GetScriptId(fields[132].Get <string> ());
+            itemTemplate.DisenchantID = fields[133].Get<uint>();
+            itemTemplate.FoodType = fields[134].Get<byte>();
+            itemTemplate.MinMoneyLoot = fields[135].Get<uint>();
+            itemTemplate.MaxMoneyLoot = fields[136].Get<uint>();
+            itemTemplate.FlagsCu = fields[137].Get<uint>();
+
+            // Checks
+            ItemEntry? dbcitem = Global.sItemStore.LookupEntry(entry);
+
+            if (dbcitem != null)
+            {
+
+                // TODO: game: ObjectMgr::LoadItemTemplates()
+            }
+
+            // TODO: game: ObjectMgr::LoadItemTemplates()
+
+            count++;
+        }
+        while (result.NextRow());
+
+
+
+        // TODO: game: ObjectMgr::LoadItemTemplates()
+
+        logger.Info(LogFilter.ServerLoading, $">> Loaded {count} Item Templates in {TimeHelper.GetMSTimeDiffToNow(oldMSTime)} ms");
+        logger.Info(LogFilter.ServerLoading, " ");
+    }
+
     public ItemTemplate? GetItemTemplate(uint itemId)
     { 
         return _itemTemplateStore.ContainsKey(itemId) ? _itemTemplateStore[itemId] : null;

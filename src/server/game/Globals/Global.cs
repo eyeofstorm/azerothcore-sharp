@@ -27,11 +27,12 @@ public static class Global
     public static readonly PacketFileLogger             sPacketLog          = PacketFileLogger.Instance;
     public static readonly ObjectMgr                    sObjectMgr          = ObjectMgr.Instance;
     public static readonly MapMgr                       sMapMgr             = MapMgr.Instance;
+    public static readonly WorldUpdateTime              sWorldUpdateTime    = new();
 
     // Data stores
     public static readonly DBCStorage<ChrClassesEntry>              sChrClassesStore            = new(DBCFmt.ChrClassesEntryfmt);
     public static readonly DBCStorage<ChrRacesEntry>                sChrRacesStore              = new(DBCFmt.ChrRacesEntryfmt);
     public static readonly DBCStorage<MapEntry>                     sMapStore                   = new(DBCFmt.MapEntryfmt);
     public static readonly DBCStorage<SpellItemEnchantmentEntry>    sSpellItemEnchantmentStore  = new(DBCFmt.SpellItemEnchantmentfmt);
-    public static readonly WorldUpdateTime                          sWorldUpdateTime            = new();
+    public static readonly DBCStorage<ItemEntry>                    sItemStore                  = new(DBCFmt.Itemfmt);
 }

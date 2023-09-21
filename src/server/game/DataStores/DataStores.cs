@@ -33,6 +33,7 @@ public class DataStores
         DBCStorage<ChrRacesEntry>.LoadDBC(ref availableDbcLocales, Global.sChrRacesStore, dbcPath, "ChrRaces.dbc", "chrraces_dbc");
         DBCStorage<MapEntry>.LoadDBC(ref availableDbcLocales, Global.sMapStore, dbcPath, "Map.dbc", "map_dbc");
         DBCStorage<SpellItemEnchantmentEntry>.LoadDBC(ref availableDbcLocales, Global.sSpellItemEnchantmentStore, dbcPath, "SpellItemEnchantment.dbc", "spellitemenchantment_dbc");
+        DBCStorage<ItemEntry>.LoadDBC(ref availableDbcLocales, Global.sItemStore, dbcPath, "Item.dbc", "item_dbc");
         // ...
     }
 }

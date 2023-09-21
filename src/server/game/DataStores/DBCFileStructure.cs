@@ -415,4 +415,58 @@ public class SpellItemEnchantmentEntry : DBCFileEntry
     }
 }
 
+public class ItemEntry : DBCFileEntry
+{
+    public uint ID;                                               // 0
+    public uint ClassID;                                          // 1
+    public uint SubclassID;                                       // 2
+    public int  SoundOverrideSubclassID;                          // 3
+    public int  Material;                                         // 4
+    public uint DisplayInfoID;                                    // 5
+    public uint InventoryType;                                    // 6
+    public uint SheatheType;                                      // 7
 
+    public override void SetField<T>(DBCFieldInfo<T> fieldInfo)
+    {
+        if (fieldInfo.FieldValue is uint uint32Value)
+        {
+            switch (fieldInfo.FieldIdx)
+            {
+            case 0:
+                ID = uint32Value;
+                break;
+            case 1:
+                ClassID = uint32Value;
+                break;
+            case 2:
+                SubclassID = uint32Value;
+                break;
+            case 5:
+                DisplayInfoID = uint32Value;
+                break;
+            case 6:
+                InventoryType = uint32Value;
+                break;
+            case 7:
+                SheatheType = uint32Value;
+                break;
+            default:
+                break;
+            }
+        }
+        else if (fieldInfo.FieldValue is int int32Value)
+        {
+            switch (fieldInfo.FieldIdx)
+            {
+            case 3:
+                SoundOverrideSubclassID = int32Value;
+                break;
+            case 4:
+                Material = int32Value;
+                break;
+            default:
+                break;
+            }
+        }
+    }
+}
